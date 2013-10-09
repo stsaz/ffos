@@ -1,0 +1,35 @@
+FAST-FORWARD (FF) LIBRARY
+Unified Operating System interface.
+
+FFOS library allows to write cross-platform code for 3 OS:
+	. FreeBSD
+	. Linux
+	. Windows
+
+The supported languages are C and C++.
+
+The resulting code is almost completely inlined by a compiler: the code is native, high-performance but still cross-platform.
+
+
+FEATURES
+
+FFOS currently supports:
+	. files
+	. pipes
+	. directories
+	. native file-system paths
+	. heap memory
+	. native system string
+	. date and time
+	. system error codes
+
+
+LICENSE
+
+The code provided here is free for use in open-source and proprietary projects.
+You may distribute, redistribute, modify the whole code or the parts of it, just keep the original copyright statement inside the files.
+
+
+10/9/2013
+
+Simon Zolin <stsaz@yandex.ru>

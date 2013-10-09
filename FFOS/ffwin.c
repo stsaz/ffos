@@ -1,0 +1,219 @@
+/**
+Copyright (c) 2013 Simon Zolin
+*/
+
+#include <FFOS/dir.h>
+#include <FFOS/time.h>
+
+#include <time.h>
+
+HANDLE _ffheap;
+
+fffd fffile_open(const ffsyschar *filename, int flags)
+{
+	enum { share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE };
+	int mode = (flags & 0x0000000f);
+	int access = (flags & 0x000000f0) << 24;
+	int f = (flags & 0xffffff00) | FILE_ATTRIBUTE_NORMAL;
+
+	if (mode == FFO_APPEND) {
+		mode = OPEN_ALWAYS;
+		access = STANDARD_RIGHTS_WRITE | FILE_APPEND_DATA | SYNCHRONIZE;
+	}
+
+	return CreateFile(filename, access, share, NULL, mode, f, NULL);
+}
+
+int fffile_time(fffd fd, fftime *last_write, fftime *last_access, fftime *creation)
+{
+	size_t i;
+	FILETIME ft[3];
+	fftime *const tt[3] = { creation, last_access, last_write };
+	if (0 == GetFileTime(fd, ft + 0, ft + 1, ft + 2))
+		return -1;
+
+	for (i = 0; i < 3; i++) {
+		if (tt[i] != NULL)
+			*tt[i] = _ff_ftToTime(&ft[i]);
+	}
+	return 0;
+}
+
+int fffile_trunc(fffd f, uint64 pos)
+{
+	int64 curpos = fffile_seek(f, 0, SEEK_CUR);
+	if (curpos == -1 || -1 == fffile_seek(f, pos, SEEK_SET))
+		return -1;
+	if (!SetEndOfFile(f))
+		return -1;
+	if (-1 == fffile_seek(f, curpos, SEEK_SET))
+		return -1;
+	return 0;
+}
+
+// [/\\] | \w:[\0/\\]
+ffbool ffpath_abs(const char *path, size_t sz)
+{
+	char c;
+	if (sz == 0)
+		return 0;
+
+	if (ffpath_slash(path[0]))
+		return 1;
+
+	c = path[0] | 0x20; //lower
+	return
+		(sz >= FFSLEN("c:") && c >= 'a' && c <= 'z'
+		&& path[1] == ':'
+		&& (sz == FFSLEN("c:") || ffpath_slash(path[2]))
+		);
+}
+
+ffdir ffdir_open(ffsyschar *path, size_t cap, ffdirentry *ent)
+{
+	ffdir dir;
+	size_t len = ffq_len(path);
+	ffsyschar *end = path + len;
+	if (len + FFSLEN("\\*") >= cap) {
+		errno = EOVERFLOW;
+		return 0;
+	}
+	if (!ffpath_slash(path[len - 1]))
+		*end++ = FFPATH_SLASH;
+	*end++ = '*';
+	*end = '\0';
+	dir = FindFirstFile(path, &ent->info.data);
+	path[len] = '\0';
+	ent->info.byH = 0;
+	if (dir == INVALID_HANDLE_VALUE)
+		return 0;
+	ent->namelen = (int)ffq_len(ent->info.data.cFileName);
+	ent->next = 0;
+	return dir;
+}
+
+int ffdir_read(ffdir dir, ffdirentry *ent)
+{
+	if (ent->next) {
+		if (0 == FindNextFile(dir, &ent->info.data))
+			return -1;
+	}
+	else
+		ent->next = 1;
+	ent->namelen = (int)ffq_len(ent->info.data.cFileName);
+	return 0;
+}
+
+int fferr_str(int code, ffsyschar *dst, size_t dst_cap)
+{
+	return FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, 0, code, 0
+		, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
+}
+
+static const uint64 _ff100nsNum = 116444736000000000ULL;
+
+/// Convert Windows FILETIME structure to time value
+fftime _ff_ftToTime(const FILETIME *ft)
+{
+	fftime t = { 0, 0 };
+	LARGE_INTEGER li;
+	li.LowPart = ft->dwLowDateTime;
+	li.HighPart = ft->dwHighDateTime;
+	if ((uint64)li.QuadPart > _ff100nsNum)
+		fftime_setmcs(&t, (li.QuadPart - _ff100nsNum) / 10);
+	return t;
+}
+
+/// Convert time value to Windows FILETIME structure
+FILETIME _ff_timeToFt(const fftime *time_value)
+{
+	uint64 d = fftime_mcs(time_value) * 10 + _ff100nsNum;
+	return *(FILETIME *)&d;
+}
+
+void fftime_now(fftime *t)
+{
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	*t = _ff_ftToTime(&ft);
+}
+
+void fftime_split(ffdtm *dt, const fftime *t, enum FF_TIMEZONE tz)
+{
+	SYSTEMTIME st = { 0 };
+
+	if (tz == FFTIME_TZLOCAL) {
+		struct tm Tm;
+		time_t tt = t->s;
+		localtime_s(&Tm, &tt);
+		fftime_fromtm(dt, &Tm);
+		dt->msec = t->mcs / 1000;
+		return ;
+	}
+
+	if (t->s || t->mcs) {
+		FILETIME filet = _ff_timeToFt(t);
+		FileTimeToSystemTime(&filet, &st);
+	}
+	else {
+		st.wYear = 1970;
+		st.wMonth = 1;
+		st.wDay = 1;
+	}
+	dt->year = st.wYear;
+	dt->month = st.wMonth;
+	dt->weekday = st.wDayOfWeek;
+	dt->day = st.wDay;
+	dt->hour = st.wHour;
+	dt->min = st.wMinute;
+	dt->sec = st.wSecond;
+	dt->msec = st.wMilliseconds;
+}
+
+fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
+{
+	SYSTEMTIME st = {
+		dt->year
+		, dt->month
+		, 0
+		, dt->day
+		, dt->hour
+		, dt->min
+		, dt->sec
+		, dt->msec
+	};
+
+	if (dt->year < 1970) {
+		t->s = t->mcs = 0;
+		return t;
+	}
+
+	if (tz == FFTIME_TZLOCAL) {
+		struct tm Tm;
+		time_t tt;
+		fftime_totm(&Tm, dt);
+		tt = mktime(&Tm);
+		t->s = (uint)tt;
+		t->mcs = dt->msec * 1000;
+		return t;
+	}
+
+	SystemTimeToFileTime(&st, (FILETIME *)t);
+	*t = _ff_ftToTime((FILETIME *)t);
+	return t;
+}
+
+size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int flags)
+{
+	int r;
+	r = MultiByteToWideChar(CP_UTF8, 0/*MB_ERR_INVALID_CHARS*/, src
+		, FF_TOINT(srclen), dst, FF_TOINT(dst_cap));
+	return r;
+}
+
+size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags)
+{
+	int r;
+	r = WideCharToMultiByte(CP_UTF8, 0, src, FF_TOINT(srclen), dst, FF_TOINT(dst_cap), NULL, NULL);
+	return r;
+}
