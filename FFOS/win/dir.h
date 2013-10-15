@@ -2,7 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/str.h>
+#include <FFOS/string.h>
 #include <FFOS/file.h>
 
 enum {

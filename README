@@ -18,6 +18,9 @@ FFOS currently supports:
 	. pipes
 	. directories
 	. native file-system paths
+	. sockets
+	. network address; IPv4/IPv6 address
+	. threads
 	. heap memory
 	. native system string
 	. date and time
@@ -29,7 +32,5 @@ LICENSE
 The code provided here is free for use in open-source and proprietary projects.
 You may distribute, redistribute, modify the whole code or the parts of it, just keep the original copyright statement inside the files.
 
-
-10/9/2013
 
 Simon Zolin <stsaz@yandex.ru>

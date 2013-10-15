@@ -84,17 +84,17 @@ static FFINL int fffile_attr(fffd fd) {
 #define fffile_isdir(file_attr)  (((file_attr) & FILE_ATTRIBUTE_DIRECTORY) != 0)
 
 static FFINL int fffile_attrset(fffd fd, uint new_attr) {
-	FILE_BASIC_INFO i = { 0 };
+	FILE_BASIC_INFO i;
+	memset(&i, 0, sizeof(FILE_BASIC_INFO));
 	i.FileAttributes = new_attr;
-	return 0 == SetFileInformationByHandle(fd, FileBasicInfo, &i, sizeof(i));
+	return 0 == SetFileInformationByHandle(fd, FileBasicInfo, &i, sizeof(FILE_BASIC_INFO));
 }
 
 #define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
 
 
 typedef struct {
-	unsigned byH : 1
-		, next : 1;
+	unsigned byH : 1;
 	union {
 		WIN32_FIND_DATA data;
 		BY_HANDLE_FILE_INFORMATION hdata;

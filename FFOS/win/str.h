@@ -6,10 +6,6 @@ Copyright (c) 2013 Simon Zolin
 #include <wchar.h>
 #endif
 
-#ifndef _S
-	#define _S(s)  L##s
-#endif
-
 #define FF_NEWLN  "\r\n"
 
 #ifdef FF_MSVC

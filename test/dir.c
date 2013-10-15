@@ -2,7 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/str.h>
+#include <FFOS/string.h>
 #include <FFOS/dir.h>
 #include <FFOS/file.h>
 #include <FFOS/error.h>
@@ -54,11 +54,11 @@ static int test_dirwalk(ffsyschar *path, size_t pathcap)
 		fi = ffdir_entryinfo(&ent);
 		x(fi != NULL);
 
-		if (!ffq_cmp2(name, _S("."))) {
+		if (!ffq_cmp2(name, TEXT("."))) {
 			x(fffile_isdir(fffile_infoattr(fi)));
 			nfiles++;
 		}
-		else if (!ffq_cmp2(name, _S("tmpfile"))) {
+		else if (!ffq_cmp2(name, TEXT("tmpfile"))) {
 			x(!fffile_isdir(fffile_infoattr(fi)));
 			x(1 == fffile_infosize(fi));
 			nfiles++;
@@ -80,10 +80,10 @@ int test_dir(const ffsyschar *tmpdir)
 	FFTEST_FUNC;
 
 	ffq_cpy2(path, tmpdir);
-	ffq_cat2(path, _S("/tmpdir"));
+	ffq_cat2(path, TEXT("/tmpdir"));
 
 	ffq_cpy2(fn, path);
-	ffq_cat2(fn, _S("/tmpfile"));
+	ffq_cat2(fn, TEXT("/tmpfile"));
 
 	x(0 == ffdir_make(path));
 

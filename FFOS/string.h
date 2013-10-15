@@ -11,7 +11,9 @@ Copyright (c) 2013 Simon Zolin
 
 #define FFSTR(s)  (char*)(s), FFSLEN(s)
 
-#define FFSTRQ(s)  (ffsyschar*)_S(s), FFSLEN(s)
+#define FFSTRQ(s)  (ffsyschar*)TEXT(s), FFSLEN(s)
+
+#define FFCRLF "\r\n"
 
 #ifdef FF_UNIX
 #include <FFOS/unix/str.h>

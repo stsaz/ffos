@@ -3,7 +3,7 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <FFOS/mem.h>
-#include <FFOS/str.h>
+#include <FFOS/string.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 
@@ -13,23 +13,25 @@ Copyright (c) 2013 Simon Zolin
 
 static int test_str()
 {
-	char s[1024];
 	ffsyschar ss[1024];
-	size_t n;
 
 	FFTEST_FUNC;
 
 	fferr_set(EINVAL);
 	x(0 != fferr_str(fferr_last(), ss, FFCNT(ss)));
 
-	x(0 == ffq_icmp(_S("asdf"), FFSTRQ("ASDF")));
-	x(FFSLEN("asdf") == ffq_len(_S("asdf")));
+	x(0 == ffq_icmp(TEXT("asdf"), FFSTRQ("ASDF")));
+	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));
 
 #ifdef FF_WIN
-	n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
-	x(n != 0);
-	n = ff_wtou(s, FFCNT(s), ss, n, 0);
-	x(n != 0);
+	{
+		char s[1024];
+		size_t n;
+		n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
+		x(n != 0);
+		n = ff_wtou(s, FFCNT(s), ss, n, 0);
+		x(n != 0);
+	}
 #endif
 
 	return 0;

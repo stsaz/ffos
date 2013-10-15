@@ -4,6 +4,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/file.h>
 #include <FFOS/time.h>
+#include <FFOS/socket.h>
 
 int fftime_cmp(const fftime *t1, const fftime *t2)
 {
@@ -62,3 +63,15 @@ ffbool fftime_ok(const ffdtm *t)
 		|| t->sec > 59
 		|| t->msec > 999);
 }
+
+#if defined FF_WIN || (defined FF_LINUX && defined FF_OLDLIBC)
+ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
+{
+	ffskt sk = accept(listenSk, a, addrSize);
+	if ((flags & SOCK_NONBLOCK) && 0 != ffskt_nblock(sk, 1)) {
+		ffskt_close(sk);
+		return FF_BADSKT;
+	}
+	return sk;
+}
+#endif

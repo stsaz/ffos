@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01000000
+#define FF_VER  0x01020000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -23,7 +23,7 @@ Copyright (c) 2013 Simon Zolin
 	#define _LARGEFILE64_SOURCE
 	#include <FFOS/unix/types.h>
 
-#elif defined _WIN32 || defined _WIN64
+#elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__
 	#define FF_WIN
 	#include <FFOS/win/types.h>
 

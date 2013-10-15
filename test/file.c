@@ -2,7 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/str.h>
+#include <FFOS/string.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
 #include <FFOS/error.h>
@@ -20,7 +20,7 @@ static int test_diropen(const ffsyschar *tmpdir)
 	FFTEST_FUNC;
 
 	ffq_cpy2(fn, tmpdir);
-	ffq_cat2(fn, _S("/tmpdir"));
+	ffq_cat2(fn, TEXT("/tmpdir"));
 
 	x(0 == ffdir_make(fn));
 
@@ -50,7 +50,6 @@ static int test_mapwr(const ffsyschar *fn)
 {
 	fffd fd
 		, fmap;
-	uint64 fsiz;
 	void *mapd;
 	size_t mapsz;
 
@@ -58,7 +57,6 @@ static int test_mapwr(const ffsyschar *fn)
 
 	fd = fffile_open(fn, FFO_OPEN | O_RDWR);
 	x(fd != FF_BADFD);
-	fsiz = fffile_size(fd);
 
 	mapsz = 64*1024 + FFSLEN(FOOBAR);
 	x(0 == fffile_trunc(fd, mapsz));
@@ -198,7 +196,7 @@ int test_file(const ffsyschar *tmpdir)
 	FFTEST_FUNC;
 
 	ffq_cpy2(fn, tmpdir);
-	ffq_cat2(fn, _S("/tmpfile"));
+	ffq_cat2(fn, TEXT("/tmpfile"));
 
 	fd = fffile_open(fn, FFO_CREATE | O_RDWR);
 	x(fd != FF_BADFD);

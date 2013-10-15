@@ -23,6 +23,7 @@ enum FFFILE_OPEN {
 	, FFO_APPEND = O_APPEND | O_CREAT
 
 	, O_DIR = 0
+
 #ifdef FF_BSD
 	, O_NOATIME = 0
 #endif

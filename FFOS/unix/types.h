@@ -5,13 +5,13 @@ Copyright (c) 2013 Simon Zolin
 #define FF_UNIX
 
 #ifdef FF_LINUX
-#ifdef FF_64
+#if defined FF_OLDLIBC && defined FF_64
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
 #endif
 
 #include <byteswap.h>
 
-#else //freebsd:
+#elif defined FF_BSD
 #include <sys/endian.h>
 
 #endif
@@ -27,12 +27,6 @@ __asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
 enum {
 	FF_BADFD = -1
 };
-
-
-typedef struct iovec ffiovec;
-
-#define toIovLen(x)  (x)
-
 
 typedef char ffsyschar;
 typedef int fffd;

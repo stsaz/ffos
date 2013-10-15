@@ -20,7 +20,7 @@ enum {
 #define ffpath_slash(c)  ((c) == FFPATH_SLASH)
 
 /** Check whether the specified path is absolute. */
-static FFINL ffpath_abs(const ffsyschar *path, size_t len) {
+static FFINL ffbool ffpath_abs(const ffsyschar *path, size_t len) {
 	return len >= 1 && path[0] == '/';
 }
 

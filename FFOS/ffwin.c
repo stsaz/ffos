@@ -4,6 +4,8 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/dir.h>
 #include <FFOS/time.h>
+#include <FFOS/socket.h>
+#include <FFOS/thread.h>
 
 #include <time.h>
 
@@ -51,6 +53,7 @@ int fffile_trunc(fffd f, uint64 pos)
 	return 0;
 }
 
+
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t sz)
 {
@@ -75,7 +78,7 @@ ffdir ffdir_open(ffsyschar *path, size_t cap, ffdirentry *ent)
 	size_t len = ffq_len(path);
 	ffsyschar *end = path + len;
 	if (len + FFSLEN("\\*") >= cap) {
-		errno = EOVERFLOW;
+		SetLastError(EOVERFLOW);
 		return 0;
 	}
 	if (!ffpath_slash(path[len - 1]))
@@ -104,11 +107,13 @@ int ffdir_read(ffdir dir, ffdirentry *ent)
 	return 0;
 }
 
+
 int fferr_str(int code, ffsyschar *dst, size_t dst_cap)
 {
 	return FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, 0, code, 0
 		, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
 }
+
 
 static const uint64 _ff100nsNum = 116444736000000000ULL;
 
@@ -145,7 +150,11 @@ void fftime_split(ffdtm *dt, const fftime *t, enum FF_TIMEZONE tz)
 	if (tz == FFTIME_TZLOCAL) {
 		struct tm Tm;
 		time_t tt = t->s;
+#ifdef FF_MSVC
 		localtime_s(&Tm, &tt);
+#else
+		localtime_r(&tt, &Tm);
+#endif
 		fftime_fromtm(dt, &Tm);
 		dt->msec = t->mcs / 1000;
 		return ;
@@ -203,6 +212,7 @@ fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
 	return t;
 }
 
+
 size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int flags)
 {
 	int r;
@@ -216,4 +226,68 @@ size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int f
 	int r;
 	r = WideCharToMultiByte(CP_UTF8, 0, src, FF_TOINT(srclen), dst, FF_TOINT(dst_cap), NULL, NULL);
 	return r;
+}
+
+
+int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
+{
+	int ret = WaitForSingleObject(th, timeout_ms);
+	if (ret == WAIT_OBJECT_0) {
+		if (exit_code != NULL)
+			(void)GetExitCodeThread(th, (DWORD *)exit_code);
+		(void)CloseHandle(th);
+		ret = 0;
+	}
+	else if (ret == WAIT_TIMEOUT)
+		ret = ETIMEDOUT;
+	return ret;
+}
+
+
+LPFN_DISCONNECTEX _ffwsaDisconnectEx;
+LPFN_CONNECTEX _ffwsaConnectEx;
+LPFN_ACCEPTEX _ffwsaAcceptEx;
+LPFN_GETACCEPTEXSOCKADDRS _ffwsaGetAcceptExSockaddrs;
+
+static const void *const _procs[] = {
+	(void*)&_ffwsaDisconnectEx, (void*)&_ffwsaConnectEx
+	, (void*)&_ffwsaAcceptEx, (void*)&_ffwsaGetAcceptExSockaddrs
+};
+static const GUID _guids[] = {
+	WSAID_DISCONNECTEX, WSAID_CONNECTEX
+	, WSAID_ACCEPTEX, WSAID_GETACCEPTEXSOCKADDRS
+};
+
+static FFINL int getWsaFunc(ffskt sk, void **func, const GUID *guid)
+{
+	DWORD b;
+	WSAIoctl(sk, SIO_GET_EXTENSION_FUNCTION_POINTER, (void*)guid, sizeof(GUID)
+		, func, sizeof(func), &b, 0, 0);
+	if (*func == NULL) {
+		fferr_set(ERROR_PROC_NOT_FOUND);
+		return -1;
+	}
+	return 0;
+}
+
+int _ffwsaGetFuncs()
+{
+	int rc = 0;
+	size_t i;
+	ffskt sk;
+
+	if (_ffwsaGetAcceptExSockaddrs != NULL)
+		return 0;
+
+	sk = ffskt_create(AF_INET, SOCK_STREAM, 0);
+	if (sk == FF_BADSKT)
+		return -1;
+	for (i = 0;  i < FFCNT(_guids);  i++) {
+		if (0 != getWsaFunc(sk, (void **)_procs[i], &_guids[i])) {
+			rc = -1;
+			break;
+		}
+	}
+	ffskt_close(sk);
+	return 0;
 }

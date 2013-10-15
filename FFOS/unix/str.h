@@ -4,9 +4,8 @@ Copyright (c) 2013 Simon Zolin
 
 #include <string.h>
 
-#ifndef _S
-	/** Native string. */
-	#define _S(s)  s
+#if !defined TEXT
+	#define TEXT(s)  (s)
 #endif
 
 #define FF_NEWLN  "\n"
