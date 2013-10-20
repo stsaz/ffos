@@ -1,14 +1,15 @@
 /**
-Thread.
+Timer.
 Copyright (c) 2013 Simon Zolin
 */
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/queue.h>
 
 #if defined FF_UNIX
-#include <FFOS/unix/thd.h>
+#include <FFOS/unix/tmr.h>
+
 #elif defined FF_WIN
-#include <FFOS/win/thd.h>
+#include <FFOS/win/tmr.h>
 #endif

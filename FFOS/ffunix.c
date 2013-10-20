@@ -1,14 +1,11 @@
 #include <FFOS/time.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
-
-#if !defined FF_NOTHR
 #include <FFOS/thread.h>
+#include <FFOS/timer.h>
 
-#if defined FF_BSD
+#if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
-#endif
-
 #endif
 
 #include <sys/fcntl.h>
@@ -141,5 +138,63 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	if (exit_code != NULL)
 		*exit_code = (int)(size_t)result;
 	return 0;
+}
+#endif
+
+void ffthd_sleep(uint ms)
+{
+	struct timespec ts;
+
+	if (ms == (uint)-1) {
+		ts.tv_sec = 0x7fffffff;
+		ts.tv_nsec = 0;
+	}
+	else {
+		ts.tv_sec = ms / 1000;
+		ts.tv_nsec = (ms % 1000) * 1000 * 1000;
+	}
+
+	while (0 != nanosleep(&ts, &ts) && errno == EINTR) {
+	}
+}
+
+#ifdef FF_BSD
+int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
+{
+	struct kevent kev;
+	int f = 0;
+
+	if (periodMs < 0) {
+		periodMs = -periodMs;
+		f = EV_ONESHOT;
+	}
+
+	EV_SET(&kev, tmr, EVFILT_TIMER
+		, EV_ADD | EV_ENABLE | f //EV_CLEAR is set internally
+		, 0, periodMs, data);
+	return kevent(qu, &kev, 1, NULL, 0, NULL);
+}
+#endif
+
+#ifdef FF_LINUX
+int fftmr_start(fffd tmr, fffd qu, void *data, int periodMs)
+{
+	struct itimerspec its;
+	int period = periodMs >= 0 ? periodMs : -periodMs;
+
+	struct epoll_event e;
+	e.events = EPOLLIN | EPOLLET;
+	e.data.ptr = data;
+	if (0 != epoll_ctl(qu, EPOLL_CTL_ADD, tmr, &e))
+		return -1;
+
+	its.it_value.tv_sec = period / 1000;
+	its.it_value.tv_nsec = (period % 1000) * 1000 * 1000;
+	if (periodMs >= 0)
+		its.it_interval = its.it_value;
+	else
+		its.it_interval.tv_sec = its.it_interval.tv_nsec = 0;
+
+	return timerfd_settime(tmr, 0, &its, NULL);
 }
 #endif

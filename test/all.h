@@ -12,6 +12,7 @@ FF_EXTN int test_file(const ffsyschar *tmpdir);
 FF_EXTN int test_dir(const ffsyschar *tmpdir);
 FF_EXTN int test_thd();
 FF_EXTN int test_skt();
+FF_EXTN int test_timer();
 
 #ifdef FF_UNIX
 #define TMP_PATH TEXT("/tmp")

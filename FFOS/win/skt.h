@@ -84,4 +84,9 @@ static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsysc
 #define ffaddr_name(a, addrlen, host, hostcap, svc, svccap, flags)\
 	GetNameInfoA(a, addrlen, host, FF_TOINT(hostcap), svc, FF_TOINT(svccap), flags)
 
+static FFINL const ffsyschar * ffaddr_errstr(int code, ffsyschar *buf, size_t bufcap) {
+	fferr_str(code, buf, bufcap);
+	return buf;
+}
+
 #define ffip_v6equal  IN6_ADDR_EQUAL

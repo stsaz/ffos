@@ -45,8 +45,6 @@ int test_mem()
 
 	FFTEST_FUNC;
 
-	ffos_init();
-
 	d = ffmem_alloc(10);
 	x(d != NULL);
 	memcpy(d, ss10, 10);

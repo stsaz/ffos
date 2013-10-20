@@ -52,16 +52,16 @@ void fftime_addms( fftime *t, uint64 ms )
 	}
 }
 
-ffbool fftime_ok(const ffdtm *t)
+void fftime_diff(const fftime *start, fftime *stop)
 {
-	return !(t->year > 4095
-		|| t->month > 12
-		|| t->day > 31
-		|| t->weekday > 6
-		|| t->hour > 23
-		|| t->min > 59
-		|| t->sec > 59
-		|| t->msec > 999);
+	if (stop->mcs >= start->mcs) {
+		stop->s -= start->s;
+		stop->mcs -= start->mcs;
+	}
+	else {
+		stop->s -= start->s + 1;
+		stop->mcs += 1000000 - start->mcs;
+	}
 }
 
 #if defined FF_WIN || (defined FF_LINUX && defined FF_OLDLIBC)

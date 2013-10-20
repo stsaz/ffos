@@ -18,6 +18,7 @@ FFOS currently supports:
 	. pipes
 	. directories
 	. native file-system paths
+	. timer, clock
 	. sockets
 	. network address; IPv4/IPv6 address
 	. threads

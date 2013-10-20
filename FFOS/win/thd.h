@@ -15,3 +15,5 @@ static FFINL ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size) 
 FF_EXTN int ffthd_join(ffthd th, uint timeout_ms, int *exit_code);
 
 #define ffthd_detach(th)  (0 == CloseHandle(th))
+
+#define ffthd_sleep  Sleep

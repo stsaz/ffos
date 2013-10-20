@@ -6,6 +6,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/time.h>
 #include <FFOS/socket.h>
 #include <FFOS/thread.h>
+#include <FFOS/timer.h>
 
 #include <time.h>
 
@@ -110,8 +111,9 @@ int ffdir_read(ffdir dir, ffdirentry *ent)
 
 int fferr_str(int code, ffsyschar *dst, size_t dst_cap)
 {
-	return FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, 0, code, 0
-		, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
+	return FormatMessage(
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK
+		, 0, code, 0, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
 }
 
 
@@ -290,4 +292,57 @@ int _ffwsaGetFuncs()
 	}
 	ffskt_close(sk);
 	return 0;
+}
+
+
+void ffclk_diff(const fftime *start, fftime *diff)
+{
+	LARGE_INTEGER freq
+		, first
+		, second;
+
+	if (!QueryPerformanceFrequency(&freq)) {
+		diff->s = diff->mcs = 0;
+		return ;
+	}
+
+	first.LowPart = start->s;
+	first.HighPart = start->mcs;
+	second.LowPart = diff->s;
+	second.HighPart = diff->mcs;
+	fftime_setns(diff, ((second.QuadPart - first.QuadPart) * 1000000000) / freq.QuadPart);
+}
+
+
+fftmr fftmr_create(int flags)
+{
+	fftmr tmr = ffmem_alloc(sizeof(fftmr_s));
+	if (tmr == NULL)
+		return FF_BADTMR;
+
+	tmr->htmr = CreateWaitableTimerEx(NULL, NULL, flags /*CREATE_WAITABLE_TIMER_MANUAL_RESET*/, TIMER_ALL_ACCESS);
+	if (tmr->htmr == NULL) {
+		ffmem_free(tmr);
+		return FF_BADTMR;
+	}
+	return tmr;
+}
+
+void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
+{
+	fftmr t = arg;
+	ffkqu_post(t->kq, t->data, NULL);
+}
+
+int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
+{
+	uint period = periodMs;
+	int64 due_ns100 = (int64)periodMs * 1000 * -10;
+	if (periodMs < 0) {
+		period = 0;
+		due_ns100 = -due_ns100;
+	}
+	tmr->kq = qu;
+	tmr->data = data;
+	return 0 == SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, 1);
 }

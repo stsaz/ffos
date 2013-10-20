@@ -67,8 +67,11 @@ FF_EXTN void fftime_totm(struct tm *tt, const ffdtm *dt);
 /** Convert 'tm' to 'ffdtm'. */
 FF_EXTN void fftime_fromtm(ffdtm *dt, const struct tm *tt);
 
-/** Check whether date-time structure is valid. */
-FF_EXTN ffbool fftime_ok(const ffdtm *t);
+/** Set time as nanoseconds value. */
+static FFINL void fftime_setns(fftime *t, uint64 ns) {
+	t->s = (uint)(ns / 1000000000);
+	t->mcs = (uint)((ns % 1000000000) / 1000);
+}
 
 /** Set time as microseconds value. */
 static FFINL void fftime_setmcs(fftime *t, uint64 mcsecs) {
@@ -92,7 +95,5 @@ static FFINL uint64 fftime_ms(const fftime *t) {
 /** Compare two 'fftime' objects. */
 FF_EXTN int fftime_cmp(const fftime *t1, const fftime *t2);
 
-/** Get time difference in ms. */
-static FFINL int64 fftime_diff(const fftime *t1, const fftime *t2) {
-	return fftime_ms(t1) - fftime_ms(t2);
-}
+/** Get time difference. */
+FF_EXTN void fftime_diff(const fftime *start, fftime *stop);

@@ -2,6 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#if !defined FF_NOTHR
 #include <pthread.h>
 
 
@@ -22,3 +23,7 @@ FF_EXTN int ffthd_join(ffthd th, uint timeout_ms, int *exit_code);
 
 /** Detach thread. */
 #define ffthd_detach  pthread_detach
+
+#endif //FF_NOTHR
+
+FF_EXTN void ffthd_sleep(uint ms);

@@ -138,7 +138,8 @@ static int test_map(const ffsyschar *fn)
 static int test_pipe()
 {
 	char buf[64];
-	fffd rd, wr;
+	fffd rd = FF_BADFD
+		, wr = FF_BADFD;
 
 	FFTEST_FUNC;
 

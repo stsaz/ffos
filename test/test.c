@@ -4,6 +4,8 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/thread.h>
 #include <FFOS/test.h>
+#include <FFOS/timer.h>
+#include <FFOS/mem.h>
 
 #include <test/all.h>
 
@@ -26,15 +28,28 @@ int test_thd()
 	return 0;
 }
 
+#define CALL(func)\
+	do {\
+		fftime start, stop;\
+		ffclk_get(&start);\
+		func;\
+		ffclk_get(&stop);\
+		ffclk_diff(&start, &stop);\
+		printf("  %d.%06ds\n", stop.s, stop.mcs);\
+	} while (0)
+
 int test_all()
 {
-	test_types();
-	test_mem();
-	test_time();
-	test_file(TMP_PATH);
-	test_dir(TMP_PATH);
-	test_thd();
-	test_skt();
+	ffos_init();
+
+	CALL(test_types());
+	CALL(test_mem());
+	CALL(test_time());
+	CALL(test_file(TMP_PATH));
+	CALL(test_dir(TMP_PATH));
+	CALL(test_thd());
+	CALL(test_skt());
+	CALL(test_timer());
 	return 0;
 }
 

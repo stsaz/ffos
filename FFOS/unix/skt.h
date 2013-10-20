@@ -110,5 +110,8 @@ flags: NI_* */
 #define ffaddr_name(a, addrlen, host, hostcap, svc, svccap, flags)\
 	getnameinfo(a, addrlen, host, (socklen_t)(hostcap), svc, (socklen_t)(svccap), flags)
 
+/** Get error message. */
+#define ffaddr_errstr(code, buf, bufcap)  gai_strerror(code)
+
 /** Return TRUE if both IPv6 addresses are equal. */
 #define ffip_v6equal  IN6_ARE_ADDR_EQUAL

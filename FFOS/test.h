@@ -6,6 +6,7 @@ Copyright (c) 2013 Simon Zolin
 #pragma once
 
 #include <FFOS/types.h>
+#include <FFOS/error.h>
 #include <stdio.h>
 
 #define FFTEST_FUNC\
@@ -22,8 +23,8 @@ static int fftest(int res, const char *file, uint line, const char *func, const 
 	const char *status = "OK";
 	if (res == 0) {
 		status = "FAIL";
-		printf("%s\tat %s:%u in %s():\t%s\n"
-			, status, file, (int)line, func, sexp);
+		printf("%s\tat %s:%u in %s():\t%s\t(%d)\n"
+			, status, file, (int)line, func, sexp, (int)fferr_last());
 	}
 	return res;
 }
