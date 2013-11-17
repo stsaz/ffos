@@ -24,6 +24,6 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap) {
 /** Set last system error code. */
 #define fferr_set(code)  errno = (code)
 
-#define fferr_again(code)  (code == EAGAIN || code == EWOULDBLOCK)
+#define fferr_again(code)  ((code) == EAGAIN || (code) == EWOULDBLOCK)
 
-#define fferr_nofile(code)  (code == ENOENT)
+#define fferr_nofile(code)  ((code) == ENOENT)

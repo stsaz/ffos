@@ -5,6 +5,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/file.h>
 #include <FFOS/time.h>
 #include <FFOS/socket.h>
+#include <FFOS/error.h>
 
 int fftime_cmp(const fftime *t1, const fftime *t2)
 {
@@ -42,7 +43,7 @@ void fftime_fromtm(ffdtm *dt, const struct tm *tt)
 	dt->msec = 0;
 }
 
-void fftime_addms( fftime *t, uint64 ms )
+void fftime_addms(fftime *t, uint64 ms)
 {
 	t->mcs += (ms % 1000) * 1000;
 	t->s += (uint)(ms / 1000);
@@ -68,10 +69,52 @@ void fftime_diff(const fftime *start, fftime *stop)
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
 {
 	ffskt sk = accept(listenSk, a, addrSize);
-	if ((flags & SOCK_NONBLOCK) && 0 != ffskt_nblock(sk, 1)) {
+	if ((flags & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
 		ffskt_close(sk);
 		return FF_BADSKT;
 	}
 	return sk;
 }
 #endif
+
+
+static const char *const err_ops[] = {
+	"success"
+	, "internal error"
+
+	, "read"
+	, "write"
+
+	, "buffer alloc"
+	, "buffer grow"
+
+	, "file open"
+	, "file seek"
+	, "file map"
+	, "file remove"
+	, "file close"
+
+	, "timer init"
+	, "kqueue create"
+	, "kqueue attach"
+	, "kqueue wait"
+	, "thread create"
+	, "non-blocking mode set"
+	, "process fork"
+
+	, "socket create"
+	, "socket bind"
+	, "socket option"
+	, "socket shutdown"
+	, "socket listen"
+	, "socket connect"
+	, "address resolve"
+
+	, "system error"
+};
+
+const char * fferr_opstr(enum FFERR e)
+{
+	FF_ASSERT(e <= FFERR_SYSTEM);
+	return err_ops[e];
+}

@@ -17,7 +17,7 @@ static FFINL ffbool ffpath_slash(ffsyschar c) {
 	return c == '/' || c == '\\';
 }
 
-FF_EXTN ffbool ffpath_abs(const char *path, size_t sz);
+FF_EXTN ffbool ffpath_abs(const char *path, size_t len);
 
 /**
 Return TRUE if long name. */

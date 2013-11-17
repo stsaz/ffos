@@ -22,6 +22,3 @@ Copyright (c) 2013 Simon Zolin
 
 /** Convert UTF-8 to wide string. */
 FF_EXTN size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int flags);
-
-/** Convert wide string to UTF-8. */
-FF_EXTN size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags);

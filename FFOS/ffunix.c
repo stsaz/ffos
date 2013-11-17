@@ -3,6 +3,7 @@
 #include <FFOS/dir.h>
 #include <FFOS/thread.h>
 #include <FFOS/timer.h>
+#include <FFOS/string.h>
 
 #if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
@@ -198,3 +199,27 @@ int fftmr_start(fffd tmr, fffd qu, void *data, int periodMs)
 	return timerfd_settime(tmr, 0, &its, NULL);
 }
 #endif
+
+
+size_t ff_wtou(char *dst, size_t dst_cap, const wchar_t *src, size_t srclen, int flags)
+{
+	mbstate_t state;
+	size_t r;
+	const wchar_t *srcend = src + srclen;
+	const char *dsto = dst;
+	const char *dstend = dst + dst_cap;
+	(void)flags;
+
+	memset(&state, 0, sizeof(mbstate_t));
+	for (;  src != srcend;  src++)
+	{
+		if (dst + 4 > dstend)
+			return 0;
+		r = wcrtomb(dst, *src, &state);
+		if (r == 0 || r == (size_t)-1)
+			return 0;
+		dst += r;
+	}
+
+	return dst - dsto;
+}

@@ -23,16 +23,16 @@ static int test_str()
 	x(0 == ffq_icmp(TEXT("asdf"), FFSTRQ("ASDF")));
 	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));
 
-#ifdef FF_WIN
 	{
 		char s[1024];
 		size_t n;
+#ifdef FF_WIN
 		n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
 		x(n != 0);
-		n = ff_wtou(s, FFCNT(s), ss, n, 0);
-		x(n != 0);
-	}
 #endif
+		n = ff_wtou(s, FFCNT(s), L"asdf", 4, 0);
+		x(n == 4 && !memcmp(s, "asdf", 4));
+	}
 
 	return 0;
 }

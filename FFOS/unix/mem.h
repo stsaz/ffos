@@ -3,9 +3,12 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <stdlib.h>
+#include <locale.h>
 
 /** Initialize FFOS. */
-#define ffos_init()
+static FFINL void ffos_init() {
+	setlocale(LC_CTYPE, "en_US.UTF-8"); //for ff_wtou()
+}
 
 /** Allocate heap memory region. */
 #define ffmem_alloc  malloc

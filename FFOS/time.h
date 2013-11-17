@@ -38,6 +38,10 @@ typedef union {
 	};
 } ffdtm;
 
+static FFINL void fftime_null(fftime *t) {
+	t->s = t->mcs = 0;
+}
+
 /** Get UTC time. */
 FF_EXTN void fftime_now(fftime *t);
 

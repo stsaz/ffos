@@ -56,10 +56,10 @@ int fffile_trunc(fffd f, uint64 pos)
 
 
 // [/\\] | \w:[\0/\\]
-ffbool ffpath_abs(const char *path, size_t sz)
+ffbool ffpath_abs(const char *path, size_t len)
 {
 	char c;
-	if (sz == 0)
+	if (len == 0)
 		return 0;
 
 	if (ffpath_slash(path[0]))
@@ -67,9 +67,9 @@ ffbool ffpath_abs(const char *path, size_t sz)
 
 	c = path[0] | 0x20; //lower
 	return
-		(sz >= FFSLEN("c:") && c >= 'a' && c <= 'z'
+		(len >= FFSLEN("c:") && c >= 'a' && c <= 'z'
 		&& path[1] == ':'
-		&& (sz == FFSLEN("c:") || ffpath_slash(path[2]))
+		&& (len == FFSLEN("c:") || ffpath_slash(path[2]))
 		);
 }
 
