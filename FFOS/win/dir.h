@@ -24,7 +24,7 @@ Return TRUE if long name. */
 static FFINL ffbool ffpath_islong(const ffsyschar *fnw, size_t sz) {
 	ffsyschar fnwLong[FF_MAXPATH];
 	uint n = GetLongPathNameW(fnw, fnwLong, FFCNT(fnwLong));
-	if (n == sz && !ffq_icmp(fnwLong, fnw, sz))
+	if (n == sz && !ffq_icmpnz(fnwLong, fnw, sz))
 		return 1;
 	return 0;
 }

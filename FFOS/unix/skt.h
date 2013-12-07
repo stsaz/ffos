@@ -89,14 +89,11 @@ typedef struct addrinfo ffaddrinfo;
 Return 0 on success.
 Example:
 	ffaddrinfo *addrs;
-	ffaddr_info(&addrs, TEXT("localhost"), TEXT("80"), AI_PASSIVE, SOCK_STREAM, IPPROTO_TCP); */
-static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc
-	, int flags, int sockType, int proto)
+	ffaddr_info(&addrs, TEXT("localhost"), TEXT("80"), AI_PASSIVE); */
+static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc, int flags)
 {
 	ffaddrinfo hints = { 0 };
 	hints.ai_flags = flags;
-	hints.ai_socktype = sockType;
-	hints.ai_protocol = proto;
 	return getaddrinfo(host, svc, &hints, a);
 }
 

@@ -69,13 +69,10 @@ static FFINL int ffskt_nblock(ffskt sk, int nblock) {
 
 typedef ADDRINFOT ffaddrinfo;
 
-static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc
-	, int flags, int sockType, int proto)
+static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc, int flags)
 {
 	ffaddrinfo hints = { 0 };
 	hints.ai_flags = flags;
-	hints.ai_socktype = sockType;
-	hints.ai_protocol = proto;
 	return GetAddrInfo(host, svc, &hints, a);
 }
 

@@ -7,6 +7,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/socket.h>
 #include <FFOS/thread.h>
 #include <FFOS/timer.h>
+#include <FFOS/process.h>
 
 #include <time.h>
 
@@ -135,7 +136,10 @@ fftime _ff_ftToTime(const FILETIME *ft)
 FILETIME _ff_timeToFt(const fftime *time_value)
 {
 	uint64 d = fftime_mcs(time_value) * 10 + _ff100nsNum;
-	return *(FILETIME *)&d;
+	FILETIME f;
+	f.dwLowDateTime = (uint)d;
+	f.dwHighDateTime = (uint)(d >> 32);
+	return f;
 }
 
 void fftime_now(fftime *t)
@@ -243,6 +247,66 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	else if (ret == WAIT_TIMEOUT)
 		ret = ETIMEDOUT;
 	return ret;
+}
+
+int ffps_wait(fffd h, uint timeout_ms, int *exit_code)
+{
+	int r = WaitForSingleObject(h, timeout_ms);
+	if (r == WAIT_OBJECT_0) {
+		if (exit_code != NULL)
+			(void)GetExitCodeProcess(h, (DWORD *)exit_code);
+		(void)CloseHandle(h);
+		r = 0;
+	}
+	else if (r == WAIT_TIMEOUT)
+		r = ETIMEDOUT;
+	return r;
+}
+
+static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
+	while (*sz != '\0')
+		*dst++ = *sz++;
+	return dst;
+}
+
+fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env)
+{
+	BOOL b;
+	PROCESS_INFORMATION info;
+	STARTUPINFOW si = { 0 };
+	ffsyschar *args
+		, *s;
+	size_t cap = 0;
+	const ffsyschar **a;
+
+	si.cb = sizeof(STARTUPINFOW);
+
+	for (a = argv + 1;  *a != NULL;  a++) {
+		cap += ffq_len(*a) + sizeof("\"\" ")-1;
+	}
+
+	args = ffmem_alloc((cap + 1) * sizeof(ffsyschar));
+	if (args == NULL)
+		return FF_BADFD;
+	s = args;
+
+	for (a = argv + 1;  *a != NULL;  a++) {
+		*s++ = '"';
+		s = scopyz(s, *a);
+		*s++ = '"';
+		*s++ = ' ';
+	}
+	*s = '\0';
+
+	b = CreateProcess(filename, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
+		, NULL /*startup dir*/, &si, &info);
+
+	ffmem_free(args);
+	if (!b)
+		return FF_BADFD;
+
+	CloseHandle(info.hThread);
+	return info.hProcess;
 }
 
 

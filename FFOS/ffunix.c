@@ -4,6 +4,7 @@
 #include <FFOS/thread.h>
 #include <FFOS/timer.h>
 #include <FFOS/string.h>
+#include <FFOS/process.h>
 
 #if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
@@ -44,6 +45,7 @@ fffileinfo * ffdir_entryinfo(ffdirentry *ent)
 	return r == 0 ? &ent->info : NULL;
 }
 
+
 void fftime_now(fftime *t)
 {
 	struct timespec ts = { 0 };
@@ -75,6 +77,7 @@ fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
 	t->mcs = dt->msec * 1000;
 	return t;
 }
+
 
 #if !defined FF_NOTHR
 ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size)
@@ -158,6 +161,18 @@ void ffthd_sleep(uint ms)
 	while (0 != nanosleep(&ts, &ts) && errno == EINTR) {
 	}
 }
+
+fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env)
+{
+	pid_t p = vfork();
+	if (p == 0) {
+		execve(filename, (char**)argv, (char**)env);
+		ffps_exit(255);
+		return 0;
+	}
+	return p;
+}
+
 
 #ifdef FF_BSD
 int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)

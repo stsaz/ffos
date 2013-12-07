@@ -36,11 +36,11 @@ static int test_sktsyncclient(const servData *sd)
 
 	FFTEST_FUNC;
 
-	e = ffaddr_info(&addrs, sd->host, sd->port, 0, SOCK_STREAM, IPPROTO_TCP);
+	e = ffaddr_info(&addrs, sd->host, sd->port, 0);
 	x(e == 0);
 
 	for (a = addrs;  a != NULL;  a = a->ai_next) {
-		sk = ffskt_create(a->ai_family, a->ai_socktype, a->ai_protocol);
+		sk = ffskt_create(a->ai_family, SOCK_STREAM, IPPROTO_TCP);
 		if (sk == FF_BADSKT)
 			break;
 		printf("%s", CLIID "connecting..." FF_NEWLN);
@@ -94,10 +94,10 @@ static int FFTHDCALL test_sktsyncserver(void *param)
 
 	FFTEST_FUNC;
 
-	x(0 == ffaddr_info(&addrs, sd->host, sd->port, AI_PASSIVE, SOCK_STREAM, IPPROTO_TCP));
+	x(0 == ffaddr_info(&addrs, sd->host, sd->port, AI_PASSIVE));
 	a = addrs;
 
-	sk = ffskt_create(a->ai_family, a->ai_socktype, a->ai_protocol);
+	sk = ffskt_create(a->ai_family, SOCK_STREAM, IPPROTO_TCP);
 	x(sk != FF_BADSKT);
 
 	x(0 == ffskt_bind(sk, a->ai_addr, a->ai_addrlen));

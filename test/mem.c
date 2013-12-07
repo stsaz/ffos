@@ -20,7 +20,7 @@ static int test_str()
 	fferr_set(EINVAL);
 	x(0 != fferr_str(fferr_last(), ss, FFCNT(ss)));
 
-	x(0 == ffq_icmp(TEXT("asdf"), FFSTRQ("ASDF")));
+	x(0 == ffq_icmpnz(TEXT("asdf"), FFSTRQ("ASDF")));
 	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));
 
 	{

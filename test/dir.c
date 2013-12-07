@@ -54,11 +54,11 @@ static int test_dirwalk(ffsyschar *path, size_t pathcap)
 		fi = ffdir_entryinfo(&ent);
 		x(fi != NULL);
 
-		if (!ffq_cmp2(name, TEXT("."))) {
+		if (!ffq_cmpz(name, TEXT("."))) {
 			x(fffile_isdir(fffile_infoattr(fi)));
 			nfiles++;
 		}
-		else if (!ffq_cmp2(name, TEXT("tmpfile"))) {
+		else if (!ffq_cmpz(name, TEXT("tmpfile"))) {
 			x(!fffile_isdir(fffile_infoattr(fi)));
 			x(1 == fffile_infosize(fi));
 			nfiles++;

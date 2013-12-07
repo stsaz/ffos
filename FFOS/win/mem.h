@@ -12,7 +12,7 @@ static FFINL void ffos_init() {
 #define ffmem_alloc(size)  HeapAlloc(_ffheap, 0, size)
 
 #define ffmem_calloc(numElements, szofElement)\
-	HeapAlloc(_ffheap, HEAP_ZERO_MEMORY, numElements * szofElement)
+	HeapAlloc(_ffheap, HEAP_ZERO_MEMORY, (numElements) * (szofElement))
 
 static FFINL void *ffmem_realloc(void *ptr, size_t newSize) {
 	if (ptr == NULL)

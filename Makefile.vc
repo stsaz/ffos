@@ -1,0 +1,30 @@
+# FFOS v1.4 makefile for GNU make (cygwin) and MSVC
+
+TEST_BIN = ffostest.exe
+OSTYPE = wint
+OS = win
+
+FFOS = .
+FFOS_OBJ_DIR = .
+
+C = cl.exe
+LD = link.exe
+O = /Fo
+O_LD = /OUT:
+
+DBG = /D "NDEBUG"
+
+override CFLAGS = $(DBG) /Oi /GL /D "WIN32" /D "_CONSOLE" /D "_UNICODE" /D "UNICODE" /FD /MT /Gy /Fd".\vc90.pdb" /W3 /WX /nologo /c /Zi /errorReport:prompt \
+	/I$(FFOS) /GF /GR- /TC
+
+override LDFLAGS = /INCREMENTAL:NO /NOLOGO /MANIFEST /MANIFESTFILE:".\ffostest.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:".\ffostest.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /DYNAMICBASE /NXCOMPAT /ERRORREPORT:PROMPT \
+	kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ws2_32.lib
+
+all: $(TEST_BIN)
+
+clean:
+	rm -vf $(TEST_BIN) \
+		$(FFOS_TEST_OBJ) $(FFOS_OBJ) \
+		./*.pdb ./*.idb ./*.manifest
+
+include ./makerules

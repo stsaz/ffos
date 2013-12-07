@@ -65,14 +65,14 @@ static int test_mapwr(const ffsyschar *fn)
 
 	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
 	x(mapd != NULL);
-	x(!strncmp(mapd, FFSTR(HELLO)));
+	x(!memcmp(mapd, FFSTR(HELLO)));
 	memcpy((char*)mapd + 64*1024, FFSTR(FOOBAR));
 	x(0 == ffmap_unmap(mapd, mapsz));
 
 	mapsz = FFSLEN(FOOBAR);
 	mapd = ffmap_open(fmap, 64*1024, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
 	x(mapd != NULL);
-	x(mapsz == FFSLEN(FOOBAR) && !strncmp(mapd, FFSTR(FOOBAR)));
+	x(mapsz == FFSLEN(FOOBAR) && !memcmp(mapd, FFSTR(FOOBAR)));
 	x(0 == ffmap_unmap(mapd, mapsz));
 
 	ffmap_close(fmap);
@@ -94,7 +94,7 @@ static int test_mapanon()
 	x(mapd != NULL);
 
 	memcpy(mapd, FFSTR(HELLO));
-	x(!strncmp(mapd, FFSTR(HELLO)));
+	x(!memcmp(mapd, FFSTR(HELLO)));
 
 	x(0 == ffmap_unmap(mapd, mapsz));
 	ffmap_close(fmap);
@@ -123,7 +123,7 @@ static int test_map(const ffsyschar *fn)
 	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ, MAP_SHARED);
 	x(mapd != NULL);
 
-	x(mapsz == FFSLEN(HELLO) && !strncmp(mapd, FFSTR(HELLO)));
+	x(mapsz == FFSLEN(HELLO) && !memcmp(mapd, FFSTR(HELLO)));
 
 	x(0 == ffmap_unmap(mapd, mapsz));
 	ffmap_close(fmap);
@@ -153,7 +153,7 @@ static int test_pipe()
 
 	x(FFSLEN(HELLO) == fffile_write(wr, FFSTR(HELLO)));
 	x(FFSLEN(HELLO) == fffile_read(rd, buf, FFCNT(buf)));
-	x(!strncmp(buf, FFSTR(HELLO)));
+	x(!memcmp(buf, FFSTR(HELLO)));
 
 	x(0 == ffpipe_close(rd));
 	x(0 == ffpipe_close(wr));

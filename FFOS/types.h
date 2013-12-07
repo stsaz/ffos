@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01030000
+#define FF_VER  0x01040000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -78,10 +78,12 @@ typedef int ffbool;
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 
 #define FF_SAFECLOSE(obj, def, func)\
-	do { if (obj != def) {\
-		func(obj);\
-		obj = def;\
-	} } while (0)
+do { \
+	if (obj != def) { \
+		func(obj); \
+		obj = def; \
+	} \
+} while (0)
 
 static FFINL uint64 ffmin64(uint64 i0, uint64 i1) {
 	return (i0 > i1 ? i1 : i0);
