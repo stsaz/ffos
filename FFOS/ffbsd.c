@@ -1,5 +1,7 @@
 #include <FFOS/file.h>
 #include <FFOS/process.h>
+#include <FFOS/sig.h>
+#include <FFOS/timer.h>
 
 #include <sys/wait.h>
 
@@ -35,4 +37,49 @@ int ffps_wait(fffd h, uint timeout, int *exit_code)
 		*exit_code = (WIFEXITED(st) ? WEXITSTATUS(st) : -1);
 
 	return 0;
+}
+
+int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
+{
+	struct kevent kev;
+	int f = 0;
+
+	if (period_ms < 0) {
+		period_ms = -period_ms;
+		f = EV_ONESHOT;
+	}
+
+	EV_SET(&kev, tmr, EVFILT_TIMER
+		, EV_ADD | EV_ENABLE | f //EV_CLEAR is set internally
+		, 0, period_ms, udata);
+	return kevent(kq, &kev, 1, NULL, 0, NULL);
+}
+
+int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
+{
+	size_t i;
+	struct kevent *evs;
+	int r = 0;
+	void *udata;
+	int f = EV_ADD | EV_ENABLE;
+
+	if (del != 0) {
+		if (kq == FF_BADFD || nsigs == 0)
+			return 0;
+		f = EV_DELETE;
+	}
+
+	evs = ffmem_talloc(struct kevent, nsigs);
+	if (evs == NULL)
+		return -1;
+
+	udata = ffaio_kqudata(t);
+	for (i = 0;  i < nsigs;  i++) {
+		EV_SET(&evs[i], sigs[i], EVFILT_SIGNAL, f, 0, 0, udata);
+	}
+	if (0 != kevent(kq, evs, nsigs, NULL, 0, NULL))
+		r = -1;
+
+	ffmem_free(evs);
+	return r;
 }

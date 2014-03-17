@@ -93,7 +93,7 @@ static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 #define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
 
 
-typedef struct {
+typedef struct fffileinfo {
 	unsigned byH : 1;
 	union {
 		WIN32_FIND_DATA data;
@@ -140,18 +140,6 @@ static FFINL int fffile_infoattr(const fffileinfo *fi) {
 #define fffile_hardlink(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
 
 #define fffile_rm(name)  (0 == DeleteFile(name))
-
-static FFINL int _ff_fileReadEx(fffd h, void *d, size_t sz, OVERLAPPED *ol) {
-	DWORD r;
-	BOOL b = ReadFile(h, d, FF_TOINT(sz), &r, ol);
-	return fferr_ioret(b);
-}
-
-static FFINL int _ff_fileWriteEx(fffd h, const void *d, size_t sz, OVERLAPPED *ol) {
-	DWORD w;
-	BOOL b = WriteFile(h, d, FF_TOINT(sz), &w, ol);
-	return fferr_ioret(b);
-}
 
 
 #define ffstdin  GetStdHandle(STD_INPUT_HANDLE)

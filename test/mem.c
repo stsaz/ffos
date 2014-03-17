@@ -7,8 +7,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 
-#include <string.h>
-
 #define x FFTEST_BOOL
 
 static int test_str()

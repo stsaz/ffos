@@ -18,6 +18,7 @@ Copyright (c) 2013 Simon Zolin
 
 enum {
 	FF_BADSKT = -1
+	, FF_MAXIP4 = 22
 	, FF_MAXIP6 = 65 // "[addr]:port"
 
 #ifdef FF_BSD
@@ -49,10 +50,24 @@ static FFINL ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *a
 FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
 #endif
 
+#define ffskt_deferaccept(sk, enable) \
+	ffskt_setopt(sk, IPPROTO_TCP, TCP_DEFER_ACCEPT, enable)
+
 #elif defined FF_BSD
 /** Inherits non-blocking mode. */
 #define ffskt_accept(listenSk, a, addrlen, flags)\
 	accept(listenSk, a, addrlen)
+
+static FFINL int ffskt_deferaccept(ffskt sk, int enable)
+{
+	struct accept_filter_arg af;
+	if (enable) {
+		memset(&af, 0, sizeof(struct accept_filter_arg));
+		strcpy(af.af_name, "dataready");
+	}
+	return setsockopt(sk, SOL_SOCKET, SO_ACCEPTFILTER, (enable ? &af : NULL), sizeof(struct accept_filter_arg));
+}
+
 #endif
 
 /** Receive data from a socket.
@@ -72,6 +87,35 @@ typedef struct iovec ffiovec;
 
 /** Send data from multiple buffers. */
 #define ffskt_sendv  writev
+
+#ifdef FF_LINUX
+
+/** Headers and trailers for sendfile() function. */
+typedef struct sf_hdtr {
+	ffiovec *headers;
+	int hdr_cnt;
+	ffiovec *trailers;
+	int trl_cnt;
+} sf_hdtr;
+
+/** Send a file to a socket.
+Return the number of bytes sent. */
+FF_EXTN int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *sent, int flags);
+
+#elif defined FF_BSD
+
+typedef struct sf_hdtr sf_hdtr;
+
+/* if sz == 0, send until eof */
+static FFINL int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags) {
+	off_t sent = 0;
+	int r = sendfile(fd, sk, /*(off_t)*/offs, FF_TOSIZE(sz), hdtr, &sent, flags);
+	*_sent = sent;
+	return r;
+}
+
+#endif
+
 
 /** Send TCP FIN. */
 #define ffskt_fin(sk)  shutdown(sk, SHUT_WR)
@@ -111,4 +155,4 @@ flags: NI_* */
 #define ffaddr_errstr(code, buf, bufcap)  gai_strerror(code)
 
 /** Return TRUE if both IPv6 addresses are equal. */
-#define ffip_v6equal  IN6_ARE_ADDR_EQUAL
+#define ffip6_eq  IN6_ARE_ADDR_EQUAL

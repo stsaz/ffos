@@ -9,7 +9,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <time.h>
 
-typedef struct {
+typedef struct fftime {
 	uint s;
 	uint mcs;
 } fftime;
@@ -19,23 +19,17 @@ enum FF_TIMEZONE {
 	, FFTIME_TZLOCAL
 };
 
-typedef union {
-	struct {
-		unsigned year : 16 ///< 0..4095
-			, month : 5 ///< 1..12
-			, weekday : 3	///< 0..6
-			, day : 8 ///< 1..31
+typedef struct ffdtm {
+	uint year
+		, month //1..12
+		, weekday //0..6
+		, day //1..31
 
-			, hour : 8 ///< 0..23
-			, min : 8 ///< 0..59
-			, sec : 6 ///< 0..59
-			, msec : 10 ///< 0..999
-			;
-	};
-	struct {
-		uint date;
-		uint time;
-	};
+		, hour //0..23
+		, min  //0..59
+		, sec  //0..59
+		, msec //0..999
+		;
 } ffdtm;
 
 static FFINL void fftime_null(fftime *t) {

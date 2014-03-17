@@ -169,21 +169,21 @@ static int test_addr()
 
 	FFTEST_FUNC;
 
-	ffaddr_init(&a, AF_INET, sizeof(struct sockaddr_in));
+	ffaddr_init(&a);
+	ffip4_setint(&a, INADDR_LOOPBACK);
 	x(ffaddr_family(&a) == AF_INET);
-	ffip_setv4addr(&a.ip4, INADDR_LOOPBACK);
 	x(a.ip4.sin_addr.s_addr == ffhton32(INADDR_LOOPBACK));
 	ffip_setport(&a, 8080);
 	x(ffip_port(&a) == 8080);
 
-	ffaddr_init(&a, AF_INET6, sizeof(struct sockaddr_in6));
+	ffaddr_init(&a);
+	ffip6_set(&a, &in6addr_loopback);
 	x(ffaddr_family(&a) == AF_INET6);
-	ffip_setv6addr(&a.ip6, &in6addr_loopback);
-	x(ffip_v6equal(&a.ip6.sin6_addr, &in6addr_loopback));
-	x(!ffip_v4mapped(&a.ip6.sin6_addr));
+	x(ffip6_eq(&a.ip6.sin6_addr, &in6addr_loopback));
+	x(!ffip6_isv4mapped(&a));
 
-	ffip_setv4mapped(&a.ip6, INADDR_LOOPBACK);
-	x(ffip_v4mapped(&a.ip6.sin6_addr));
+	ffip6_setv4mapped(&a, INADDR_LOOPBACK);
+	x(ffip6_isv4mapped(&a));
 	ffip_v4mapped_tov4(&a);
 	x(a.ip4.sin_addr.s_addr == ffhton32(INADDR_LOOPBACK));
 	x(ffaddr_family(&a) == AF_INET);

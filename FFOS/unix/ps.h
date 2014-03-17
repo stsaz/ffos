@@ -62,3 +62,12 @@ Return NULL on error. */
 
 /** Close the library. */
 #define ffdl_close  dlclose
+
+
+typedef void * ffsysconf;
+
+/** Init sysconf structure. */
+#define ffsc_init(sc) ((void)sc)
+
+/** Get value from system config. */
+#define ffsc_get(sc, name)  sysconf(name)

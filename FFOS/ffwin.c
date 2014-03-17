@@ -8,6 +8,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/thread.h>
 #include <FFOS/timer.h>
 #include <FFOS/process.h>
+#include <FFOS/asyncio.h>
 
 #include <time.h>
 
@@ -356,6 +357,184 @@ int _ffwsaGetFuncs()
 	}
 	ffskt_close(sk);
 	return 0;
+}
+
+
+int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler)
+{
+	ffaio_task *t = &acc->task;
+	ffskt sk;
+	BOOL b;
+	DWORD r;
+
+	sk = ffskt_create(acc->family, acc->sktype, 0);
+	if (sk == FF_BADSKT)
+		return FFAIO_ERROR;
+
+	ffmem_tzero(&t->rovl);
+	b = _ffwsaAcceptEx(t->sk, sk, acc->addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &r, &t->rovl);
+	if (0 != fferr_ioret(b)) {
+		int er = fferr_last();
+		(void)ffskt_close(sk);
+		fferr_set(er);
+		return FFAIO_ERROR;
+	}
+
+	acc->csk = sk;
+	t->rhandler = handler;
+	return FFAIO_ASYNC;
+}
+
+static FFINL void getNAddrs(byte *addrs, ffaddr *local, ffaddr *peer)
+{
+	int lenP = 0
+		, lenL = 0;
+	struct sockaddr *lo
+		, *pe;
+	_ffwsaGetAcceptExSockaddrs(addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &lo, &lenL, &pe, &lenP);
+
+	memcpy(&local->a, lo, lenL);
+	local->len = lenL;
+	memcpy(&peer->a, pe, lenP);
+	peer->len = lenP;
+}
+
+ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags)
+{
+	ffaio_task *t = &acc->task;
+	ffskt sk = FF_BADSKT;
+	int er = 0;
+
+	if (acc->csk == FF_BADSKT) {
+		peer->len = FFADDR_MAXLEN;
+		sk = ffskt_accept(t->sk, &peer->a, &peer->len, flags);
+		if (sk != FF_BADSKT)
+			(void)ffskt_local(sk, local);
+		return sk;
+	}
+
+	if (0 == ffio_result(&t->rovl)) {
+		sk = acc->csk;
+		if (flags & SOCK_NONBLOCK)
+			(void)ffskt_nblock(sk, 1);
+
+		getNAddrs(acc->addrs, local, peer);
+
+	} else {
+		er = fferr_last();
+		(void)ffskt_close(acc->csk);
+	}
+
+	acc->csk = FF_BADSKT;
+	ffmem_zero(acc->addrs, sizeof(acc->addrs));
+
+	if (er != 0)
+		fferr_set(er);
+	return sk;
+}
+
+int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size)
+{
+	BOOL b;
+	DWORD r;
+	ffaddr a;
+	ffaddr_init(&a);
+	ffaddr_setany(&a, addr->sa_family);
+	if (0 != ffskt_bind(t->sk, &a.a, a.len))
+		goto fail;
+
+	ffmem_tzero(&t->wovl);
+	b = _ffwsaConnectEx(t->sk, addr, addr_size, NULL, 0, &r, &t->wovl);
+
+	if (0 != fferr_ioret(b))
+		goto fail;
+
+	t->whandler = handler;
+	return FFAIO_ASYNC;
+
+fail:
+	t->result = -1;
+	return FFAIO_ERROR;
+}
+
+int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
+{
+	BOOL b;
+	DWORD rd;
+
+	ffmem_tzero(&t->rovl);
+	b = ReadFile(t->fd, d, FF_TOINT(cap), &rd, &t->rovl);
+
+	if (0 != fferr_ioret(b)) {
+		t->result = -1;
+		return FFAIO_ERROR;
+	}
+
+	t->rhandler = handler;
+	return FFAIO_ASYNC;
+}
+
+int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len)
+{
+	BOOL b;
+	DWORD wr;
+
+	ffmem_tzero(&t->wovl);
+	b = WriteFile(t->fd, d, (int)ffmin(len, 1), &wr, &t->wovl);
+
+	if (0 != fferr_ioret(b)) {
+		t->result = -1;
+		return FFAIO_ERROR;
+	}
+
+	t->whandler = handler;
+	return FFAIO_ASYNC;
+}
+
+int ffaio_cancelasync(ffaio_task *t, ffaio_handler oncancel)
+{
+	if (t->rhandler != NULL) {
+		if (oncancel != NULL)
+			t->rhandler = oncancel;
+		CancelIoEx(t->fd, &t->rovl);
+	}
+
+	if (t->whandler != NULL) {
+		if (oncancel != NULL)
+			t->whandler = oncancel;
+		CancelIoEx(t->fd, &t->wovl);
+	}
+
+	t->canceled = 1;
+	return 0;
+}
+
+int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
+{
+	int ev = 0;
+
+	if (e->lpOverlapped != NULL) {
+		t->result = ffio_result(e->lpOverlapped);
+		if (t->result == -1)
+			ev |= FFKQU_ERR;
+	}
+
+	if (e->lpOverlapped == &t->wovl)
+		ev |= FFKQU_WRITE;
+	else
+		ev |= FFKQU_READ;
+
+	if (t->canceled) {
+		t->result = -1;
+		ev |= FFKQU_ERR;
+		fferr_set(ECANCELED); //overwrite errno even if operation has completed successfully
+
+		if (((ev & FFKQU_WRITE) && t->rhandler == NULL)
+			|| ((ev & FFKQU_READ) && t->whandler == NULL))
+			t->canceled = 0; //reset flag only if both handlers have signaled
+	}
+
+	return ev;
 }
 
 

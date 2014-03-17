@@ -10,13 +10,11 @@ typedef fffd fftmr;
 
 /** Create timer.
 Return FF_BADTMR on error. */
-static FFINL fffd fftmr_create(int flags) {
+static FFINL fftmr fftmr_create(int flags) {
 	return timerfd_create(CLOCK_MONOTONIC, flags);
 }
 
-FF_EXTN int fftmr_start(fffd tmr, fffd qu, void *data, int periodMs);
-
-static FFINL int fftmr_read(fffd tmr) {
+static FFINL int fftmr_read(fftmr tmr) {
 	int64 val;
 	ssize_t r = read(tmr, &val, sizeof(int64));
 	if (r != sizeof(int64))
@@ -24,9 +22,11 @@ static FFINL int fftmr_read(fffd tmr) {
 	return 0;
 }
 
-static FFINL int fftmr_stop(fffd tmr, fffd qu) {
+/** Stop a timer. */
+static FFINL int fftmr_stop(fftmr tmr, fffd qu) {
 	const struct itimerspec ts = { {0, 0}, {0, 0} };
 	return timerfd_settime(tmr, 0, &ts, NULL);
 }
 
+/** Close a timer. */
 #define fftmr_close(tmr, qu)  close(tmr)

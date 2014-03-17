@@ -81,21 +81,12 @@ int test_timer()
 				break;
 		}
 
-#ifdef FF_UNIX
 		if (nevents == -1 && fferr_last() != EINTR) {
 			x(0);
 			break;
 		}
-#endif
 
-#ifdef FF_WIN
-		if (nevents == -1 && fferr_last() != WAIT_TIMEOUT) {
-			x(0);
-			break;
-		}
-
-		SleepEx(0, 1);
-#endif
+		ffkqu_runtimer();
 	}
 
 	(void)fftmr_stop(tmr1, kq);

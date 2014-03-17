@@ -16,8 +16,6 @@ static FFINL fftmr fftmr_create(int flags) {
 	return (ssize_t)t;
 }
 
-FF_EXTN int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs);
-
 #define fftmr_read(tmr)
 
 static FFINL int fftmr_stop(fftmr tmr, fffd qu) {

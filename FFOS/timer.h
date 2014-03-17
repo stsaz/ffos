@@ -13,3 +13,6 @@ Copyright (c) 2013 Simon Zolin
 #elif defined FF_WIN
 #include <FFOS/win/tmr.h>
 #endif
+
+/** Start timer. */
+FF_EXTN int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms);

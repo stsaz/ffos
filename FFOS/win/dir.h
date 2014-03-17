@@ -3,7 +3,6 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <FFOS/string.h>
-#include <FFOS/file.h>
 
 enum {
 	ENOMOREFILES = ERROR_NO_MORE_FILES
@@ -37,7 +36,7 @@ static FFINL ffbool ffpath_islong(const ffsyschar *fnw, size_t sz) {
 
 typedef fffd ffdir;
 
-typedef struct {
+typedef struct ffdirentry {
 	fffileinfo info;
 	uint namelen : 31
 		, next : 1;

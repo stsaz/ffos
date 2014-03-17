@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01040000
+#define FF_VER  0x01050000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -47,6 +47,9 @@ typedef int ffbool;
 
 #define FFOFF(structType, member)  (((size_t)&((structType *)0)->member))
 
+#define FF_GETPTR(struct_type, member_name, member_ptr) \
+	((struct_type*)((byte*)member_ptr - FFOFF(struct_type, member_name)))
+
 
 #define FF_LITTLE_ENDIAN  1234
 #define FF_BIG_ENDIAN  4321
@@ -74,6 +77,12 @@ typedef int ffbool;
 	#define ffhton16  _byteswap_ushort
 #endif
 #endif
+
+#define ffint_hton16(dst, i)  *((short*)(dst)) = ffhton16(i)
+#define ffint_hton32(dst, i)  *((int*)(dst)) = ffhton32(i)
+
+#define ffint_ntoh16(p)  ffhton16(*(short*)(p))
+#define ffint_ntoh32(p)  ffhton32(*(int*)(p))
 
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 
@@ -118,3 +127,6 @@ static FFINL uint64 ffmax64(uint64 i0, uint64 i1) {
 #define FF_HI32(i64)  ((int)(((i64) >> 32) & 0xffffffff))
 
 #endif
+
+/** Print FF debug messages. */
+extern int ffdbg_print(int t, const char *fmt, ...);

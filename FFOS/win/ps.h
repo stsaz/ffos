@@ -44,3 +44,25 @@ typedef FARPROC ffdl_proc;
 #define ffdl_addr  GetProcAddress
 
 #define ffdl_close(h)  (0 == FreeLibrary(h))
+
+
+enum FFSC_I {
+	_SC_PAGESIZE = 1
+	, _SC_NPROCESSORS_ONLN
+};
+
+typedef SYSTEM_INFO ffsysconf;
+
+static FFINL void ffsc_init(ffsysconf *sc) {
+	GetNativeSystemInfo(sc);
+}
+
+static FFINL int ffsc_get(ffsysconf *sc, int name) {
+	switch (name) {
+	case _SC_PAGESIZE:
+		return sc->dwAllocationGranularity;
+	case _SC_NPROCESSORS_ONLN:
+		return sc->dwNumberOfProcessors;
+	}
+	return 0;
+}

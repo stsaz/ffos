@@ -1,4 +1,4 @@
-/** Process, dynamic library
+/** Process, dynamic library, system config.
 Copyright (c) 2013 Simon Zolin
 */
 

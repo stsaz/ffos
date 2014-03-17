@@ -2,8 +2,6 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/file.h>
-
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>

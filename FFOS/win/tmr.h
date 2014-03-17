@@ -31,8 +31,6 @@ FF_EXTN void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dw
 
 FF_EXTN fftmr fftmr_create(int flags);
 
-FF_EXTN int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs);
-
 #define fftmr_read(tmr)
 
 #define fftmr_stop(tmr, qu)  (0 == CancelWaitableTimer(tmr->htmr))

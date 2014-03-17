@@ -91,6 +91,15 @@ int test_dl(const ffsyschar *fn, const char *func)
 	return 0;
 }
 
+int test_sconf()
+{
+	ffsysconf sc;
+	ffsc_init(&sc);
+	x(0 != ffsc_get(&sc, _SC_PAGESIZE));
+	x(0 != ffsc_get(&sc, _SC_NPROCESSORS_ONLN));
+	return 0;
+}
+
 int test_all()
 {
 	ffos_init();
@@ -103,15 +112,22 @@ int test_all()
 	CALL(test_thd());
 	CALL(test_skt());
 	CALL(test_timer());
+	CALL(test_kqu());
 
-#ifdef FF_UNIX
+#ifdef FF_LINUX
 	CALL(test_ps(TEXT("/bin/echo")));
 	CALL(test_dl(TEXT("/lib/i386-linux-gnu/libc.so.6"), "open"));
+
+#elif defined FF_BSD
+	CALL(test_ps(TEXT("/bin/echo")));
+	CALL(test_dl(TEXT("/lib/libc.so.7"), "open"));
+
 #else
 	CALL(test_ps(TEXT("c:\\windows\\system32\\cmd.exe")));
 	CALL(test_dl(TEXT("kernel32.dll"), "CreateFileW"));
 #endif
 
+	CALL(test_sconf());
 	return 0;
 }
 

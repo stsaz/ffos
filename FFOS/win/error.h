@@ -10,6 +10,8 @@ FF_EXTN int fferr_str(int code, ffsyschar *dst, size_t dst_cap);
 
 #define fferr_again(code)  (code == WSAEWOULDBLOCK)
 
+#define fferr_fdlim(code)  (0)
+
 /**
 return 0 if b = TRUE or (b = FALSE and IO_PENDING)
 return -1 if b = FALSE and !IO_PENDING */
@@ -30,4 +32,6 @@ enum FF_ERRORS {
 	, EACCES = ERROR_ACCESS_DENIED
 	, ENOTEMPTY = ERROR_DIR_NOT_EMPTY
 	, ETIMEDOUT = WSAETIMEDOUT
+	, ECANCELED = ERROR_OPERATION_ABORTED
+	, EINTR = WAIT_TIMEOUT
 };

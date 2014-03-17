@@ -2,9 +2,25 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+static FFINL int ffio_result(OVERLAPPED *ol) {
+	DWORD t;
+	BOOL b = GetOverlappedResult(NULL, ol, &t, 0);
+	if (!b)
+		return -1;
+	return t;
+}
+
+enum FFKQU_F {
+	FFKQU_ADD = 0
+	, FFKQU_READ = 1
+	, FFKQU_WRITE = 2
+	, FFKQU_ERR = 4
+};
+
 typedef OVERLAPPED_ENTRY ffkqu_entry;
 
 #define ffkqu_data(ev)  ((void*)(ev)->lpCompletionKey)
+
 
 static FFINL fffd ffkqu_create() {
 	fffd h = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -13,12 +29,18 @@ static FFINL fffd ffkqu_create() {
 	return h;
 }
 
+#define ffkqu_attach(kq, fd, data, flags) \
+	(0 == CreateIoCompletionPort((fffd)(fd), kq, (ULONG_PTR)(data), 0))
+
 typedef uint ffkqu_time;
 
 static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
 	*t = ms;
 	return t;
 }
+
+/** Execute timer handler function. */
+#define ffkqu_runtimer()  SleepEx(0, 1)
 
 static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 	ULONG num = 0;

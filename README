@@ -23,6 +23,8 @@ FFOS currently supports:
 	. sockets
 	. network address; IPv4/IPv6 address
 	. threads
+	. kernel queue and asynchronous I/O
+	. UNIX signals
 	. heap memory
 	. native system string
 	. date and time

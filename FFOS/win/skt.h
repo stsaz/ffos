@@ -9,9 +9,10 @@ Copyright (c) 2013 Simon Zolin
 
 enum {
 	FF_BADSKT = -1
+	, FF_MAXIP4 = INET_ADDRSTRLEN
 	, FF_MAXIP6 = INET6_ADDRSTRLEN
 
-	, SOCK_NONBLOCK = 0
+	, SOCK_NONBLOCK = 1
 };
 
 FF_EXTN LPFN_ACCEPTEX _ffwsaAcceptEx;
@@ -34,6 +35,8 @@ static FFINL int ffskt_init(int flags) {
 /** Does not inherit non-blocking mode. */
 FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags);
 
+#define ffskt_deferaccept(sk, enable)  (-1)
+
 static FFINL ssize_t ffskt_recv(ffskt sk, void *buf, size_t size, int flags) {
 	return recv(sk, (char *)buf, FF_TOINT(size), flags);
 }
@@ -55,6 +58,13 @@ static FFINL ssize_t ffskt_sendv(ffskt sk, ffiovec *ar, int arlen) {
 		return sent;
 	return -1;
 }
+
+typedef struct sf_hdtr {
+	ffiovec *headers;
+	int hdr_cnt;
+	ffiovec *trailers;
+	int trl_cnt;
+} sf_hdtr;
 
 
 //note: usual function shutdown() fails with WSAENOTCONN on a connected and valid socket assigned to IOCP
@@ -86,4 +96,4 @@ static FFINL const ffsyschar * ffaddr_errstr(int code, ffsyschar *buf, size_t bu
 	return buf;
 }
 
-#define ffip_v6equal  IN6_ADDR_EQUAL
+#define ffip6_eq  IN6_ADDR_EQUAL

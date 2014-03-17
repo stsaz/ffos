@@ -32,7 +32,7 @@ enum FFSKT_INIT {
 #endif
 
 
-typedef struct {
+typedef struct ffaddr {
 	socklen_t len;
 	union {
 		struct sockaddr a;
@@ -41,11 +41,23 @@ typedef struct {
 	};
 } ffaddr;
 
+enum {
+	FFADDR_MAXLEN = sizeof(struct sockaddr_in6)
+};
+
 /** Initialize ffaddr structure. */
-static FFINL void ffaddr_init(ffaddr *adr, int family, socklen_t len) {
+static FFINL void ffaddr_init(ffaddr *adr) {
 	memset(adr, 0, sizeof(ffaddr));
-	adr->a.sa_family = family;
-	adr->len = len;
+}
+
+/** Copy address. */
+static FFINL void ffaddr_copy(ffaddr *dst, const struct sockaddr *src, size_t len) {
+	if (len > FFADDR_MAXLEN) {
+		dst->len = 0;
+		return;
+	}
+	memcpy(&dst->a, src, len);
+	dst->len = (socklen_t)len;
 }
 
 /** Get address family. */
@@ -61,43 +73,61 @@ static FFINL void ffip_setport(ffaddr *adr, uint port) {
 }
 
 /** Get port (host byte order). */
-static FFINL ushort ffip_port(ffaddr *adr) {
+static FFINL ushort ffip_port(const ffaddr *adr) {
 	return adr->a.sa_family == AF_INET
 		? ffhton16(adr->ip4.sin_port)
 		: ffhton16(adr->ip6.sin6_port);
 }
 
+/** Set IPv4 address. */
+static FFINL void ffip4_set(ffaddr *adr, const struct in_addr *net_addr) {
+	adr->ip4.sin_addr = *net_addr;
+	adr->a.sa_family = AF_INET;
+	adr->len = sizeof(struct sockaddr_in);
+}
+
 /** Set IPv4 address (host byte order).
 Example:
-ffip_setv4addr(&ip4, INADDR_LOOPBACK); */
-static FFINL void ffip_setv4addr(struct sockaddr_in *ip4, int net_addr) {
-	ip4->sin_addr.s_addr = ffhton32(net_addr);
+ffip4_setint(&ip4, INADDR_LOOPBACK); */
+static FFINL void ffip4_setint(ffaddr *adr, int net_addr) {
+	net_addr = ffhton32(net_addr);
+	ffip4_set(adr, (struct in_addr*)&net_addr);
 }
 
 /** Set IPv4-mapped address (host byte order). */
-static FFINL void ffip_setv4mapped(struct sockaddr_in6 *ip6, int net_addr) {
-	int *a = (int*)&ip6->sin6_addr;
+static FFINL void ffip6_setv4mapped(ffaddr *adr, int net_addr) {
+	int *a = (int*)&adr->ip6.sin6_addr;
 	a[0] = a[1] = 0;
 	a[2] = ffhton32(0x0000ffff);
 	a[3] = ffhton32(net_addr);
+	adr->a.sa_family = AF_INET6;
+	adr->len = sizeof(struct sockaddr_in6);
 }
 
 /** Set IPv6 address.
 Example:
-ffip_setv6addr(&ip6, &in6addr_loopback); */
-static FFINL void ffip_setv6addr(struct sockaddr_in6 *ip6, const struct in6_addr *net_addr) {
-	ip6->sin6_addr = *net_addr;
+ffip6_set(&ip6, &in6addr_loopback); */
+static FFINL void ffip6_set(ffaddr *adr, const struct in6_addr *net_addr) {
+	adr->ip6.sin6_addr = *net_addr;
+	adr->a.sa_family = AF_INET6;
+	adr->len = sizeof(struct sockaddr_in6);
+}
+
+/** Set "any" address. */
+static FFINL void ffaddr_setany(ffaddr *adr, int family) {
+	if (family == AF_INET)
+		ffip4_setint(adr, INADDR_ANY);
+	else
+		ffip6_set(adr, &in6addr_any);
 }
 
 /** Return TRUE for IPv4-mapped address. */
-#define ffip_v4mapped  IN6_IS_ADDR_V4MAPPED
+#define ffip6_isv4mapped(adr)  IN6_IS_ADDR_V4MAPPED(&(adr)->ip6.sin6_addr)
 
 /** Convert IPv4-mapped address to IPv4. */
 static FFINL void ffip_v4mapped_tov4(ffaddr *a) {
-	a->len = sizeof(struct sockaddr_in);
-	a->a.sa_family = AF_INET;
 	a->ip4.sin_port = a->ip6.sin6_port;
-	a->ip4.sin_addr.s_addr = *((int *)(&a->ip6.sin6_addr) + 3);
+	ffip4_set(a, (struct in_addr*)(((byte*)&a->ip6.sin6_addr) + 12));
 }
 
 
@@ -139,9 +169,9 @@ static FFINL int ffskt_bind(ffskt sk, const struct sockaddr *addr, size_t addrle
 /** Get local socket address.
 Return 0 on success. */
 static FFINL int ffskt_local(ffskt sk, ffaddr *adr) {
-	socklen_t size = sizeof(struct sockaddr_in6);
+	socklen_t size = FFADDR_MAXLEN;
 	if (0 != getsockname(sk, &adr->a, &size)
-		|| size > sizeof(struct sockaddr_in6))
+		|| size > FFADDR_MAXLEN)
 		return -1;
 	adr->len = size;
 	return 0;
@@ -161,4 +191,22 @@ static FFINL void ffiov_set(ffiovec *iov, const void *data, size_t len) {
 /** Shift buffer position in ffiovec structure. */
 static FFINL void ffiov_shift(ffiovec *iov, size_t len) {
 	ffiov_set(iov, (char*)iov->iov_base + len, (size_t)iov->iov_len - len);
+}
+
+/** Get the overall size of ffiovec[]. */
+static FFINL size_t ffiov_size(const ffiovec *iovs, size_t nels)
+{
+	size_t sz = 0;
+	size_t i;
+	for (i = 0;  i < nels;  ++i) {
+		sz += iovs[i].iov_len;
+	}
+	return sz;
+}
+
+static FFINL void ffsf_sethdtr(sf_hdtr *ht, ffiovec *hdrs, size_t nhdrs, ffiovec *trls, size_t ntrls) {
+	ht->headers = hdrs;
+	ht->hdr_cnt = (int)nhdrs;
+	ht->trailers = trls;
+	ht->trl_cnt = (int)ntrls;
 }

@@ -2,9 +2,9 @@
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
 #include <FFOS/thread.h>
-#include <FFOS/timer.h>
 #include <FFOS/string.h>
 #include <FFOS/process.h>
+#include <FFOS/asyncio.h>
 
 #if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
@@ -24,7 +24,7 @@ int fffile_nblock(fffd fd, int nblock)
 }
 
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
-	if (ent->pathlen + nmlen + sizeof('/') >= ent->pathcap) {
+	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {
 		errno = EOVERFLOW;
 		return NULL;
 	}
@@ -174,46 +174,43 @@ fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyscha
 }
 
 
-#ifdef FF_BSD
-int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
+ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags)
 {
-	struct kevent kev;
-	int f = 0;
+	ffskt sk;
+	peer->len = FFADDR_MAXLEN;
+	sk = ffskt_accept(acc->sk, &peer->a, &peer->len, flags);
+	if (sk != FF_BADSKT)
+		ffskt_local(sk, local);
+	return sk;
+}
 
-	if (periodMs < 0) {
-		periodMs = -periodMs;
-		f = EV_ONESHOT;
+int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size)
+{
+	if (0 == ffskt_connect(t->fd, addr, addr_size))
+		return FFAIO_OK;
+
+	if (errno == EINPROGRESS) {
+		t->whandler = handler;
+		return FFAIO_ASYNC;
 	}
 
-	EV_SET(&kev, tmr, EVFILT_TIMER
-		, EV_ADD | EV_ENABLE | f //EV_CLEAR is set internally
-		, 0, periodMs, data);
-	return kevent(qu, &kev, 1, NULL, 0, NULL);
+	t->evflags |= FFKQU_ERR;
+	return FFAIO_ERROR;
 }
-#endif
 
-#ifdef FF_LINUX
-int fftmr_start(fffd tmr, fffd qu, void *data, int periodMs)
+int ffaio_cancelasync(ffaio_task *t, ffaio_handler oncancel)
 {
-	struct itimerspec its;
-	int period = periodMs >= 0 ? periodMs : -periodMs;
+	if (oncancel == NULL)
+		oncancel = (t->rhandler != NULL ? t->rhandler : t->whandler);
 
-	struct epoll_event e;
-	e.events = EPOLLIN | EPOLLET;
-	e.data.ptr = data;
-	if (0 != epoll_ctl(qu, EPOLL_CTL_ADD, tmr, &e))
-		return -1;
+	t->rhandler = NULL;
+	t->whandler = NULL;
+	t->evflags |= FFKQU_ERR;
+	errno = ECANCELED;
 
-	its.it_value.tv_sec = period / 1000;
-	its.it_value.tv_nsec = (period % 1000) * 1000 * 1000;
-	if (periodMs >= 0)
-		its.it_interval = its.it_value;
-	else
-		its.it_interval.tv_sec = its.it_interval.tv_nsec = 0;
-
-	return timerfd_settime(tmr, 0, &its, NULL);
+	oncancel(t->udata);
+	return 0;
 }
-#endif
 
 
 size_t ff_wtou(char *dst, size_t dst_cap, const wchar_t *src, size_t srclen, int flags)
