@@ -78,11 +78,19 @@ typedef int ffbool;
 #endif
 #endif
 
-#define ffint_hton16(dst, i)  *((short*)(dst)) = ffhton16(i)
-#define ffint_hton32(dst, i)  *((int*)(dst)) = ffhton32(i)
+static FFINL void ffint_hton16(void *dst, ushort i) {
+	*((ushort*)dst) = ffhton16(i);
+}
+static FFINL void ffint_hton32(void *dst, uint i) {
+	*((uint*)dst) = ffhton32(i);
+}
 
-#define ffint_ntoh16(p)  ffhton16(*(short*)(p))
-#define ffint_ntoh32(p)  ffhton32(*(int*)(p))
+static FFINL ushort ffint_ntoh16(const void *p) {
+	return ffhton16(*(ushort*)p);
+}
+static FFINL uint ffint_ntoh32(const void *p) {
+	return ffhton32(*(uint*)p);
+}
 
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 

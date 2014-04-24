@@ -11,12 +11,12 @@ static FFINL void ffos_init() {
 }
 
 /** Allocate heap memory region. */
-#define ffmem_alloc  malloc
+#define _ffmem_alloc  malloc
 
-#define ffmem_calloc  calloc
+#define _ffmem_calloc  calloc
 
 /** Reallocate heap memory region. */
-#define ffmem_realloc  realloc
+#define _ffmem_realloc  realloc
 
 /** Deallocate heap memory region. */
-#define ffmem_free  free
+#define _ffmem_free  free

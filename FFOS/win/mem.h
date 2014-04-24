@@ -9,15 +9,15 @@ static FFINL void ffos_init() {
 	_ffheap = GetProcessHeap();
 }
 
-#define ffmem_alloc(size)  HeapAlloc(_ffheap, 0, size)
+#define _ffmem_alloc(size)  HeapAlloc(_ffheap, 0, size)
 
-#define ffmem_calloc(numElements, szofElement)\
+#define _ffmem_calloc(numElements, szofElement)\
 	HeapAlloc(_ffheap, HEAP_ZERO_MEMORY, (numElements) * (szofElement))
 
-static FFINL void *ffmem_realloc(void *ptr, size_t newSize) {
+static FFINL void *_ffmem_realloc(void *ptr, size_t newSize) {
 	if (ptr == NULL)
-		return ffmem_alloc(newSize);
+		return _ffmem_alloc(newSize);
 	return HeapReAlloc(_ffheap, 0, ptr, newSize);
 }
 
-#define ffmem_free(ptr)  HeapFree(_ffheap, 0, ptr)
+#define _ffmem_free(ptr)  HeapFree(_ffheap, 0, ptr)

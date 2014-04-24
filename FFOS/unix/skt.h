@@ -99,7 +99,7 @@ typedef struct sf_hdtr {
 } sf_hdtr;
 
 /** Send a file to a socket.
-Return the number of bytes sent. */
+Return 0 on success. */
 FF_EXTN int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *sent, int flags);
 
 #elif defined FF_BSD

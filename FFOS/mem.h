@@ -28,3 +28,45 @@ Copyright (c) 2013 Simon Zolin
 
 /** Zero the object. */
 #define ffmem_tzero(p)  memset(p, 0, sizeof(*(p)))
+
+
+#ifdef FFDBG_MEM
+static void * ffmem_alloc(size_t size) {
+	void *p = _ffmem_alloc(size);
+	ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L\n"
+		, p, size);
+	return p;
+}
+
+static void * ffmem_calloc(size_t n, size_t sz) {
+	void *p = _ffmem_calloc(n, sz);
+	ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L*%L\n"
+		, p, n, sz);
+	return p;
+}
+
+static void * ffmem_realloc(void *ptr, size_t newSize) {
+	void *p;
+	p = _ffmem_realloc(ptr, newSize);
+	if (p == ptr)
+		ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L\n"
+			, p, newSize, ptr);
+	else
+		ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L, oldp:%p\n"
+			, p, newSize, ptr);
+	return p;
+}
+
+static void ffmem_free(void *ptr) {
+	ffdbg_print(0, __FUNCTION__ "(): p:%p\n"
+		, ptr);
+	_ffmem_free(ptr);
+}
+
+#else
+#define ffmem_alloc _ffmem_alloc
+#define ffmem_calloc _ffmem_calloc
+#define ffmem_realloc _ffmem_realloc
+#define ffmem_free _ffmem_free
+
+#endif
