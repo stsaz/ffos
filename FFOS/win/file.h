@@ -4,6 +4,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/time.h>
 #include <FFOS/error.h>
+#include <FFOS/win/str.h>
 
 enum {
 	FF_MAXPATH = 4096
@@ -29,9 +30,20 @@ enum FFFILE_OPEN {
 	, O_NOATIME = 0
 	, O_DIR = FILE_FLAG_BACKUP_SEMANTICS
 	, O_DIRECT = FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED
+	, FFO_NODOSNAME = 0x00000100
 };
 
-FF_EXTN fffd fffile_open(const ffsyschar *filename, int flags);
+FF_EXTN fffd fffile_openq(const ffsyschar *filename, int flags);
+
+static FFINL fffd fffile_open(const char *filename, int flags) {
+	ffsyschar wfilename[FF_MAXPATH];
+	if (0 == ff_utow(wfilename, FFCNT(wfilename), filename, -1, 0))
+		return FF_BADFD;
+	return fffile_openq(wfilename, flags);
+}
+
+#define fffile_createtemp(filename, flags) \
+	fffile_open(filename, FFO_CREATENEW | FILE_FLAG_DELETE_ON_CLOSE | (flags))
 
 static FFINL ssize_t fffile_read(fffd fd, void *buf, size_t size) {
 	DWORD read;
@@ -79,9 +91,23 @@ static FFINL int fffile_attr(fffd fd) {
 	return info.dwFileAttributes;
 }
 
-#define fffile_attrfn  GetFileAttributes
+#define fffile_attrfnq  GetFileAttributes
+
+static FFINL int fffile_attrfn(const char *name) {
+	ffsyschar wname[FF_MAXPATH];
+	if (0 == ff_utow(wname, FFCNT(wname), name, -1, 0))
+		return -1;
+	return fffile_attrfnq(wname);
+}
 
 #define fffile_isdir(file_attr)  (((file_attr) & FILE_ATTRIBUTE_DIRECTORY) != 0)
+
+static FFINL ffbool fffile_existsq(const ffsyschar *filename) {
+	int a = fffile_attrfnq(filename);
+	if (a == -1)
+		return 0;
+	return !fffile_isdir(a);
+}
 
 static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 	FILE_BASIC_INFO i;
@@ -135,11 +161,26 @@ static FFINL int fffile_infoattr(const fffileinfo *fi) {
 }
 
 
-#define fffile_rename(src, dst)  (0 == MoveFileEx(src, dst, /*MOVEFILE_COPY_ALLOWED*/ MOVEFILE_REPLACE_EXISTING))
+#define fffile_renameq(src, dst)  (0 == MoveFileEx(src, dst, /*MOVEFILE_COPY_ALLOWED*/ MOVEFILE_REPLACE_EXISTING))
+
+static FFINL int fffile_rename(const char *src, const char *dst) {
+	ffsyschar wsrc[FF_MAXPATH], wdst[FF_MAXPATH];
+	if (0 == ff_utow(wsrc, FFCNT(wsrc), src, -1, 0)
+		|| 0 == ff_utow(wdst, FFCNT(wdst), dst, -1, 0))
+		return -1;
+	return fffile_renameq(wsrc, wdst);
+}
 
 #define fffile_hardlink(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
 
-#define fffile_rm(name)  (0 == DeleteFile(name))
+#define fffile_rmq(name)  (0 == DeleteFile(name))
+
+static FFINL int fffile_rm(const char *name) {
+	ffsyschar wname[FF_MAXPATH];
+	if (0 == ff_utow(wname, FFCNT(wname), name, -1, 0))
+		return -1;
+	return fffile_rmq(wname);
+}
 
 
 #define ffstdin  GetStdHandle(STD_INPUT_HANDLE)

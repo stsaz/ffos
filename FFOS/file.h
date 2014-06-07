@@ -19,7 +19,7 @@ Copyright (c) 2013 Simon Zolin
 FF_EXTN int fffile_time(fffd fd, fftime *last_write, fftime *last_access, fftime *creation);
 
 /** Check whether the specified file exists. */
-static FFINL ffbool fffile_exists(const ffsyschar *filename) {
+static FFINL ffbool fffile_exists(const char *filename) {
 	int a = fffile_attrfn(filename);
 	if (a == -1)
 		return 0;

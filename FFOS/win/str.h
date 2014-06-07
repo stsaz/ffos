@@ -15,7 +15,7 @@ Copyright (c) 2013 Simon Zolin
 
 #define ffq_len  wcslen
 #define ffq_cmpz  wcscmp
-#define ffq_icmpz  wcsicmp
+#define ffq_icmpz  _wcsicmp
 #define ffq_icmpnz  wcsncasecmp
 #define ffq_cpy2  wcscpy
 #define ffq_cat2  wcscat

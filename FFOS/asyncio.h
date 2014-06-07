@@ -21,7 +21,8 @@ typedef struct ffaio_task {
 	ffaio_handler rhandler;
 	ffaio_handler whandler;
 	int evflags;
-	unsigned instance :1;
+	unsigned instance :1
+		, oneshot :1;
 
 #if defined FF_BSD
 	ffkqu_entry *ev;
@@ -40,6 +41,7 @@ static FFINL void ffaio_init(ffaio_task *t) {
 	ffmem_tzero(t);
 	t->fd = FF_BADFD;
 	t->instance = inst;
+	t->oneshot = 1;
 }
 
 /** Finalize AIO task. */

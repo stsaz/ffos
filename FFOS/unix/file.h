@@ -23,6 +23,7 @@ enum FFFILE_OPEN {
 	, FFO_APPEND = O_APPEND | O_CREAT
 
 	, O_DIR = 0
+	, FFO_NODOSNAME = 0
 
 #ifdef FF_BSD
 	, O_NOATIME = 0
@@ -32,11 +33,18 @@ enum FFFILE_OPEN {
 /** Open or create a file.
 flags: O_*.
 Return FF_BADFD on error. */
-static FFINL fffd fffile_open(const ffsyschar *filename, int flags) {
+static FFINL fffd fffile_open(const char *filename, int flags) {
 #ifdef FF_LINUX
 	flags |= O_LARGEFILE;
 #endif
 	return open(filename, flags, 0666);
+}
+
+static FFINL fffd fffile_createtemp(const char *filename, int flags) {
+	fffd fd = fffile_open(filename, FFO_CREATENEW | flags);
+	if (fd != FF_BADFD)
+		unlink(filename);
+	return fd;
 }
 
 
@@ -171,3 +179,10 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 
 /** Close a pipe. */
 #define ffpipe_close  close
+
+
+#define fffile_openq  fffile_open
+#define fffile_attrfnq  fffile_attrfn
+#define fffile_renameq  fffile_rename
+#define fffile_rmq  fffile_rm
+#define fffile_existsq  fffile_exists

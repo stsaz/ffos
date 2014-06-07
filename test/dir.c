@@ -10,7 +10,7 @@ Copyright (c) 2013 Simon Zolin
 
 #define x FFTEST_BOOL
 
-static int test_path(const ffsyschar *dirname)
+static int test_path(const char *dirname)
 {
 	FFTEST_FUNC;
 
@@ -22,13 +22,18 @@ static int test_path(const ffsyschar *dirname)
 #endif
 
 #ifdef FF_WIN
-	x(ffpath_islong(dirname, ffq_len(dirname)));
+	{
+		ffsyschar wname[FF_MAXPATH];
+		if (0 == ff_utow(wname, FFCNT(wname), dirname, -1, 0))
+			return -1;
+		x(ffpath_islong(wname));
+	}
 #endif
 
 	return 0;
 }
 
-static int test_dirwalk(ffsyschar *path, size_t pathcap)
+static int test_dirwalk(char *path, size_t pathcap)
 {
 	ffdir d;
 	ffdirentry ent;
@@ -70,20 +75,20 @@ static int test_dirwalk(ffsyschar *path, size_t pathcap)
 	return 0;
 }
 
-int test_dir(const ffsyschar *tmpdir)
+int test_dir(const char *tmpdir)
 {
 	fffd f;
-	ffsyschar path[FF_MAXPATH];
-	ffsyschar fn[FF_MAXPATH];
+	char path[FF_MAXPATH];
+	char fn[FF_MAXPATH];
 	size_t pathcap = FFCNT(path);
 
 	FFTEST_FUNC;
 
-	ffq_cpy2(path, tmpdir);
-	ffq_cat2(path, TEXT("/tmpdir"));
+	strcpy(path, tmpdir);
+	strcat(path, "/tmpdir");
 
-	ffq_cpy2(fn, path);
-	ffq_cat2(fn, TEXT("/tmpfile"));
+	strcpy(fn, path);
+	strcat(fn, "/tmpfile");
 
 	x(0 == ffdir_make(path));
 

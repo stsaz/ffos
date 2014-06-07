@@ -138,13 +138,13 @@ end:
 	return res;
 }
 
-int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
+int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	sigset_t mask;
 	size_t i;
 	fffd sigfd;
 
-	if (del != 0) {
+	if (handler == NULL) {
 		if (t->fd != FF_BADFD) {
 			close(t->fd);
 			t->fd = FF_BADFD;
@@ -161,6 +161,8 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
 	if (sigfd == FF_BADFD)
 		return -1;
 
+	t->rhandler = handler;
+	t->oneshot = 0;
 	if (0 != ffkqu_attach(kq, sigfd, ffaio_kqudata(t), FFKQU_ADD | FFKQU_READ)) {
 		close(sigfd);
 		return -1;

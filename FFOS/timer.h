@@ -14,5 +14,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/win/tmr.h>
 #endif
 
-/** Start timer. */
+/** Start timer.
+Windows: this function must be called inside the same thread that runs event loop. */
 FF_EXTN int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms);

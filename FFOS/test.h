@@ -14,13 +14,13 @@ FF_EXTN uint _fftest_nrun;
 FF_EXTN uint _fftest_nfail;
 
 #define FFTEST_FUNC\
-	printf("at %s:%u in %s()\n", __FILE__, __LINE__, __FUNCTION__)
+	printf("at %s:%u in %s()\n", __FILE__, __LINE__, FF_FUNC)
 
 #define FFTEST_BOOL(expr)\
-	fftest(expr, __FILE__, __LINE__, __FUNCTION__, #expr)
+	fftest(expr, __FILE__, __LINE__, FF_FUNC, #expr)
 
 #define FFTEST_EQ(p1, p2)\
-	fftest(p1 == p2, __FILE__, __LINE__, __FUNCTION__, #p1 " == " #p2)
+	fftest(p1 == p2, __FILE__, __LINE__, FF_FUNC, #p1 " == " #p2)
 
 static FFINL int fftest(int res, const char *file, uint line, const char *func, const char *sexp)
 {

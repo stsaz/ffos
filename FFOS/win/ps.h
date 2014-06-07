@@ -20,6 +20,9 @@ FF_EXTN fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const 
 
 #define ffps_id  GetProcessId
 
+/** Send signal to a process.  Works only if the other process has called ffsig_ctl(). */
+FF_EXTN int ffps_sig(int pid, int sig);
+
 #define ffps_kill(h)  (0 == TerminateProcess(h, -1))
 
 #define ffps_close(h)  (0 == CloseHandle(h))
@@ -38,8 +41,15 @@ FF_EXTN int ffps_wait(fffd h, uint timeout_ms, int *exit_code);
 typedef HMODULE ffdl;
 typedef FARPROC ffdl_proc;
 
-#define ffdl_open(filename, flags) \
+#define ffdl_openq(filename, flags) \
 	LoadLibraryEx(filename, NULL, (flags) | LOAD_WITH_ALTERED_SEARCH_PATH)
+
+static FFINL fffd ffdl_open(const char *filename, int flags) {
+	ffsyschar wfilename[FF_MAXPATH];
+	if (0 == ff_utow(wfilename, FFCNT(wfilename), filename, -1, 0))
+		return FF_BADFD;
+	return ffdl_openq(wfilename, flags);
+}
 
 #define ffdl_addr  GetProcAddress
 

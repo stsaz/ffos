@@ -31,35 +31,35 @@ Copyright (c) 2013 Simon Zolin
 
 
 #ifdef FFDBG_MEM
-static void * ffmem_alloc(size_t size) {
+static FFINL void * ffmem_alloc(size_t size) {
 	void *p = _ffmem_alloc(size);
-	ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L\n"
-		, p, size);
+	ffdbg_print(0, "%s(): p:%p, size:%L\n"
+		, FF_FUNC, p, size);
 	return p;
 }
 
-static void * ffmem_calloc(size_t n, size_t sz) {
+static FFINL void * ffmem_calloc(size_t n, size_t sz) {
 	void *p = _ffmem_calloc(n, sz);
-	ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L*%L\n"
-		, p, n, sz);
+	ffdbg_print(0, "%s(): p:%p, size:%L*%L\n"
+		, FF_FUNC, p, n, sz);
 	return p;
 }
 
-static void * ffmem_realloc(void *ptr, size_t newSize) {
+static FFINL void * ffmem_realloc(void *ptr, size_t newSize) {
 	void *p;
 	p = _ffmem_realloc(ptr, newSize);
 	if (p == ptr)
-		ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L\n"
-			, p, newSize, ptr);
+		ffdbg_print(0, "%s(): p:%p, size:%L\n"
+			, FF_FUNC, p, newSize, ptr);
 	else
-		ffdbg_print(0, __FUNCTION__ "(): p:%p, size:%L, oldp:%p\n"
-			, p, newSize, ptr);
+		ffdbg_print(0, "%s(): p:%p, size:%L, oldp:%p\n"
+			, FF_FUNC, p, newSize, ptr);
 	return p;
 }
 
-static void ffmem_free(void *ptr) {
-	ffdbg_print(0, __FUNCTION__ "(): p:%p\n"
-		, ptr);
+static FFINL void ffmem_free(void *ptr) {
+	ffdbg_print(0, "%s(): p:%p\n"
+		, FF_FUNC, ptr);
 	_ffmem_free(ptr);
 }
 

@@ -100,19 +100,21 @@ void ffaio_run1(ffkqu_entry *e)
 #endif
 
 #ifdef FFDBG_AIO
-	ffdbg_print(0, __FUNCTION__ "(): task:%p, evflags:%u, r:%u, w:%u, rhandler:%p, whandler:%p\n"
-		, t, (int)t->evflags, r, w, t->rhandler, t->whandler);
+	ffdbg_print(0, "%s(): task:%p, evflags:%u, r:%u, w:%u, rhandler:%p, whandler:%p\n"
+		, FF_FUNC, t, (int)t->evflags, r, w, t->rhandler, t->whandler);
 #endif
 
 	if (r && t->rhandler != NULL) {
 		func = t->rhandler;
-		t->rhandler = NULL;
+		if (t->oneshot)
+			t->rhandler = NULL;
 		func(t->udata);
 	}
 
 	if (w && t->whandler != NULL) {
 		func = t->whandler;
-		t->whandler = NULL;
+		if (t->oneshot)
+			t->whandler = NULL;
 		func(t->udata);
 	}
 }
@@ -133,6 +135,7 @@ static const char *const err_ops[] = {
 	, "file map"
 	, "file remove"
 	, "file close"
+	, "file rename"
 
 	, "timer init"
 	, "kqueue create"

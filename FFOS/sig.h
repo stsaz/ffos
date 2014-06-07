@@ -22,12 +22,12 @@ static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
 	}
 	return sigprocmask(how, &mask, NULL);
 }
-
-/** If 'del' is unset, initialize kernel event for signals.
-If 'del' is set, close signal fd.  If 'kq' and 'nsigs' are also specified, remove event from the kernel. */
-FF_EXTN int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del);
-
 #endif
+
+/** If 'handler' is set, initialize kernel event for signals.
+If 'handler' is NULL, close signal fd.  If 'kq' and 'nsigs' are also specified, remove event from the kernel. */
+FF_EXTN int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler);
+
 
 #if defined FF_LINUX
 
@@ -47,5 +47,9 @@ static FFINL int ffsig_read(const ffaio_task *t) {
 	t->ev->ident = -1;
 	return ident;
 }
+
+#elif defined FF_WIN
+
+FF_EXTN int ffsig_read(ffaio_task *t);
 
 #endif

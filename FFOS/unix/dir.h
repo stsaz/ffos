@@ -35,7 +35,7 @@ typedef DIR * ffdir;
 typedef struct {
 	fffileinfo info;
 	size_t pathlen;
-	ffsyschar *path;
+	char *path;
 	size_t pathcap;
 	struct dirent de;
 	uint namelen;
@@ -44,7 +44,7 @@ typedef struct {
 /** Open directory reader.
 Return 0 on error.
 'path' should have at least FF_MAXFN characters of free space. */
-static FFINL ffdir ffdir_open(ffsyschar *path, size_t pathcap, ffdirentry *ent) {
+static FFINL ffdir ffdir_open(char *path, size_t pathcap, ffdirentry *ent) {
 	ent->pathlen = strlen(path);
 	ent->path = path;
 	ent->pathcap = pathcap;
@@ -74,3 +74,6 @@ FF_EXTN fffileinfo * ffdir_entryinfo(ffdirentry *ent);
 
 /** Close directory reader. */
 #define ffdir_close  closedir
+
+
+#define ffdir_makeq ffdir_make

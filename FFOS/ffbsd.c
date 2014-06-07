@@ -55,7 +55,7 @@ int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 	return kevent(kq, &kev, 1, NULL, 0, NULL);
 }
 
-int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
+int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	size_t i;
 	struct kevent *evs;
@@ -63,7 +63,7 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
 	void *udata;
 	int f = EV_ADD | EV_ENABLE;
 
-	if (del != 0) {
+	if (handler == NULL) {
 		if (kq == FF_BADFD || nsigs == 0)
 			return 0;
 		f = EV_DELETE;
@@ -73,6 +73,8 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, int del)
 	if (evs == NULL)
 		return -1;
 
+	t->rhandler = handler;
+	t->oneshot = 0;
 	udata = ffaio_kqudata(t);
 	for (i = 0;  i < nsigs;  i++) {
 		EV_SET(&evs[i], sigs[i], EVFILT_SIGNAL, f, 0, 0, udata);

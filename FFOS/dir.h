@@ -14,7 +14,7 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 /** Check whether the specified directory exists. */
-static FFINL ffbool ffdir_exists(const ffsyschar *filename) {
+static FFINL ffbool ffdir_exists(const char *filename) {
 	int a = fffile_attrfn(filename);
 	if (a == -1)
 		return 0;

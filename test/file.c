@@ -12,15 +12,15 @@ Copyright (c) 2013 Simon Zolin
 #define HELLO "hello\n"
 #define FOOBAR "foobar\n"
 
-static int test_diropen(const ffsyschar *tmpdir)
+static int test_diropen(const char *tmpdir)
 {
 	fffd hdir;
-	ffsyschar fn[FF_MAXPATH];
+	char fn[FF_MAXPATH];
 
 	FFTEST_FUNC;
 
-	ffq_cpy2(fn, tmpdir);
-	ffq_cat2(fn, TEXT("/tmpdir"));
+	strcpy(fn, tmpdir);
+	strcat(fn, "/tmpdir");
 
 	x(0 == ffdir_make(fn));
 
@@ -46,7 +46,7 @@ static int test_std()
 	return 0;
 }
 
-static int test_mapwr(const ffsyschar *fn)
+static int test_mapwr(const char *fn)
 {
 	fffd fd
 		, fmap;
@@ -102,7 +102,7 @@ static int test_mapanon()
 	return 0;
 }
 
-static int test_map(const ffsyschar *fn)
+static int test_map(const char *fn)
 {
 	fffd fd
 		, fmap;
@@ -160,7 +160,7 @@ static int test_pipe()
 	return 0;
 }
 
-static int test_fileinfo(ffsyschar *fn)
+static int test_fileinfo(char *fn)
 {
 	fffileinfo fi;
 	fffd fd;
@@ -188,16 +188,16 @@ static int test_fileinfo(ffsyschar *fn)
 	return 0;
 }
 
-int test_file(const ffsyschar *tmpdir)
+int test_file(const char *tmpdir)
 {
 	fffd fd;
-	ffsyschar fn[FF_MAXPATH];
+	char fn[FF_MAXPATH];
 	char buf[4096];
 
 	FFTEST_FUNC;
 
-	ffq_cpy2(fn, tmpdir);
-	ffq_cat2(fn, TEXT("/tmpfile"));
+	strcpy(fn, tmpdir);
+	strcat(fn, "/tmpfile");
 
 	fd = fffile_open(fn, FFO_CREATE | O_RDWR);
 	x(fd != FF_BADFD);
@@ -212,6 +212,11 @@ int test_file(const ffsyschar *tmpdir)
 
 	x(fffile_exists(fn));
 	x(0 == fffile_rm(fn));
+	x(!fffile_exists(fn));
+
+	fd = fffile_createtemp(fn, O_WRONLY);
+	x(fd != FF_BADFD);
+	x(0 == fffile_close(fd));
 	x(!fffile_exists(fn));
 
 	test_diropen(tmpdir);

@@ -14,12 +14,16 @@ Copyright (c) 2013 Simon Zolin
 
 HANDLE _ffheap;
 
-fffd fffile_open(const ffsyschar *filename, int flags)
+fffd fffile_openq(const ffsyschar *filename, int flags)
 {
 	enum { share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE };
 	int mode = (flags & 0x0000000f);
 	int access = (flags & 0x000000f0) << 24;
-	int f = (flags & 0xffffff00) | FILE_ATTRIBUTE_NORMAL;
+	int f = (flags & 0xfffffe00) | FILE_ATTRIBUTE_NORMAL;
+
+	if ((flags & FFO_NODOSNAME) && !ffpath_islong(filename)) {
+		return FF_BADFD;
+	}
 
 	if (mode == FFO_APPEND) {
 		mode = OPEN_ALWAYS;
@@ -75,7 +79,7 @@ ffbool ffpath_abs(const char *path, size_t len)
 		);
 }
 
-ffdir ffdir_open(ffsyschar *path, size_t cap, ffdirentry *ent)
+ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 {
 	ffdir dir;
 	size_t len = ffq_len(path);
@@ -113,9 +117,14 @@ int ffdir_read(ffdir dir, ffdirentry *ent)
 
 int fferr_str(int code, ffsyschar *dst, size_t dst_cap)
 {
-	return FormatMessage(
+	int n = FormatMessage(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK
 		, 0, code, 0, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
+	if (n > 2) {
+		n -= FFSLEN(". ");
+		dst[n] = L'\0';
+	}
+	return n;
 }
 
 
@@ -588,4 +597,81 @@ int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
 	tmr->kq = qu;
 	tmr->data = data;
 	return 0 == SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, 1);
+}
+
+
+static void pipename(ffsyschar *dst, size_t cap, int pid)
+{
+	char s[64];
+	_ultoa_s(pid, s, FFCNT(s), 10);
+	dst = scopyz(dst, L"\\\\.\\pipe\\ffps-");
+	dst += ff_utow(dst, cap, s, strlen(s), 0);
+	*dst = L'\0';
+}
+
+int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
+{
+	ffsyschar name[64];
+	BOOL b;
+
+	if (handler == NULL) {
+		FF_SAFECLOSE(t->fd, FF_BADFD, (void)ffpipe_close);
+		return 0;
+	}
+
+	pipename(name, FFCNT(name), ffps_curid());
+	t->fd = ffpipe_createnamed(name);
+	if (t->fd == FF_BADFD)
+		return 1;
+
+	if (0 != ffaio_attach(t, kq, FFKQU_READ))
+		return 1;
+
+	ffmem_tzero(&t->wovl);
+	b = ConnectNamedPipe(t->fd, &t->wovl);
+	if (0 != fferr_ioret(b))
+		return -1;
+
+	t->whandler = handler;
+	t->oneshot = 0;
+	return 0;
+}
+
+int ffsig_read(ffaio_task *t)
+{
+	ssize_t r;
+	byte b;
+
+	r = fffile_read(t->fd, &b, 1);
+	if (r == 1)
+		return b;
+
+	ffpipe_disconnect(t->fd);
+	ffmem_tzero(&t->wovl);
+	b = ConnectNamedPipe(t->fd, &t->wovl);
+	// if (0 != fferr_ioret(b))
+		// return -1;
+	return -1;
+}
+
+int ffps_sig(int pid, int sig)
+{
+	ffsyschar name[64];
+	fffd p;
+	byte b;
+
+	pipename(name, FFCNT(name), pid);
+
+	p = fffile_openq(name, FFO_OPEN | O_WRONLY);
+	if (p == FF_BADFD)
+		return 1;
+
+	b = (byte)sig;
+	if (1 != fffile_write(p, &b, 1)) {
+		(void)ffpipe_close(p);
+		return 1;
+	}
+
+	(void)ffpipe_close(p);
+	return 0;
 }

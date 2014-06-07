@@ -76,7 +76,7 @@ int test_ps(const ffsyschar *fn)
 	return 0;
 }
 
-int test_dl(const ffsyschar *fn, const char *func)
+int test_dl(const char *fn, const char *func)
 {
 	ffdl h;
 	ffdl_proc p;
@@ -116,15 +116,15 @@ int test_all()
 
 #ifdef FF_LINUX
 	CALL(test_ps(TEXT("/bin/echo")));
-	CALL(test_dl(TEXT("/lib/i386-linux-gnu/libc.so.6"), "open"));
+	CALL(test_dl("/lib/i386-linux-gnu/libc.so.6", "open"));
 
 #elif defined FF_BSD
 	CALL(test_ps(TEXT("/bin/echo")));
-	CALL(test_dl(TEXT("/lib/libc.so.7"), "open"));
+	CALL(test_dl("/lib/libc.so.7", "open"));
 
 #else
 	CALL(test_ps(TEXT("c:\\windows\\system32\\cmd.exe")));
-	CALL(test_dl(TEXT("kernel32.dll"), "CreateFileW"));
+	CALL(test_dl("kernel32.dll", "CreateFileW"));
 #endif
 
 	CALL(test_sconf());
