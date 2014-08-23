@@ -79,11 +79,24 @@ static FFINL int ffskt_nblock(ffskt sk, int nblock) {
 
 typedef ADDRINFOT ffaddrinfo;
 
-static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc, int flags)
+static FFINL int ffaddr_infoq(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc, int flags)
 {
 	ffaddrinfo hints = { 0 };
 	hints.ai_flags = flags;
 	return GetAddrInfo(host, svc, &hints, a);
+}
+
+static FFINL int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
+{
+	ffsyschar whost[NI_MAXHOST], wsvc[NI_MAXSERV];
+
+	if (host != NULL && 0 == ff_utow(whost, FFCNT(whost), host, -1, 0))
+		return -1;
+
+	if (svc != NULL && 0 == ff_utow(wsvc, FFCNT(wsvc), svc, -1, 0))
+		return -1;
+
+	return ffaddr_infoq(a, (host != NULL) ? whost : NULL, (svc != NULL) ? wsvc : NULL, flags);
 }
 
 #define ffaddr_free  FreeAddrInfo
@@ -91,7 +104,7 @@ static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsysc
 #define ffaddr_name(a, addrlen, host, hostcap, svc, svccap, flags)\
 	GetNameInfoA(a, addrlen, host, FF_TOINT(hostcap), svc, FF_TOINT(svccap), flags)
 
-static FFINL const ffsyschar * ffaddr_errstr(int code, ffsyschar *buf, size_t bufcap) {
+static FFINL const char * ffaddr_errstr(int code, char *buf, size_t bufcap) {
 	fferr_str(code, buf, bufcap);
 	return buf;
 }

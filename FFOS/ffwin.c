@@ -115,7 +115,7 @@ int ffdir_read(ffdir dir, ffdirentry *ent)
 }
 
 
-int fferr_str(int code, ffsyschar *dst, size_t dst_cap)
+int fferr_strq(int code, ffsyschar *dst, size_t dst_cap)
 {
 	int n = FormatMessage(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK
@@ -500,15 +500,15 @@ int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len)
 	return FFAIO_ASYNC;
 }
 
-int ffaio_cancelasync(ffaio_task *t, ffaio_handler oncancel)
+int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 {
-	if (t->rhandler != NULL) {
+	if ((op & FFAIO_READ) && t->rhandler != NULL) {
 		if (oncancel != NULL)
 			t->rhandler = oncancel;
 		CancelIoEx(t->fd, &t->rovl);
 	}
 
-	if (t->whandler != NULL) {
+	if ((op & FFAIO_WRITE) && t->whandler != NULL) {
 		if (oncancel != NULL)
 			t->whandler = oncancel;
 		CancelIoEx(t->fd, &t->wovl);

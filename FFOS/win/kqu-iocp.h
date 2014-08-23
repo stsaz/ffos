@@ -52,4 +52,6 @@ static FFINL int ffkqu_post(fffd ioq, void* data, OVERLAPPED *ovl) {
 	return (0 == PostQueuedCompletionStatus(ioq, 0 /*bytes transferred*/, (ULONG_PTR)data, ovl));
 }
 
-#define ffkqu_close(qu)  (0 == CloseHandle(qu))
+static FFINL int ffkqu_close(fffd qu) {
+	return 0 == CloseHandle(qu);
+}

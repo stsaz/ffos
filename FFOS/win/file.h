@@ -42,6 +42,9 @@ static FFINL fffd fffile_open(const char *filename, int flags) {
 	return fffile_openq(wfilename, flags);
 }
 
+#define fffile_createtempq(filename, flags) \
+	fffile_openq(filename, FFO_CREATENEW | FILE_FLAG_DELETE_ON_CLOSE | (flags))
+
 #define fffile_createtemp(filename, flags) \
 	fffile_open(filename, FFO_CREATENEW | FILE_FLAG_DELETE_ON_CLOSE | (flags))
 
@@ -75,7 +78,9 @@ static FFINL fffd fffile_dup(fffd hdl) {
 	return ret;
 }
 
-#define fffile_close(fd)  (0 == CloseHandle(fd))
+static FFINL int fffile_close(fffd fd) {
+	return 0 == CloseHandle(fd);
+}
 
 static FFINL int64 fffile_size(fffd fd) {
 	uint64 size = 0;
@@ -173,7 +178,9 @@ static FFINL int fffile_rename(const char *src, const char *dst) {
 
 #define fffile_hardlink(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
 
-#define fffile_rmq(name)  (0 == DeleteFile(name))
+static FFINL int fffile_rmq(const ffsyschar *name) {
+	return 0 == DeleteFile(name);
+}
 
 static FFINL int fffile_rm(const char *name) {
 	ffsyschar wname[FF_MAXPATH];
@@ -222,4 +229,4 @@ static FFINL fffd ffpipe_createnamed(const ffsyschar *name) {
 /// Server kicks the client from the pipe
 #define ffpipe_disconnect  DisconnectNamedPipe
 
-#define ffpipe_close(h)  (0 == CloseHandle(h))
+#define ffpipe_close  fffile_close

@@ -7,14 +7,12 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/timer.h>
 #include <FFOS/mem.h>
 #include <FFOS/process.h>
+#include <FFOS/random.h>
 
 #include <test/all.h>
 
 #define x FFTEST_BOOL
 #define CALL FFTEST_TIMECALL
-
-uint _fftest_nrun;
-uint _fftest_nfail;
 
 static int FFTHDCALL thdfunc(void *param) {
 	return 0;
@@ -100,6 +98,26 @@ int test_sconf()
 	return 0;
 }
 
+static int test_rnd()
+{
+	int n, n2;
+	fftime t;
+
+	FFTEST_FUNC;
+
+	fftime_now(&t);
+	ffrnd_seed(t.s);
+	n = ffrnd_get();
+	n2 = ffrnd_get();
+	x(n != n2);
+
+	ffrnd_seed(t.s);
+	n2 = ffrnd_get();
+	x(n == n2);
+
+	return 0;
+}
+
 int test_all()
 {
 	ffos_init();
@@ -128,6 +146,9 @@ int test_all()
 #endif
 
 	CALL(test_sconf());
+	test_rnd();
+
+	printf("%u tests were run, failed: %u.\n", fftestobj.nrun, fftestobj.nfail);
 	return 0;
 }
 

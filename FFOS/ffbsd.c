@@ -85,3 +85,47 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handl
 	ffmem_free(evs);
 	return r;
 }
+
+/* sendfile() sends the whole file if 'file size' argument is 0.
+We don't want this behaviour. */
+int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)
+{
+	off_t sent = 0;
+	ssize_t r;
+
+	if (sz != 0) {
+		r = sendfile(fd, sk, /*(off_t)*/offs, FF_TOSIZE(sz), hdtr, &sent, flags);
+		goto done;
+	}
+
+	if (hdtr == NULL) {
+		r = 0;
+		goto done; //no file, no hdtr
+	}
+
+	if (hdtr->hdr_cnt != 0) {
+		r = ffskt_sendv(sk, hdtr->headers, hdtr->hdr_cnt);
+		if (r == -1)
+			goto done;
+
+		sent = r;
+
+		if (hdtr->trl_cnt != 0
+			&& r != ffiov_size(hdtr->headers, hdtr->hdr_cnt))
+			goto done; //headers are not sent yet completely
+	}
+
+	if (hdtr->trl_cnt != 0) {
+		r = ffskt_sendv(sk, hdtr->trailers, hdtr->trl_cnt);
+		if (r == -1)
+			goto done;
+
+		sent += r;
+	}
+
+	r = 0;
+
+done:
+	*_sent = sent;
+	return (int)r;
+}

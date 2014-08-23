@@ -4,7 +4,6 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/file.h>
 
-#include <errno.h>
 #include <signal.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -20,15 +19,7 @@ enum {
 	FF_BADSKT = -1
 	, FF_MAXIP4 = 22
 	, FF_MAXIP6 = 65 // "[addr]:port"
-
-#ifdef FF_BSD
-	, SOCK_NONBLOCK = 0
-#endif
 };
-
-#ifdef FF_LINUX
-#define TCP_NOPUSH  TCP_CORK
-#endif
 
 /** Prepare using sockets.
 flags: enum FFSKT_INIT. */
@@ -37,37 +28,12 @@ static FFINL int ffskt_init(int flags) {
 	return 0;
 }
 
-#ifdef FF_LINUX
-#if !defined FF_OLDLIBC
+#ifndef FF_OLDLIBC
 /** Accept a connection on a socket.
-flags: SOCK_NONBLOCK
-Does not inherit non-blocking mode. */
+flags: SOCK_NONBLOCK. */
 static FFINL ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags) {
 	return accept4(listenSk, a, addrlen, flags);
 }
-
-#else
-FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
-#endif
-
-#define ffskt_deferaccept(sk, enable) \
-	ffskt_setopt(sk, IPPROTO_TCP, TCP_DEFER_ACCEPT, enable)
-
-#elif defined FF_BSD
-/** Inherits non-blocking mode. */
-#define ffskt_accept(listenSk, a, addrlen, flags)\
-	accept(listenSk, a, addrlen)
-
-static FFINL int ffskt_deferaccept(ffskt sk, int enable)
-{
-	struct accept_filter_arg af;
-	if (enable) {
-		memset(&af, 0, sizeof(struct accept_filter_arg));
-		strcpy(af.af_name, "dataready");
-	}
-	return setsockopt(sk, SOL_SOCKET, SO_ACCEPTFILTER, (enable ? &af : NULL), sizeof(struct accept_filter_arg));
-}
-
 #endif
 
 /** Receive data from a socket.
@@ -88,33 +54,12 @@ typedef struct iovec ffiovec;
 /** Send data from multiple buffers. */
 #define ffskt_sendv  writev
 
-#ifdef FF_LINUX
-
-/** Headers and trailers for sendfile() function. */
-typedef struct sf_hdtr {
-	ffiovec *headers;
-	int hdr_cnt;
-	ffiovec *trailers;
-	int trl_cnt;
-} sf_hdtr;
-
-/** Send a file to a socket.
-Return 0 on success. */
-FF_EXTN int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *sent, int flags);
-
-#elif defined FF_BSD
-
 typedef struct sf_hdtr sf_hdtr;
 
-/* if sz == 0, send until eof */
-static FFINL int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags) {
-	off_t sent = 0;
-	int r = sendfile(fd, sk, /*(off_t)*/offs, FF_TOSIZE(sz), hdtr, &sent, flags);
-	*_sent = sent;
-	return r;
-}
-
-#endif
+/** Send a file to a socket.
+@hdtr: optional.
+Return 0 on success. */
+FF_EXTN int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *sent, int flags);
 
 
 /** Send TCP FIN. */
@@ -133,13 +78,15 @@ typedef struct addrinfo ffaddrinfo;
 Return 0 on success.
 Example:
 	ffaddrinfo *addrs;
-	ffaddr_info(&addrs, TEXT("localhost"), TEXT("80"), AI_PASSIVE); */
-static FFINL int ffaddr_info(ffaddrinfo **a, const ffsyschar *host, const ffsyschar *svc, int flags)
+	ffaddr_info(&addrs, "localhost", "80", AI_PASSIVE); */
+static FFINL int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 {
 	ffaddrinfo hints = { 0 };
 	hints.ai_flags = flags;
 	return getaddrinfo(host, svc, &hints, a);
 }
+
+#define ffaddr_infoq ffaddr_info
 
 /** Free ffaddrinfo structure. */
 #define ffaddr_free freeaddrinfo
@@ -152,7 +99,9 @@ flags: NI_* */
 	getnameinfo(a, addrlen, host, (socklen_t)(hostcap), svc, (socklen_t)(svccap), flags)
 
 /** Get error message. */
-#define ffaddr_errstr(code, buf, bufcap)  gai_strerror(code)
+static FFINL const char * ffaddr_errstr(int code, char *buf, size_t bufcap) {
+	return gai_strerror(code);
+}
 
 /** Return TRUE if both IPv6 addresses are equal. */
 #define ffip6_eq  IN6_ARE_ADDR_EQUAL

@@ -29,7 +29,9 @@ static FFINL void *ffmap_open(fffd hfilemap, uint64 offs, size_t size, int prot,
 	return MapViewOfFile(hfilemap, prot, FF_HI32(offs), FF_LO32(offs), size);
 }
 
-#define ffmap_unmap(p, sz)  (0 == UnmapViewOfFile(p))
+static FFINL int ffmap_unmap(void *p, size_t sz) {
+	return 0 == UnmapViewOfFile(p);
+}
 
 static FFINL void ffmap_close(fffd fmap) {
 	if (fmap != (fffd)-2)

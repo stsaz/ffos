@@ -47,6 +47,8 @@ static FFINL fffd fffile_createtemp(const char *filename, int flags) {
 	return fd;
 }
 
+#define fffile_createtempq  fffile_createtemp
+
 
 /** Read from a file descriptor.
 Return -1 on error. */

@@ -198,17 +198,31 @@ int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *a
 	return FFAIO_ERROR;
 }
 
-int ffaio_cancelasync(ffaio_task *t, ffaio_handler oncancel)
+int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 {
-	if (oncancel == NULL)
-		oncancel = (t->rhandler != NULL ? t->rhandler : t->whandler);
+	uint w = (t->whandler != NULL);
+	ffaio_handler func;
 
-	t->rhandler = NULL;
-	t->whandler = NULL;
+#ifdef FF_BSD
+	t->ev = NULL;
+#endif
 	t->evflags |= FFKQU_ERR;
 	errno = ECANCELED;
 
-	oncancel(t->udata);
+	if ((op & FFAIO_READ) && t->rhandler != NULL) {
+		func = ((oncancel != NULL) ? oncancel : t->rhandler);
+		t->rhandler = NULL;
+		func(t->udata);
+	}
+
+	if ((op & FFAIO_WRITE) && w && t->whandler != NULL) {
+		func = ((oncancel != NULL) ? oncancel : t->whandler);
+		t->whandler = NULL;
+		t->evflags |= FFKQU_ERR;
+		errno = ECANCELED;
+		func(t->udata);
+	}
+
 	return 0;
 }
 

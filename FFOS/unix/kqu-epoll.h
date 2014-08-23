@@ -5,6 +5,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/socket.h>
 
 #include <sys/epoll.h>
+#include <errno.h>
 
 
 enum FFKQU_F {

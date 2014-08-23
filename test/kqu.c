@@ -112,37 +112,45 @@ static void do_accept(void *udata)
 	}
 }
 
+static void client_sendfile(void *udata)
+{
+#ifdef FF_UNIX
+	conn_t *conn = udata;
+	char buf[64 * 1024];
+
+	sf_hdtr hdtr;
+	ffiovec iovs[2];
+	uint64 sent, sent2;
+	fffd f;
+
+	ffiov_set(&iovs[0], buf, 100);
+	ffiov_set(&iovs[1], buf, 300);
+	ffsf_sethdtr(&hdtr, &iovs[0], 1, &iovs[1], 1);
+
+	f = fffile_open("/tmp/tmp-ffos", FFO_CREATE | O_RDWR);
+	x(f != FF_BADFD);
+	x(200 == fffile_write(f, buf, 200));
+
+	x(0 == ffskt_sendfile(conn->csk, f, 0, fffile_size(f), &hdtr, &sent, 0));
+	x(sent == 100 + 200 + 300);
+	printf("client: sent %d" FF_NEWLN, (int)sent);
+
+	//file size = 0
+	x(0 == ffskt_sendfile(conn->csk, f, 0, 0, &hdtr, &sent2, 0));
+	x(sent2 == 100 + 300);
+
+	x(0 == fffile_close(f));
+	x(0 == fffile_rm("/tmp/tmp-ffos"));
+
+	printf("client: sent %d" FF_NEWLN, (int)sent2);
+#endif
+}
+
 static void client_send(void *udata)
 {
 	conn_t *conn = udata;
 	ssize_t r;
 	char buf[64 * 1024];
-
-#ifdef FF_UNIX
-	if (conn->nsent == 0) {
-		sf_hdtr hdtr;
-		ffiovec iovs[2];
-		uint64 sent;
-		fffd f;
-
-		ffiov_set(&iovs[0], buf, 100);
-		ffiov_set(&iovs[1], buf, 300);
-		ffsf_sethdtr(&hdtr, &iovs[0], 1, &iovs[1], 1);
-
-		f = fffile_open(TEXT("/tmp/tmp-ffos"), FFO_CREATE | O_RDWR);
-		x(f != FF_BADFD);
-		x(200 == fffile_write(f, buf, 200));
-
-		x(0 == ffskt_sendfile(conn->csk, f, 0, fffile_size(f), &hdtr, &sent, 0));
-		x(sent == 100 + 200 + 300);
-
-		x(0 == fffile_close(f));
-		x(0 == fffile_rm(TEXT("/tmp/tmp-ffos")));
-
-		conn->nsent += sent;
-		printf("client: sent +%d" FF_NEWLN, (int)sent);
-	}
-#endif
 
 	while (conn->nsent != NDATA) {
 		r = ffaio_result(&conn->task);
@@ -171,6 +179,7 @@ static void connect_onsig(void *udata)
 	conn_t *conn = udata;
 	x(0 == ffaio_result(&conn->task));
 	printf("client: connected" FF_NEWLN);
+	client_sendfile(conn);
 	client_send(conn);
 }
 
@@ -252,7 +261,7 @@ int test_kqu()
 
 	{
 		ffaddrinfo *a;
-		x(0 == ffaddr_info(&a, TEXT("127.0.0.1"), NULL, AI_PASSIVE));
+		x(0 == ffaddr_info(&a, "127.0.0.1", NULL, AI_PASSIVE));
 		ffaddr_copy(&adr, a->ai_addr, a->ai_addrlen);
 		ffaddr_free(a);
 	}
@@ -267,7 +276,7 @@ int test_kqu()
 
 	start_conn(&conn, &adr, 8081, &connect_oncancel);
 	if (ffaio_active(&conn.task))
-		ffaio_cancelasync(&conn.task, &connect_oncancel);
+		ffaio_cancelasync(&conn.task, FFAIO_CONNECT, &connect_oncancel);
 
 	for (;;) {
 		nevents = ffkqu_wait(kq, ents, FFCNT(ents), kqtm);

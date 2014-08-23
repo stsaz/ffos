@@ -2,11 +2,21 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include <FFOS/string.h>
+
+
 #define fferr_last  GetLastError
 
 #define fferr_set  SetLastError
 
-FF_EXTN int fferr_str(int code, ffsyschar *dst, size_t dst_cap);
+FF_EXTN int fferr_strq(int code, ffsyschar *dst, size_t dst_cap);
+
+static FFINL int fferr_str(int code, char *dst, size_t dst_cap)
+{
+	ffsyschar w[255];
+	int e = fferr_strq(code, w, FFCNT(w));
+	return (int)ff_wtou(dst, dst_cap, w, e, 0);
+}
 
 #define fferr_again(code)  (code == WSAEWOULDBLOCK)
 

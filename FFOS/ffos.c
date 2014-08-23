@@ -79,13 +79,27 @@ ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int 
 }
 #endif
 
+size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len)
+{
+	size_t i;
+	for (i = 0;  i != nels;  i++) {
+		if (*len < iovs[i].iov_len) {
+			ffiov_shift(&iovs[i], (size_t)*len);
+			*len = 0;
+			break;
+		}
+		*len -= iovs[i].iov_len;
+	}
+	return i;
+}
+
 
 void ffaio_run1(ffkqu_entry *e)
 {
 	size_t udata = (size_t)ffkqu_data(e);
 	ffaio_task *t = (void*)(udata & ~1);
 	ffaio_handler func;
-	unsigned r, w;
+	uint r, w;
 
 #ifdef FF_UNIX
 	if ((udata & 1) != t->instance)

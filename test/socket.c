@@ -7,16 +7,16 @@
 
 #define x FFTEST_BOOL
 
-#define HOST TEXT("localhost")
-#define PORT TEXT("8080")
+#define HOST "localhost"
+#define PORT "8080"
 #define REQ "GET / HTTP/1.0" FFCRLF FFCRLF
 #define RESP_HDR "HTTP/1.0 200 OK" FFCRLF FFCRLF
 #define RESP_BODY "this is body" FFCRLF
 #define RESP RESP_HDR RESP_BODY
 
 typedef struct {
-	const ffsyschar *host;
-	const ffsyschar *port;
+	const char *host;
+	const char *port;
 	const char *req;
 	const char *respHdr;
 	const char *respBody;

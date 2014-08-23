@@ -42,7 +42,9 @@ static FFINL int ffdir_make(const char *name) {
 	return ffdir_makeq(wname);
 }
 
-#define ffdir_rmq(name)  (0 == RemoveDirectory(name))
+static FFINL int ffdir_rmq(const ffsyschar *name) {
+	return 0 == RemoveDirectory(name);
+}
 
 static FFINL int ffdir_rm(const char *name) {
 	ffsyschar wname[FF_MAXPATH];
@@ -75,4 +77,6 @@ FF_EXTN int ffdir_read(ffdir dir, ffdirentry *ent);
 
 #define ffdir_entryinfo(ent)  (&(ent)->info)
 
-#define ffdir_close(dir)  (0 == FindClose(dir))
+static FFINL int ffdir_close(ffdir dir) {
+	return 0 == FindClose(dir);
+}

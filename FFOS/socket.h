@@ -25,8 +25,14 @@ enum FFSKT_INIT {
 };
 
 
-#ifdef FF_UNIX
+#ifdef FF_LINUX
 #include <FFOS/unix/skt.h>
+#include <FFOS/unix/skt-linux.h>
+
+#elif defined FF_BSD
+#include <FFOS/unix/skt.h>
+#include <FFOS/unix/skt-bsd.h>
+
 #elif defined FF_WIN
 #include <FFOS/win/skt.h>
 #endif
@@ -192,6 +198,10 @@ static FFINL void ffiov_set(ffiovec *iov, const void *data, size_t len) {
 static FFINL void ffiov_shift(ffiovec *iov, size_t len) {
 	ffiov_set(iov, (char*)iov->iov_base + len, (size_t)iov->iov_len - len);
 }
+
+/** Shift an array of ffiovec.
+Return the number of shifted elements. */
+FF_EXTN size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len);
 
 /** Get the overall size of ffiovec[]. */
 static FFINL size_t ffiov_size(const ffiovec *iovs, size_t nels)

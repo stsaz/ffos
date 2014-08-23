@@ -89,6 +89,14 @@ FF_EXTN void ffaio_run1(ffkqu_entry *e);
 /** Return TRUE if AIO task is active. */
 #define ffaio_active(a)  ((a)->rhandler != NULL || (a)->whandler != NULL)
 
+enum FFAIO_CANCEL {
+	FFAIO_READ = 1
+	, FFAIO_WRITE = 2
+	, FFAIO_CONNECT = FFAIO_WRITE
+	, FFAIO_RW = FFAIO_READ | FFAIO_WRITE
+};
+
 /** Cancel AIO task.  Handler function will be called.
-'oncancel': if not NULL, set new handler. */
-FF_EXTN int ffaio_cancelasync(ffaio_task *t, ffaio_handler oncancel);
+@op: enum FFAIO_CANCEL.
+@oncancel: if not NULL, set new handler. */
+FF_EXTN int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel);

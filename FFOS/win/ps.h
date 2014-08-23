@@ -25,7 +25,9 @@ FF_EXTN int ffps_sig(int pid, int sig);
 
 #define ffps_kill(h)  (0 == TerminateProcess(h, -1))
 
-#define ffps_close(h)  (0 == CloseHandle(h))
+static FFINL int ffps_close(fffd h) {
+	return 0 == CloseHandle(h);
+}
 
 FF_EXTN int ffps_wait(fffd h, uint timeout_ms, int *exit_code);
 
@@ -53,7 +55,9 @@ static FFINL fffd ffdl_open(const char *filename, int flags) {
 
 #define ffdl_addr  GetProcAddress
 
-#define ffdl_close(h)  (0 == FreeLibrary(h))
+static FFINL int ffdl_close(fffd h) {
+	return 0 == FreeLibrary(h);
+}
 
 
 enum FFSC_I {

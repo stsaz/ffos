@@ -11,12 +11,12 @@ Copyright (c) 2013 Simon Zolin
 
 static int test_str()
 {
-	ffsyschar ss[1024];
+	char su[1024];
 
 	FFTEST_FUNC;
 
 	fferr_set(EINVAL);
-	x(0 != fferr_str(fferr_last(), ss, FFCNT(ss)));
+	x(0 != fferr_str(fferr_last(), su, FFCNT(su)));
 
 	x(0 == ffq_icmpnz(TEXT("asdf"), FFSTRQ("ASDF")));
 	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));
@@ -25,6 +25,7 @@ static int test_str()
 		char s[1024];
 		size_t n;
 #ifdef FF_WIN
+		ffsyschar ss[1024];
 		n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
 		x(n != 0);
 #endif

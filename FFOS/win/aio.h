@@ -43,4 +43,11 @@ FF_EXTN int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap
 
 FF_EXTN int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len);
 
+static FFINL int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iovs, size_t iovcnt) {
+	ffiovec v = {0};
+	if (iovcnt != 0)
+		v = iovs[0];
+	return ffaio_send(t, handler, v.iov_base, v.iov_len);
+}
+
 FF_EXTN int _ffaio_events(ffaio_task *t, const ffkqu_entry *e);

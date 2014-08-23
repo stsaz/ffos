@@ -54,5 +54,8 @@ static FFINL ssize_t ffaio_send(ffaio_task *t, ffaio_handler handler, const void
 	return FFAIO_ASYNC;
 }
 
+#define ffaio_sendv(aiotask, handler, iov, iovcnt) \
+	ffaio_send(aiotask, handler, NULL, 0)
+
 /** Get signaled events and flags of a kernel event structure. */
 #define _ffaio_events(task, kqent)  ffkqu_result(kqent, (task)->fd)

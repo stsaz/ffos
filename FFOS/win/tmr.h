@@ -33,7 +33,9 @@ FF_EXTN fftmr fftmr_create(int flags);
 
 #define fftmr_read(tmr)
 
-#define fftmr_stop(tmr, qu)  (0 == CancelWaitableTimer(tmr->htmr))
+static FFINL int fftmr_stop(fftmr tmr, fffd qu) {
+	return 0 == CancelWaitableTimer(tmr->htmr);
+}
 
 static FFINL int fftmr_close(fftmr tmr, fffd qu) {
 	int r = (0 == CloseHandle(tmr->htmr));

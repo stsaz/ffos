@@ -132,9 +132,7 @@ end:
 	if (npush)
 		(void)ffskt_setopt(sk, IPPROTO_TCP, TCP_NOPUSH, 0);
 
-	if (_sent != NULL)
-		*_sent = sent;
-
+	*_sent = sent;
 	return res;
 }
 
