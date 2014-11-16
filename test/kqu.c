@@ -92,7 +92,7 @@ static void do_accept(void *udata)
 		sk = ffaio_accept(&srv->acc, &local, &peer, SOCK_NONBLOCK);
 
 		if (sk == FF_BADSKT) {
-			printf("server: accept() returned %d" FF_NEWLN, fferr_last());
+			printf("server: accept() returned %d" FF_NEWLN, (int)fferr_last());
 
 			if (fferr_again(fferr_last())) {
 				x(FFAIO_ASYNC == ffaio_acceptbegin(&srv->acc, &do_accept));

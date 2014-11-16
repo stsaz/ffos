@@ -28,7 +28,8 @@ typedef struct ffaio_task {
 	ffkqu_entry *ev;
 
 #elif defined FF_WIN
-	unsigned canceled :1;
+	unsigned canceled :1
+		, rsig :1;
 	int result;
 	OVERLAPPED rovl;
 	OVERLAPPED wovl;

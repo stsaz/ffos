@@ -31,5 +31,13 @@ int test_time()
 	fftime_diff(&t1, &t);
 	x(t.s == 0 && t.mcs == (1000 - 1) * 1000);
 
+	x(fftime_chk(&dtm));
+	dtm.month = 2;
+	dtm.day = 29;
+	dtm.year = 2014;
+	x(!fftime_chk(&dtm));
+	dtm.year = 2012;
+	x(fftime_chk(&dtm));
+
 	return 0;
 }

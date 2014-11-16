@@ -7,7 +7,27 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/socket.h>
 #include <FFOS/error.h>
 #include <FFOS/asyncio.h>
+#include <FFOS/atomic.h>
 
+
+static const byte month_days[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+ffbool fftime_chk(const ffdtm *dt)
+{
+	if (dt->month == 0 || dt->month > 12
+		|| dt->weekday > 6
+		|| dt->day == 0 || dt->day > month_days[dt->month - 1]
+		|| dt->hour > 23
+		|| dt->min > 59
+		|| dt->sec > 59)
+		return 0;
+
+	if (dt->month == 2 && 0 != (dt->year % 4)
+		&& dt->day > 28)
+		return 0;
+
+	return 1;
+}
 
 int fftime_cmp(const fftime *t1, const fftime *t2)
 {
@@ -134,6 +154,30 @@ void ffaio_run1(ffkqu_entry *e)
 }
 
 
+uint _ffsc_ncpu;
+
+enum { FFLK_SPIN = 2048 };
+
+void fflk_lock(fflock *lk)
+{
+	for (;;) {
+		if (fflk_trylock(lk))
+			return;
+
+		if (_ffsc_ncpu > 1) {
+			uint n;
+			for (n = 0;  n < FFLK_SPIN;  n++) {
+				ffcpu_pause();
+				if (fflk_trylock(lk))
+					return;
+			}
+		}
+
+		ffcpu_yield();
+	}
+}
+
+
 static const char *const err_ops[] = {
 	"success"
 	, "internal error"
@@ -150,6 +194,8 @@ static const char *const err_ops[] = {
 	, "file remove"
 	, "file close"
 	, "file rename"
+
+	, "directory open"
 
 	, "timer init"
 	, "kqueue create"

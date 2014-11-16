@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01070000
+#define FF_VER  0x01080000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -143,6 +143,27 @@ static FFINL uint64 ffmax64(uint64 i0, uint64 i1) {
 #define FF_HI32(i64)  ((int)(((i64) >> 32) & 0xffffffff))
 
 #endif
+
+
+#if defined FF_MSVC
+#define FFDL_ONINIT(init, fin) \
+BOOL DllMain(HMODULE p1, DWORD reason, void *p3) \
+{ \
+	if (reason == DLL_PROCESS_ATTACH) \
+		init(); \
+	return 1; \
+}
+
+#else
+/** Set module constructor function. */
+#define FFDL_ONINIT(init, fin) \
+void _ffdl_oninit(void)__attribute__((constructor)); \
+void _ffdl_oninit(void) \
+{ \
+	init(); \
+}
+#endif
+
 
 /** Print FF debug messages. */
 extern int ffdbg_print(int t, const char *fmt, ...);

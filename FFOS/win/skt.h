@@ -68,7 +68,9 @@ typedef struct sf_hdtr {
 
 
 //note: usual function shutdown() fails with WSAENOTCONN on a connected and valid socket assigned to IOCP
-#define ffskt_fin(sk)  (0 == _ffwsaDisconnectEx(sk, (OVERLAPPED*)NULL, 0, 0))
+static FFINL int ffskt_fin(ffskt sk) {
+	return 0 == _ffwsaDisconnectEx(sk, (OVERLAPPED*)NULL, 0, 0);
+}
 
 #define ffskt_close  closesocket
 

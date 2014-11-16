@@ -8,6 +8,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/mem.h>
 #include <FFOS/process.h>
 #include <FFOS/random.h>
+#include <FFOS/atomic.h>
 
 #include <test/all.h>
 
@@ -118,11 +119,70 @@ static int test_rnd()
 	return 0;
 }
 
+static int test_atomic()
+{
+	ffatomic a;
+
+	FFTEST_FUNC;
+
+	ffatom_set(&a, 0x12345678);
+	x(0x12345678 == ffatom_xchg(&a, 0x87654321));
+	x(!ffatom_cmpxchg(&a, 0x11223344, 0xabcdef));
+	x(ffatom_cmpxchg(&a, 0x87654321, 0xabcdef));
+	x(0xabcdef == ffatom_get(&a));
+	x(0xffabcdef == ffatom_addret(&a, 0xff000000));
+	x(0xffabcdee == ffatom_decret(&a));
+	x(0xffabcdef == ffatom_incret(&a));
+
+#ifdef FF_64
+	ffatom_set(&a, 0x12345678);
+	x(0xffffffff12345678ULL == ffatom_addret(&a, 0xffffffff00000000ULL));
+
+	ffatom_set(&a, 0x12345678);
+	ffatom_add(&a, 0xffffffff00000000ULL);
+	x(0xffffffff12345678ULL == ffatom_get(&a));
+
+	ffatom_set(&a, 0xffffffffffffffffULL);
+	ffatom_inc(&a);
+	x(0 == ffatom_get(&a));
+
+	ffatom_dec(&a);
+	x(0xffffffffffffffffULL == ffatom_get(&a));
+
+#else
+	ffatom_set(&a, 0x12345678);
+	ffatom_add(&a, 0x98000000);
+	x(0xaa345678 == ffatom_get(&a));
+
+	ffatom_inc(&a);
+	x(0xaa345679 == ffatom_get(&a));
+
+	ffatom_dec(&a);
+	x(0xaa345678 == ffatom_get(&a));
+#endif
+
+	return 0;
+}
+
+static int test_lock()
+{
+	fflock lk;
+	FFTEST_FUNC;
+
+	fflk_init(&lk);
+	x(0 != fflk_trylock(&lk));
+	x(0 == fflk_trylock(&lk));
+	fflk_unlock(&lk);
+	return 0;
+}
+
 int test_all()
 {
 	ffos_init();
 
 	CALL(test_types());
+	CALL(test_atomic());
+	CALL(test_lock());
 	CALL(test_mem());
 	CALL(test_time());
 	CALL(test_file(TMP_PATH));

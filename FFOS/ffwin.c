@@ -11,6 +11,9 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/asyncio.h>
 
 #include <time.h>
+#ifndef FF_MSVC
+#include <stdio.h>
+#endif
 
 HANDLE _ffheap;
 
@@ -365,7 +368,7 @@ int _ffwsaGetFuncs()
 		}
 	}
 	ffskt_close(sk);
-	return 0;
+	return rc;
 }
 
 
@@ -471,6 +474,13 @@ int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 	BOOL b;
 	DWORD rd;
 
+	if (t->rsig && cap == 0) {
+		/* Reuse the previous 'read' operation.
+		There's no need to cancel the previous and start a new one. */
+		t->rhandler = handler;
+		return FFAIO_ASYNC;
+	}
+
 	ffmem_tzero(&t->rovl);
 	b = ReadFile(t->fd, d, FF_TOINT(cap), &rd, &t->rovl);
 
@@ -480,6 +490,8 @@ int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 	}
 
 	t->rhandler = handler;
+	if (cap == 0)
+		t->rsig = 1;
 	return FFAIO_ASYNC;
 }
 
@@ -530,8 +542,12 @@ int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
 
 	if (e->lpOverlapped == &t->wovl)
 		ev |= FFKQU_WRITE;
-	else
+	else {
+		if (t->rsig)
+			t->rsig = 0;
+
 		ev |= FFKQU_READ;
+	}
 
 	if (t->canceled) {
 		t->result = -1;
@@ -603,7 +619,11 @@ int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
 static void pipename(ffsyschar *dst, size_t cap, int pid)
 {
 	char s[64];
+#ifdef FF_MSVC
 	_ultoa_s(pid, s, FFCNT(s), 10);
+#else
+	sprintf(s, "%u", pid);
+#endif
 	dst = scopyz(dst, L"\\\\.\\pipe\\ffps-");
 	dst += ff_utow(dst, cap, s, strlen(s), 0);
 	*dst = L'\0';

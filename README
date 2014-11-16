@@ -29,6 +29,7 @@ FFOS currently supports:
 	. native system string
 	. date and time
 	. system error codes
+	. atomic integer functions
 
 
 LICENSE
