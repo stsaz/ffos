@@ -113,6 +113,19 @@ size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len)
 	return i;
 }
 
+size_t ffiov_copyhdtr(ffiovec *dst, size_t cap, const sf_hdtr *hdtr)
+{
+	size_t n = 0;
+	int i;
+	for (i = 0; i < hdtr->hdr_cnt && n < cap; i++) {
+		dst[n++] = hdtr->headers[i];
+	}
+	for (i = 0; i < hdtr->trl_cnt && n < cap; i++) {
+		dst[n++] = hdtr->trailers[i];
+	}
+	return n;
+}
+
 
 void ffaio_run1(ffkqu_entry *e)
 {

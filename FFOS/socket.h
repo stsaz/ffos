@@ -203,6 +203,9 @@ static FFINL void ffiov_shift(ffiovec *iov, size_t len) {
 Return the number of shifted elements. */
 FF_EXTN size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len);
 
+/** Copy headers & trailers into a new array. */
+FF_EXTN size_t ffiov_copyhdtr(ffiovec *dst, size_t cap, const sf_hdtr *ht);
+
 /** Get the overall size of ffiovec[]. */
 static FFINL size_t ffiov_size(const ffiovec *iovs, size_t nels)
 {
