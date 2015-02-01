@@ -194,7 +194,7 @@ int test_all()
 
 #ifdef FF_LINUX
 	CALL(test_ps(TEXT("/bin/echo")));
-	CALL(test_dl("/lib/i386-linux-gnu/libc.so.6", "open"));
+	CALL(test_dl("/lib64/libc.so.6", "open"));
 
 #elif defined FF_BSD
 	CALL(test_ps(TEXT("/bin/echo")));

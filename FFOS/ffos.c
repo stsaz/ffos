@@ -3,11 +3,41 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <FFOS/file.h>
+#include <FFOS/dir.h>
 #include <FFOS/time.h>
 #include <FFOS/socket.h>
 #include <FFOS/error.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/atomic.h>
+
+
+int ffdir_rmakeq(ffsyschar *path, size_t off)
+{
+	ffsyschar *s = path + off;
+
+	if (ffpath_slash(*s))
+		s++;
+
+	for (;; s++) {
+
+		if (ffpath_slash(*s) || *s == '\0') {
+			int er;
+			ffsyschar slash = *s;
+
+			*s = '\0';
+			er = ffdir_makeq(path);
+			*s = slash;
+
+			if (er != 0 && fferr_last() != EEXIST)
+				return er;
+
+			if (*s == '\0')
+				break;
+		}
+	}
+
+	return 0;
+}
 
 
 static const byte month_days[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -134,10 +164,8 @@ void ffaio_run1(ffkqu_entry *e)
 	ffaio_handler func;
 	uint r, w;
 
-#ifdef FF_UNIX
 	if ((udata & 1) != t->instance)
 		return; //cached event has signaled
-#endif
 
 	t->evflags = _ffaio_events(t, e);
 	r = 0 != (t->evflags & FFKQU_READ);

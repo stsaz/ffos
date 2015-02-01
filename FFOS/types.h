@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01080000
+#define FF_VER  0x01090000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -108,7 +108,9 @@ do { \
 	} \
 } while (0)
 
-#define ffabs(n)  ((n) < 0 ? -(n) : (n))
+static FFINL size_t ffabs(ssize_t n) {
+	return (n >= 0) ? n : -n;
+}
 
 static FFINL uint64 ffmin64(uint64 i0, uint64 i1) {
 	return (i0 > i1 ? i1 : i0);

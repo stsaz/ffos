@@ -10,18 +10,8 @@
 #include <pthread_np.h>
 #endif
 
-#include <sys/fcntl.h>
 #include <string.h>
 
-int fffile_nblock(fffd fd, int nblock)
-{
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (nblock != 0)
-		flags |= O_NONBLOCK;
-	else
-		flags &= ~O_NONBLOCK;
-	return fcntl(fd, F_SETFL, flags);
-}
 
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
 	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {
@@ -34,7 +24,7 @@ static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) 
 	return ent->path;
 }
 
-fffileinfo * ffdir_entryinfo(ffdirentry *ent)
+ffdir_einfo * ffdir_entryinfo(ffdirentry *ent)
 {
 	int r;
 	const ffsyschar *nm = fullPath(ent, ffdir_entryname(ent), ent->namelen);

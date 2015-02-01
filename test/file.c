@@ -16,6 +16,7 @@ static int test_diropen(const char *tmpdir)
 {
 	fffd hdir;
 	char fn[FF_MAXPATH];
+	fffileinfo fi;
 
 	FFTEST_FUNC;
 
@@ -24,15 +25,13 @@ static int test_diropen(const char *tmpdir)
 
 	x(0 == ffdir_make(fn));
 
-	hdir = fffile_open(fn, FFO_OPEN | O_RDONLY | O_DIR);
+	hdir = fffile_open(fn, O_RDONLY);
 	x(hdir != FF_BADFD);
-	x(fffile_isdir(fffile_attr(hdir)));
-	x(fffile_isdir(fffile_attrfn(fn)));
+	x(0 == fffile_info(hdir, &fi));
+	x(fffile_isdir(fffile_infoattr(&fi)));
 	x(0 == fffile_close(hdir));
 
-	x(ffdir_exists(fn));
 	x(0 == ffdir_rm(fn));
-	x(!ffdir_exists(fn));
 
 	return 0;
 }
@@ -55,7 +54,7 @@ static int test_mapwr(const char *fn)
 
 	FFTEST_FUNC;
 
-	fd = fffile_open(fn, FFO_OPEN | O_RDWR);
+	fd = fffile_open(fn, O_RDWR);
 	x(fd != FF_BADFD);
 
 	mapsz = 64*1024 + FFSLEN(FOOBAR);
@@ -112,7 +111,7 @@ static int test_map(const char *fn)
 
 	FFTEST_FUNC;
 
-	fd = fffile_open(fn, FFO_OPEN | O_RDONLY);
+	fd = fffile_open(fn, O_RDONLY);
 	x(fd != FF_BADFD);
 	fsiz = fffile_size(fd);
 
@@ -164,25 +163,19 @@ static int test_fileinfo(char *fn)
 {
 	fffileinfo fi;
 	fffd fd;
+	fftime lw;
 
 	FFTEST_FUNC;
 
-	fd = fffile_open(fn, FFO_OPEN | O_RDONLY);
+	fd = fffile_open(fn, O_RDONLY);
 	x(fd != FF_BADFD);
 
-	x(fffile_attrfn(fn) == fffile_attr(fd));
-
 	x(0 == fffile_info(fd, &fi));
-	x(fffile_infoattr(&fi) == fffile_attr(fd));
-	x(fffile_infosize(&fi) == fffile_size(fd));
-
-	{
-		fftime lw, la, cre;
-		fftime lw2;
-		x(0 == fffile_time(fd, &lw, &la, &cre));
-		lw2 = fffile_infotimew(&fi);
-		x(0 == fftime_cmp(&lw, &lw2));
-	}
+	x(0 != fffile_infoattr(&fi));
+	x(0 != fffile_infosize(&fi));
+	x(0 != fffile_infoid(&fi));
+	lw = fffile_infomtime(&fi);
+	x(lw.s != 0);
 
 	x(0 == fffile_close(fd));
 	return 0;
@@ -199,7 +192,7 @@ int test_file(const char *tmpdir)
 	strcpy(fn, tmpdir);
 	strcat(fn, "/tmpfile");
 
-	fd = fffile_open(fn, FFO_CREATE | O_RDWR);
+	fd = fffile_open(fn, O_CREAT | O_TRUNC | O_RDWR);
 	x(fd != FF_BADFD);
 	x(FFSLEN(HELLO) == fffile_write(fd, FFSTR(HELLO)));
 
@@ -210,14 +203,12 @@ int test_file(const char *tmpdir)
 	test_fileinfo(fn);
 	test_map(fn);
 
-	x(fffile_exists(fn));
 	x(0 == fffile_rm(fn));
-	x(!fffile_exists(fn));
 
 	fd = fffile_createtemp(fn, O_WRONLY);
 	x(fd != FF_BADFD);
 	x(0 == fffile_close(fd));
-	x(!fffile_exists(fn));
+	x(FF_BADFD == fffile_open(fn, O_RDONLY));
 
 	test_diropen(tmpdir);
 	test_std();

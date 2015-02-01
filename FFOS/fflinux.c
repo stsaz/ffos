@@ -1,4 +1,7 @@
-#include <FFOS/file.h>
+/**
+Copyright (c) 2013 Simon Zolin
+*/
+
 #include <FFOS/time.h>
 #include <FFOS/error.h>
 #include <FFOS/process.h>
@@ -11,20 +14,6 @@
 #include <sys/wait.h>
 #include <sys/sendfile.h>
 
-int fffile_time(fffd fd, fftime *last_write, fftime *last_access, fftime *cre)
-{
-	struct stat s;
-	if (0 != fstat(fd, &s))
-		return -1;
-
-	if (last_access)
-		fftime_fromtime_t(last_access, s.st_atime);
-	if (last_write)
-		fftime_fromtime_t(last_write, s.st_mtime);
-	if (cre)
-		cre->s = cre->mcs = 0;
-	return 0;
-}
 
 int fferr_str(int code, char *dst, size_t dst_cap) {
 	char *dst2;

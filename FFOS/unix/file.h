@@ -8,6 +8,7 @@ Copyright (c) 2013 Simon Zolin
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
 
 enum {
 	FF_MAXPATH = 4096
@@ -16,13 +17,9 @@ enum {
 };
 
 enum FFFILE_OPEN {
-	FFO_OPEN = 0
-	, FFO_CREATENEW = O_CREAT | O_EXCL
-	, FFO_CREATE = O_CREAT | O_TRUNC
-	, FFO_TRUNC = O_TRUNC
+	FFO_CREATENEW = O_CREAT | O_EXCL
 	, FFO_APPEND = O_APPEND | O_CREAT
 
-	, O_DIR = 0
 	, FFO_NODOSNAME = 0
 
 #ifdef FF_BSD
@@ -76,7 +73,9 @@ Return -1 on error. */
 #define fffile_trunc  ftruncate
 
 /** Set file non-blocking mode. */
-FF_EXTN int fffile_nblock(fffd fd, int nblock);
+static FFINL int fffile_nblock(fffd fd, int nblock) {
+	return ioctl(fd, FIONBIO, &nblock);
+}
 
 /** Duplicate a file descriptor.
 Return FF_BADFD on error. */
@@ -92,24 +91,6 @@ static FFINL int64 fffile_size(fffd fd) {
 	if (0 != fstat(fd, &s))
 		return -1;
 	return s.st_size;
-}
-
-/** Get file attributes.
-Return -1 on error. */
-static FFINL int fffile_attr(fffd fd) {
-	struct stat s;
-	if (0 != fstat(fd, &s))
-		return -1;
-	return s.st_mode;
-}
-
-/** Get file attributes by file name.
-Return -1 on error. */
-static FFINL int fffile_attrfn(const ffsyschar *filename) {
-	struct stat s;
-	if (0 != stat(filename, &s))
-		return -1;
-	return s.st_mode;
 }
 
 /** Check whether directory flag is set in file attributes. */
@@ -132,10 +113,14 @@ typedef struct stat fffileinfo;
 #define fffile_infofn  stat
 
 /** Return last-write time from fileinfo. */
-static FFINL fftime fffile_infotimew(const fffileinfo *fi) {
+static FFINL fftime fffile_infomtime(const fffileinfo *fi) {
 	fftime t;
+#ifdef FF_BSD
+	fftime_fromtimespec(&t, &fi->st_mtim);
+#else
 	t.s = fi->st_mtime;
 	t.mcs = 0;
+#endif
 	return t;
 }
 
@@ -144,6 +129,11 @@ static FFINL fftime fffile_infotimew(const fffileinfo *fi) {
 
 /** Return file attributes from fileinfo. */
 #define fffile_infoattr(fi)  (fi)->st_mode
+
+typedef ino_t fffileid;
+
+/** Get file ID. */
+#define fffile_infoid(fi)  (fi)->st_ino
 
 
 /** Change the name or location of a file. */
@@ -157,9 +147,9 @@ static FFINL fftime fffile_infotimew(const fffileinfo *fi) {
 
 
 enum FFSTD {
-	ffstdin = 0
-	, ffstdout = 1
-	, ffstderr = 2
+	ffstdin = STDIN_FILENO
+	, ffstdout = STDOUT_FILENO
+	, ffstderr = STDERR_FILENO
 };
 
 /** Read console input. */
@@ -184,7 +174,5 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 
 
 #define fffile_openq  fffile_open
-#define fffile_attrfnq  fffile_attrfn
 #define fffile_renameq  fffile_rename
 #define fffile_rmq  fffile_rm
-#define fffile_existsq  fffile_exists

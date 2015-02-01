@@ -42,6 +42,13 @@ static FFINL int ffdir_make(const char *name) {
 	return ffdir_makeq(wname);
 }
 
+static FFINL int ffdir_rmake(const char *path, size_t off) {
+	ffsyschar wpath[FF_MAXPATH];
+	if (0 == ff_utow(wpath, FFCNT(wpath), path, -1, 0))
+		return -1;
+	return ffdir_rmakeq(wpath, off);
+}
+
 static FFINL int ffdir_rmq(const ffsyschar *name) {
 	return 0 == RemoveDirectory(name);
 }
@@ -55,9 +62,10 @@ static FFINL int ffdir_rm(const char *name) {
 
 
 typedef fffd ffdir;
+typedef WIN32_FIND_DATA ffdir_einfo;
 
 typedef struct ffdirentry {
-	fffileinfo info;
+	ffdir_einfo info;
 	uint namelen : 31
 		, next : 1;
 } ffdirentry;
@@ -73,7 +81,7 @@ static FFINL ffdir ffdir_open(char *path, size_t cap, ffdirentry *ent) {
 
 FF_EXTN int ffdir_read(ffdir dir, ffdirentry *ent);
 
-#define ffdir_entryname(ent)  (ent)->info.data.cFileName
+#define ffdir_entryname(ent)  (ent)->info.cFileName
 
 #define ffdir_entryinfo(ent)  (&(ent)->info)
 

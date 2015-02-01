@@ -32,6 +32,11 @@ typedef struct ffdtm {
 		;
 } ffdtm;
 
+
+#define fftime_sec2day(sec)  ((sec) / (60 * 60 * 24))
+#define fftime_day2sec(day)  ((day) * (60 * 60 * 24))
+
+
 static FFINL void fftime_null(fftime *t) {
 	t->s = t->mcs = 0;
 }

@@ -14,12 +14,9 @@ enum {
 
 enum FFFILE_OPEN {
 	// 0x0000 000f.  mode
-	FFO_OPEN = OPEN_EXISTING
+	O_CREAT = OPEN_ALWAYS
 	, FFO_CREATENEW = CREATE_NEW
-	, FFO_CREATE = CREATE_ALWAYS
-	, FFO_TRUNC = TRUNCATE_EXISTING
 	, FFO_APPEND = 0x0e //hack
-	// OPEN_ALWAYS is not used
 
 	// 0x0000 00f0.  access
 	, O_RDONLY = GENERIC_READ >> 24
@@ -28,9 +25,10 @@ enum FFFILE_OPEN {
 
 	// 0xffff ff00.  flags
 	, O_NOATIME = 0
-	, O_DIR = FILE_FLAG_BACKUP_SEMANTICS
+	, O_NONBLOCK = 0
 	, O_DIRECT = FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED
 	, FFO_NODOSNAME = 0x00000100
+	, O_TRUNC = 0x00000200
 };
 
 FF_EXTN fffd fffile_openq(const ffsyschar *filename, int flags);
@@ -89,30 +87,7 @@ static FFINL int64 fffile_size(fffd fd) {
 	return size;
 }
 
-static FFINL int fffile_attr(fffd fd) {
-	BY_HANDLE_FILE_INFORMATION info = { 0 };
-	if (0 == GetFileInformationByHandle(fd, &info))
-		return -1;
-	return info.dwFileAttributes;
-}
-
-#define fffile_attrfnq  GetFileAttributes
-
-static FFINL int fffile_attrfn(const char *name) {
-	ffsyschar wname[FF_MAXPATH];
-	if (0 == ff_utow(wname, FFCNT(wname), name, -1, 0))
-		return -1;
-	return fffile_attrfnq(wname);
-}
-
 #define fffile_isdir(file_attr)  (((file_attr) & FILE_ATTRIBUTE_DIRECTORY) != 0)
-
-static FFINL ffbool fffile_existsq(const ffsyschar *filename) {
-	int a = fffile_attrfnq(filename);
-	if (a == -1)
-		return 0;
-	return !fffile_isdir(a);
-}
 
 static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 	FILE_BASIC_INFO i;
@@ -124,46 +99,28 @@ static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 #define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
 
 
-typedef struct fffileinfo {
-	unsigned byH : 1;
-	union {
-		WIN32_FIND_DATA data;
-		BY_HANDLE_FILE_INFORMATION hdata;
-	};
-} fffileinfo;
+typedef BY_HANDLE_FILE_INFORMATION fffileinfo;
 
 static FFINL int fffile_info(fffd fd, fffileinfo *fi) {
-	fi->byH = 1;
-	return 0 == GetFileInformationByHandle(fd, &fi->hdata);
+	return 0 == GetFileInformationByHandle(fd, fi);
 }
 
-static FFINL int fffile_infofn(const ffsyschar *fn, fffileinfo *fi) {
-	fffd h = FindFirstFile(fn, &fi->data);
-	fi->byH = 0;
-	if (h == INVALID_HANDLE_VALUE)
-		return -1;
-	FindClose(h);
-	return 0;
-}
+/**
+Note: fffile_infoid() won't work. */
+FF_EXTN int fffile_infofn(const char *fn, fffileinfo *fi);
 
 FF_EXTN fftime _ff_ftToTime(const FILETIME *ft);
 FF_EXTN FILETIME _ff_timeToFt(const fftime *time_value);
 
-static FFINL fftime fffile_infotimew(const fffileinfo *fi) {
-	return _ff_ftToTime(fi->byH ? &fi->hdata.ftLastWriteTime : &fi->data.ftLastWriteTime);
-}
+#define fffile_infomtime(fi)  _ff_ftToTime(&(fi)->ftLastWriteTime)
 
-static FFINL uint64 fffile_infosize(const fffileinfo *fi) {
-	return fi->byH
-		? ((uint64)fi->hdata.nFileSizeHigh << 32) | fi->hdata.nFileSizeLow
-		: ((uint64)fi->data.nFileSizeHigh << 32) | fi->data.nFileSizeLow;
-}
+#define fffile_infosize(fi)  (((uint64)(fi)->nFileSizeHigh << 32) | (fi)->nFileSizeLow)
 
-static FFINL int fffile_infoattr(const fffileinfo *fi) {
-	return fi->byH
-		? fi->hdata.dwFileAttributes
-		: fi->data.dwFileAttributes;
-}
+#define fffile_infoattr(fi)  (fi)->dwFileAttributes
+
+typedef uint64 fffileid;
+
+#define fffile_infoid(fi)  (((uint64)(fi)->nFileIndexHigh << 32) | (fi)->nFileIndexLow)
 
 
 #define fffile_renameq(src, dst)  (0 == MoveFileEx(src, dst, /*MOVEFILE_COPY_ALLOWED*/ MOVEFILE_REPLACE_EXISTING))
@@ -182,6 +139,8 @@ static FFINL int fffile_rmq(const ffsyschar *name) {
 	return 0 == DeleteFile(name);
 }
 
+/**
+Note: fails with error "Access is denied" if file mapping is opened. */
 static FFINL int fffile_rm(const char *name) {
 	ffsyschar wname[FF_MAXPATH];
 	if (0 == ff_utow(wname, FFCNT(wname), name, -1, 0))

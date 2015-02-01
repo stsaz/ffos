@@ -46,7 +46,7 @@ static int test_dirwalk(char *path, size_t pathcap)
 
 	for (;;) {
 		const ffsyschar *name;
-		const fffileinfo *fi;
+		const ffdir_einfo *fi;
 
 		if (0 != ffdir_read(d, &ent)) {
 			x(fferr_last() == ENOMOREFILES);
@@ -92,7 +92,7 @@ int test_dir(const char *tmpdir)
 
 	x(0 == ffdir_make(path));
 
-	f = fffile_open(fn, FFO_CREATE | O_WRONLY);
+	f = fffile_open(fn, O_CREAT | O_TRUNC | O_WRONLY);
 	x(f != FF_BADFD);
 	x(1 == fffile_write(f, FFSTR("1")));
 	x(0 == fffile_close(f));
@@ -102,5 +102,14 @@ int test_dir(const char *tmpdir)
 
 	x(0 == fffile_rm(fn));
 	x(0 == ffdir_rm(path));
+
+
+	strcpy(path, tmpdir);
+	strcat(path, "/tmpdir/tmpdir2");
+	x(0 == ffdir_rmake(path, strlen(tmpdir)));
+	x(0 == ffdir_rm(path));
+	path[strlen(path) - FFSLEN("/tmpdir2")] = '\0';
+	x(0 == ffdir_rm(path));
+
 	return 0;
 }

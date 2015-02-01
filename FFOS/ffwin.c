@@ -22,33 +22,27 @@ fffd fffile_openq(const ffsyschar *filename, int flags)
 	enum { share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE };
 	int mode = (flags & 0x0000000f);
 	int access = (flags & 0x000000f0) << 24;
-	int f = (flags & 0xfffffe00) | FILE_ATTRIBUTE_NORMAL;
+	int f = (flags & 0xffff0000) | FILE_ATTRIBUTE_NORMAL
+		| FILE_FLAG_BACKUP_SEMANTICS /*open directories*/;
 
 	if ((flags & FFO_NODOSNAME) && !ffpath_islong(filename)) {
 		return FF_BADFD;
 	}
 
-	if (mode == FFO_APPEND) {
+	if (mode == 0)
+		mode = OPEN_EXISTING;
+	else if (mode == FFO_APPEND) {
 		mode = OPEN_ALWAYS;
 		access = STANDARD_RIGHTS_WRITE | FILE_APPEND_DATA | SYNCHRONIZE;
 	}
 
-	return CreateFile(filename, access, share, NULL, mode, f, NULL);
-}
-
-int fffile_time(fffd fd, fftime *last_write, fftime *last_access, fftime *creation)
-{
-	size_t i;
-	FILETIME ft[3];
-	fftime *const tt[3] = { creation, last_access, last_write };
-	if (0 == GetFileTime(fd, ft + 0, ft + 1, ft + 2))
-		return -1;
-
-	for (i = 0; i < 3; i++) {
-		if (tt[i] != NULL)
-			*tt[i] = _ff_ftToTime(&ft[i]);
+	if (flags & O_TRUNC) {
+		mode = (mode == OPEN_ALWAYS) ? CREATE_ALWAYS
+			: (mode == OPEN_EXISTING) ? TRUNCATE_EXISTING
+			: 0;
 	}
-	return 0;
+
+	return CreateFile(filename, access, share, NULL, mode, f, NULL);
 }
 
 int fffile_trunc(fffd f, uint64 pos)
@@ -60,6 +54,26 @@ int fffile_trunc(fffd f, uint64 pos)
 		return -1;
 	if (-1 == fffile_seek(f, curpos, SEEK_SET))
 		return -1;
+	return 0;
+}
+
+int fffile_infofn(const char *fn, fffileinfo *fi)
+{
+	ffsyschar wname[FF_MAXPATH];
+	WIN32_FILE_ATTRIBUTE_DATA fad;
+
+	if (0 == ff_utow(wname, FFCNT(wname), fn, -1, 0))
+		return -1;
+	if (!GetFileAttributesEx(wname, GetFileExInfoStandard, &fad))
+		return -1;
+
+	fi->dwFileAttributes = fad.dwFileAttributes;
+	fi->ftCreationTime = fad.ftCreationTime;
+	fi->ftLastAccessTime = fad.ftLastAccessTime;
+	fi->ftLastWriteTime = fad.ftLastWriteTime;
+	fi->nFileSizeHigh = fad.nFileSizeHigh;
+	fi->nFileSizeLow = fad.nFileSizeLow;
+	fi->nFileIndexHigh = fi->nFileIndexLow = 0;
 	return 0;
 }
 
@@ -95,12 +109,10 @@ ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 		*end++ = FFPATH_SLASH;
 	*end++ = '*';
 	*end = '\0';
-	dir = FindFirstFile(path, &ent->info.data);
+	dir = FindFirstFile(path, &ent->info);
 	path[len] = '\0';
-	ent->info.byH = 0;
 	if (dir == INVALID_HANDLE_VALUE)
 		return 0;
-	ent->namelen = (int)ffq_len(ent->info.data.cFileName);
 	ent->next = 0;
 	return dir;
 }
@@ -108,12 +120,12 @@ ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 int ffdir_read(ffdir dir, ffdirentry *ent)
 {
 	if (ent->next) {
-		if (0 == FindNextFile(dir, &ent->info.data))
+		if (0 == FindNextFile(dir, &ent->info))
 			return -1;
 	}
 	else
 		ent->next = 1;
-	ent->namelen = (int)ffq_len(ent->info.data.cFileName);
+	ent->namelen = (int)ffq_len(ent->info.cFileName);
 	return 0;
 }
 
@@ -137,11 +149,9 @@ static const uint64 _ff100nsNum = 116444736000000000ULL;
 fftime _ff_ftToTime(const FILETIME *ft)
 {
 	fftime t = { 0, 0 };
-	LARGE_INTEGER li;
-	li.LowPart = ft->dwLowDateTime;
-	li.HighPart = ft->dwHighDateTime;
-	if ((uint64)li.QuadPart > _ff100nsNum)
-		fftime_setmcs(&t, (li.QuadPart - _ff100nsNum) / 10);
+	uint64 i = ((uint64)ft->dwHighDateTime << 32) | ft->dwLowDateTime;
+	if (i > _ff100nsNum)
+		fftime_setmcs(&t, (i - _ff100nsNum) / 10);
 	return t;
 }
 
@@ -682,7 +692,7 @@ int ffps_sig(int pid, int sig)
 
 	pipename(name, FFCNT(name), pid);
 
-	p = fffile_openq(name, FFO_OPEN | O_WRONLY);
+	p = fffile_openq(name, O_WRONLY);
 	if (p == FF_BADFD)
 		return 1;
 

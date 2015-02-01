@@ -26,14 +26,19 @@ static FFINL ffbool ffpath_abs(const ffsyschar *path, size_t len) {
 /** Create a new directory. */
 #define ffdir_make(name)  mkdir(name, 0777)
 
+/** Recursively create directories.
+@off: length of the path that already exists. */
+#define ffdir_rmake(path, off)  ffdir_rmakeq(path, off)
+
 /** Delete the directory. */
 #define ffdir_rm(name)  rmdir(name)
 
 
 typedef DIR * ffdir;
+typedef fffileinfo ffdir_einfo;
 
-typedef struct {
-	fffileinfo info;
+typedef struct ffdirentry {
+	ffdir_einfo info;
 	size_t pathlen;
 	char *path;
 	size_t pathcap;
@@ -70,7 +75,7 @@ static FFINL int ffdir_read(ffdir dir, ffdirentry *ent) {
 /** Get file information.
 Return NULL on error.
 Fail with EOVERFLOW if there is not enough space in 'path'. */
-FF_EXTN fffileinfo * ffdir_entryinfo(ffdirentry *ent);
+FF_EXTN ffdir_einfo * ffdir_entryinfo(ffdirentry *ent);
 
 /** Close directory reader. */
 #define ffdir_close  closedir

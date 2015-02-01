@@ -7,16 +7,10 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/file.h>
 
+FF_EXTN int ffdir_rmakeq(ffsyschar *path, size_t off);
+
 #ifdef FF_UNIX
 #include <FFOS/unix/dir.h>
 #elif defined FF_WIN
 #include <FFOS/win/dir.h>
 #endif
-
-/** Check whether the specified directory exists. */
-static FFINL ffbool ffdir_exists(const char *filename) {
-	int a = fffile_attrfn(filename);
-	if (a == -1)
-		return 0;
-	return fffile_isdir(a);
-}
