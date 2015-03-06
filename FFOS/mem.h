@@ -31,37 +31,13 @@ Copyright (c) 2013 Simon Zolin
 
 
 #ifdef FFDBG_MEM
-static FFINL void * ffmem_alloc(size_t size) {
-	void *p = _ffmem_alloc(size);
-	ffdbg_print(0, "%s(): p:%p, size:%L\n"
-		, FF_FUNC, p, size);
-	return p;
-}
+FF_EXTN void* ffmem_alloc(size_t size);
+FF_EXTN void* ffmem_calloc(size_t n, size_t size);
+FF_EXTN void* ffmem_realloc(void *ptr, size_t newsize);
+FF_EXTN void ffmem_free(void *ptr);
 
-static FFINL void * ffmem_calloc(size_t n, size_t sz) {
-	void *p = _ffmem_calloc(n, sz);
-	ffdbg_print(0, "%s(): p:%p, size:%L*%L\n"
-		, FF_FUNC, p, n, sz);
-	return p;
-}
-
-static FFINL void * ffmem_realloc(void *ptr, size_t newSize) {
-	void *p;
-	p = _ffmem_realloc(ptr, newSize);
-	if (p == ptr)
-		ffdbg_print(0, "%s(): p:%p, size:%L\n"
-			, FF_FUNC, p, newSize, ptr);
-	else
-		ffdbg_print(0, "%s(): p:%p, size:%L, oldp:%p\n"
-			, FF_FUNC, p, newSize, ptr);
-	return p;
-}
-
-static FFINL void ffmem_free(void *ptr) {
-	ffdbg_print(0, "%s(): p:%p\n"
-		, FF_FUNC, ptr);
-	_ffmem_free(ptr);
-}
+FF_EXTN void* ffmem_align(size_t size, size_t align);
+FF_EXTN void ffmem_alignfree(void *ptr);
 
 #else
 #define ffmem_alloc _ffmem_alloc
@@ -69,4 +45,6 @@ static FFINL void ffmem_free(void *ptr) {
 #define ffmem_realloc _ffmem_realloc
 #define ffmem_free _ffmem_free
 
+#define ffmem_align _ffmem_align
+#define ffmem_alignfree _ffmem_alignfree
 #endif

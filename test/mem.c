@@ -25,9 +25,21 @@ static int test_str()
 		char s[1024];
 		size_t n;
 #ifdef FF_WIN
+		WCHAR *pw;
 		ffsyschar ss[1024];
 		n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
 		x(n != 0);
+
+		n = 5;
+		x(ss == (pw = ffs_utow(ss, &n, FFSTR("asdf"))));
+		pw[n] = L'\0';
+		x(n == FFSLEN("asdf") && !ffq_cmpz(pw, L"asdf"));
+
+		n = 3;
+		pw = ffs_utow(ss, &n, "asdf", -1);
+		x(pw != NULL && pw != ss);
+		x(n == FFSLEN("asdf")+1 && !ffq_cmpz(pw, L"asdf"));
+		ffmem_free(pw);
 #endif
 		n = ff_wtou(s, FFCNT(s), L"asdf", 4, 0);
 		x(n == 4 && !memcmp(s, "asdf", 4));
@@ -64,6 +76,15 @@ int test_mem()
 	x(NULL == ffmem_alloc((size_t)-1));
 	x(NULL == ffmem_calloc((size_t)-1, 1));
 	x(NULL == ffmem_realloc(NULL, (size_t)-1));
+
+//align
+	x(NULL != (d = ffmem_align(4, 16)));
+	x(((size_t)d % 16) == 0);
+	ffmem_alignfree(d);
+
+	x(NULL != (d = ffmem_align(999, 512)));
+	x(((size_t)d % 512) == 0);
+	ffmem_alignfree(d);
 
 	test_str();
 

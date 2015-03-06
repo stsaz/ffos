@@ -21,3 +21,12 @@ static FFINL void *_ffmem_realloc(void *ptr, size_t newSize) {
 }
 
 #define _ffmem_free(ptr)  HeapFree(_ffheap, 0, ptr)
+
+
+FF_EXTN void* _ffmem_align(size_t size, size_t align);
+
+static FFINL void _ffmem_alignfree(void *ptr)
+{
+	void *buf = *((void**)ptr - 1);
+	_ffmem_free(buf);
+}

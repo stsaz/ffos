@@ -14,3 +14,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/unix/file.h>
 #include <FFOS/unix/fmap.h>
 #endif
+
+/** Write constant string to a file. */
+#define fffile_writecz(fd, csz)  fffile_write(fd, csz, sizeof(csz)-1)

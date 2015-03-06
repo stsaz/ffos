@@ -15,7 +15,28 @@ Copyright (c) 2013 Simon Zolin
 #include <stdio.h>
 #endif
 
+
 HANDLE _ffheap;
+
+/* [allocated-start] ... [pointer to allocated-start] [aligned] ... [allocated-end] */
+void* _ffmem_align(size_t size, size_t align)
+{
+	void *buf, *al;
+
+	if ((align % sizeof(void*)) != 0) {
+		fferr_set(EINVAL);
+		return NULL;
+	}
+
+	buf = _ffmem_alloc(size + align + sizeof(void*));
+	if (buf == NULL)
+		return NULL;
+
+	al = (void*)ff_align((size_t)buf + sizeof(void*), align);
+	*((void**)al - 1) = buf; //remember the original pointer
+	return al;
+}
+
 
 fffd fffile_openq(const ffsyschar *filename, int flags)
 {
@@ -45,6 +66,20 @@ fffd fffile_openq(const ffsyschar *filename, int flags)
 	return CreateFile(filename, access, share, NULL, mode, f, NULL);
 }
 
+fffd fffile_open(const char *filename, int flags)
+{
+	fffd f;
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
+		return FF_BADFD;
+
+	f = fffile_openq(ws, flags);
+	if (w != ws)
+		ffmem_free(w);
+	return f;
+}
+
 int fffile_trunc(fffd f, uint64 pos)
 {
 	int64 curpos = fffile_seek(f, 0, SEEK_CUR);
@@ -59,12 +94,17 @@ int fffile_trunc(fffd f, uint64 pos)
 
 int fffile_infofn(const char *fn, fffileinfo *fi)
 {
-	ffsyschar wname[FF_MAXPATH];
+	ffsyschar *w, wname[FF_MAXFN];
 	WIN32_FILE_ATTRIBUTE_DATA fad;
+	size_t n = FFCNT(wname);
+	BOOL b;
 
-	if (0 == ff_utow(wname, FFCNT(wname), fn, -1, 0))
+	if (NULL == (w = ffs_utow(wname, &n, fn, -1)))
 		return -1;
-	if (!GetFileAttributesEx(wname, GetFileExInfoStandard, &fad))
+	b = GetFileAttributesEx(w, GetFileExInfoStandard, &fad);
+	if (w != wname)
+		ffmem_free(w);
+	if (!b)
 		return -1;
 
 	fi->dwFileAttributes = fad.dwFileAttributes;
@@ -75,6 +115,40 @@ int fffile_infofn(const char *fn, fffileinfo *fi)
 	fi->nFileSizeLow = fad.nFileSizeLow;
 	fi->nFileIndexHigh = fi->nFileIndexLow = 0;
 	return 0;
+}
+
+int fffile_rename(const char *src, const char *dst)
+{
+	ffsyschar wsrc[FF_MAXFN], wdst[FF_MAXFN], *ws = wsrc, *wd = wdst;
+	size_t ns = FFCNT(wsrc), nd = FFCNT(wdst);
+	int r = -1;
+
+	if (NULL == (ws = ffs_utow(wsrc, &ns, src, -1))
+		|| NULL == (wd = ffs_utow(wdst, &nd, dst, -1)))
+		goto fail;
+
+	r = fffile_renameq(ws, wd);
+
+fail:
+	if (ws != wsrc)
+		ffmem_free(ws);
+	if (wd != wdst)
+		ffmem_free(wd);
+	return r;
+}
+
+int fffile_rm(const char *name)
+{
+	ffsyschar ws[FF_MAXFN], *w;
+	size_t n = FFCNT(ws);
+	int r;
+
+	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+		return -1;
+	r = fffile_rmq(ws);
+	if (w != ws)
+		ffmem_free(w);
+	return r;
 }
 
 
@@ -96,6 +170,49 @@ ffbool ffpath_abs(const char *path, size_t len)
 		);
 }
 
+
+int ffdir_make(const char *name)
+{
+	ffsyschar ws[FF_MAXFN], *w;
+	size_t n = FFCNT(ws);
+	int r;
+
+	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+		return -1;
+	r = ffdir_makeq(ws);
+	if (w != ws)
+		ffmem_free(w);
+	return r;
+}
+
+int ffdir_rmake(const char *path, size_t off)
+{
+	ffsyschar ws[FF_MAXFN], *w;
+	size_t n = FFCNT(ws);
+	int r;
+
+	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
+		return -1;
+	r = ffdir_rmakeq(ws, off);
+	if (w != ws)
+		ffmem_free(w);
+	return r;
+}
+
+int ffdir_rm(const char *name)
+{
+	ffsyschar ws[FF_MAXFN], *w;
+	size_t n = FFCNT(ws);
+	int r;
+
+	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+		return -1;
+	r = ffdir_rmq(ws);
+	if (w != ws)
+		ffmem_free(w);
+	return r;
+}
+
 ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 {
 	ffdir dir;
@@ -109,7 +226,7 @@ ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 		*end++ = FFPATH_SLASH;
 	*end++ = '*';
 	*end = '\0';
-	dir = FindFirstFile(path, &ent->info);
+	dir = FindFirstFileEx(path, FindExInfoBasic, &ent->info, 0, NULL, 0);
 	path[len] = '\0';
 	if (dir == INVALID_HANDLE_VALUE)
 		return 0;
@@ -250,6 +367,34 @@ size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int f
 	return r;
 }
 
+WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
+{
+	size_t wlen;
+
+	if (dst != NULL) {
+		wlen = ff_utow(dst, *dstlen, s, len, 0);
+		if (wlen != 0)
+			goto done;
+	}
+
+	//not enough space in the provided buffer.  Allocate a new one.
+	wlen = (len == -1) ? strlen(s) + 1 : len;
+	dst = ffmem_talloc(WCHAR, wlen);
+	if (dst == NULL)
+		return NULL;
+
+	wlen = ff_utow(dst, wlen, s, len, 0);
+	if (wlen == 0) {
+		ffmem_free(dst);
+		return NULL;
+	}
+
+done:
+	if (dstlen != NULL)
+		*dstlen = wlen;
+	return dst;
+}
+
 size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags)
 {
 	int r;
@@ -299,6 +444,7 @@ fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyscha
 	STARTUPINFOW si = { 0 };
 	ffsyschar *args
 		, *s;
+	ffbool has_space;
 	size_t cap = 0;
 	const ffsyschar **a;
 
@@ -314,9 +460,12 @@ fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyscha
 	s = args;
 
 	for (a = argv + 1;  *a != NULL;  a++) {
-		*s++ = '"';
+		has_space = (NULL != wcschr(*a, ' '));
+		if (has_space)
+			*s++ = '"';
 		s = scopyz(s, *a);
-		*s++ = '"';
+		if (has_space)
+			*s++ = '"';
 		*s++ = ' ';
 	}
 	*s = '\0';
@@ -330,6 +479,21 @@ fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyscha
 
 	CloseHandle(info.hThread);
 	return info.hProcess;
+}
+
+
+fffd ffdl_open(const char *filename, int flags)
+{
+	fffd f;
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
+		return FF_BADFD;
+
+	f = ffdl_openq(ws, flags);
+	if (w != ws)
+		ffmem_free(w);
+	return f;
 }
 
 
@@ -703,5 +867,26 @@ int ffps_sig(int pid, int sig)
 	}
 
 	(void)ffpipe_close(p);
+	return 0;
+}
+
+
+int ffpath_infoinit(const char *path, ffpathinfo *st)
+{
+	DWORD spc, bps, fc, c;
+	BOOL b;
+	WCHAR wpath_s[256];
+	size_t wpath_len = FFCNT(wpath_s);
+	WCHAR *wpath = ffs_utow(wpath_s, &wpath_len, path, -1);
+	if (wpath == NULL)
+		return 1;
+
+	b = GetDiskFreeSpaceW(wpath, &spc, &bps, &fc, &c);
+	if (wpath != wpath_s)
+		ffmem_free(wpath);
+	if (!b)
+		return 1;
+
+	st->f_bsize = spc * bps;
 	return 0;
 }

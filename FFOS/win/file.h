@@ -9,7 +9,6 @@ Copyright (c) 2013 Simon Zolin
 enum {
 	FF_MAXPATH = 4096
 	, FF_MAXFN = 256
-	, FF_MAXFN_UTF8 = FF_MAXFN * 4
 };
 
 enum FFFILE_OPEN {
@@ -32,13 +31,7 @@ enum FFFILE_OPEN {
 };
 
 FF_EXTN fffd fffile_openq(const ffsyschar *filename, int flags);
-
-static FFINL fffd fffile_open(const char *filename, int flags) {
-	ffsyschar wfilename[FF_MAXPATH];
-	if (0 == ff_utow(wfilename, FFCNT(wfilename), filename, -1, 0))
-		return FF_BADFD;
-	return fffile_openq(wfilename, flags);
-}
+FF_EXTN fffd fffile_open(const char *filename, int flags);
 
 #define fffile_createtempq(filename, flags) \
 	fffile_openq(filename, FFO_CREATENEW | FILE_FLAG_DELETE_ON_CLOSE | (flags))
@@ -68,6 +61,8 @@ static FFINL int64 fffile_seek(fffd fd, int64 pos, int method) {
 }
 
 FF_EXTN int fffile_trunc(fffd f, uint64 pos);
+
+#define fffile_readahead(f, size)  0
 
 static FFINL fffd fffile_dup(fffd hdl) {
 	fffd ret = INVALID_HANDLE_VALUE;
@@ -125,13 +120,7 @@ typedef uint64 fffileid;
 
 #define fffile_renameq(src, dst)  (0 == MoveFileEx(src, dst, /*MOVEFILE_COPY_ALLOWED*/ MOVEFILE_REPLACE_EXISTING))
 
-static FFINL int fffile_rename(const char *src, const char *dst) {
-	ffsyschar wsrc[FF_MAXPATH], wdst[FF_MAXPATH];
-	if (0 == ff_utow(wsrc, FFCNT(wsrc), src, -1, 0)
-		|| 0 == ff_utow(wdst, FFCNT(wdst), dst, -1, 0))
-		return -1;
-	return fffile_renameq(wsrc, wdst);
-}
+FF_EXTN int fffile_rename(const char *src, const char *dst);
 
 #define fffile_hardlink(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
 
@@ -141,12 +130,7 @@ static FFINL int fffile_rmq(const ffsyschar *name) {
 
 /**
 Note: fails with error "Access is denied" if file mapping is opened. */
-static FFINL int fffile_rm(const char *name) {
-	ffsyschar wname[FF_MAXPATH];
-	if (0 == ff_utow(wname, FFCNT(wname), name, -1, 0))
-		return -1;
-	return fffile_rmq(wname);
-}
+FF_EXTN int fffile_rm(const char *name);
 
 
 #define ffstdin  GetStdHandle(STD_INPUT_HANDLE)

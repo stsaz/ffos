@@ -58,7 +58,7 @@ int test_ps(const ffsyschar *fn)
 #else
 	args[1] = TEXT("/c");
 	args[2] = TEXT("echo");
-	args[3] = TEXT("good");
+	args[3] = TEXT("very good");
 	args[4] = TEXT("day");
 	args[5] = NULL;
 	env[0] = NULL;

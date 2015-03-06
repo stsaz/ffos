@@ -9,11 +9,11 @@ Copyright (c) 2013 Simon Zolin
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 enum {
 	FF_MAXPATH = 4096
 	, FF_MAXFN = 256
-	, FF_MAXFN_UTF8 = FF_MAXFN
 };
 
 enum FFFILE_OPEN {
@@ -76,6 +76,20 @@ Return -1 on error. */
 static FFINL int fffile_nblock(fffd fd, int nblock) {
 	return ioctl(fd, FIONBIO, &nblock);
 }
+
+#ifdef FF_BSD
+#define fffile_readahead(fd, size)  fcntl(fd, F_READAHEAD, size)
+
+#else
+static FFINL int fffile_readahead(fffd fd, size_t size) {
+	int er = posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (er != 0) {
+		errno = er;
+		return 1;
+	}
+	return 0;
+}
+#endif
 
 /** Duplicate a file descriptor.
 Return FF_BADFD on error. */

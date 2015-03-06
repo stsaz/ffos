@@ -46,12 +46,7 @@ typedef FARPROC ffdl_proc;
 #define ffdl_openq(filename, flags) \
 	LoadLibraryEx(filename, NULL, (flags) | LOAD_WITH_ALTERED_SEARCH_PATH)
 
-static FFINL fffd ffdl_open(const char *filename, int flags) {
-	ffsyschar wfilename[FF_MAXPATH];
-	if (0 == ff_utow(wfilename, FFCNT(wfilename), filename, -1, 0))
-		return FF_BADFD;
-	return ffdl_openq(wfilename, flags);
-}
+FF_EXTN fffd ffdl_open(const char *filename, int flags);
 
 #define ffdl_addr  GetProcAddress
 

@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x01090000
+#define FF_VER  0x01100000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64
@@ -144,7 +144,9 @@ static FFINL uint64 ffmax64(uint64 i0, uint64 i1) {
 
 #define FF_HI32(i64)  ((int)(((i64) >> 32) & 0xffffffff))
 
-#endif
+/** Align number to upper boundary.
+@align: must be a power of 2. */
+#define ff_align(n, align)  (((n) & ~((align) - 1)) + (align))
 
 
 #if defined FF_MSVC
@@ -169,3 +171,5 @@ void _ffdl_oninit(void) \
 
 /** Print FF debug messages. */
 extern int ffdbg_print(int t, const char *fmt, ...);
+
+#endif //FF_VER

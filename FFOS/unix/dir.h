@@ -6,6 +6,13 @@ Copyright (c) 2013 Simon Zolin
 #include <errno.h>
 #include <dirent.h>
 
+#ifdef FF_BSD
+#include <sys/mount.h>
+#else
+#include <sys/vfs.h>
+#endif
+
+
 enum {
 	ENOMOREFILES = 0
 	, FFPATH_ICASE = 0
@@ -82,3 +89,25 @@ FF_EXTN ffdir_einfo * ffdir_entryinfo(ffdirentry *ent);
 
 
 #define ffdir_makeq ffdir_make
+
+
+typedef struct statfs ffpathinfo;
+
+/** Initialize statfs structure. */
+#define ffpath_infoinit(path, st)  statfs(path, st)
+
+enum FFPATH_INFO {
+	FFPATH_BSIZE
+};
+
+/** Get file-system parameter.
+@name: enum FFPATH_INFO. */
+static FFINL uint64 ffpath_info(ffpathinfo *st, uint name)
+{
+	switch (name) {
+	case FFPATH_BSIZE:
+		return st->f_bsize;
+	}
+
+	return 0;
+}

@@ -175,8 +175,8 @@ void ffaio_run1(ffkqu_entry *e)
 #endif
 
 #ifdef FFDBG_AIO
-	ffdbg_print(0, "%s(): task:%p, evflags:%u, r:%u, w:%u, rhandler:%p, whandler:%p\n"
-		, FF_FUNC, t, (int)t->evflags, r, w, t->rhandler, t->whandler);
+	ffdbg_print(0, "%s(): task:%p, fd:%L, evflags:%xu, r:%u, w:%u, rhandler:%p, whandler:%p\n"
+		, FF_FUNC, t, (size_t)t->fd, (int)t->evflags, r, w, t->rhandler, t->whandler);
 #endif
 
 	if (r && t->rhandler != NULL) {
@@ -262,3 +262,50 @@ const char * fferr_opstr(enum FFERR e)
 	FF_ASSERT(e <= FFERR_SYSTEM);
 	return err_ops[e];
 }
+
+
+#ifdef FFDBG_MEM
+void* ffmem_alloc(size_t size)
+{
+	void *p = _ffmem_alloc(size);
+	ffdbg_print(0, "%s(): p:%p, size:%L\n", FF_FUNC, p, size);
+	return p;
+}
+
+void* ffmem_calloc(size_t n, size_t sz)
+{
+	void *p = _ffmem_calloc(n, sz);
+	ffdbg_print(0, "%s(): p:%p, size:%L*%L\n", FF_FUNC, p, n, sz);
+	return p;
+}
+
+void* ffmem_realloc(void *ptr, size_t newsize)
+{
+	void *p;
+	p = _ffmem_realloc(ptr, newsize);
+	if (p == ptr)
+		ffdbg_print(0, "%s(): p:%p, size:%L\n", FF_FUNC, p, newsize);
+	else
+		ffdbg_print(0, "%s(): p:%p, size:%L, oldp:%p\n", FF_FUNC, p, newsize, ptr);
+	return p;
+}
+
+void ffmem_free(void *ptr)
+{
+	ffdbg_print(0, "%s(): p:%p\n", FF_FUNC, ptr);
+	_ffmem_free(ptr);
+}
+
+void* ffmem_align(size_t size, size_t align)
+{
+	void *p = _ffmem_align(size);
+	ffdbg_print(0, "%s(): p:%p, size:%L, align:%L\n", FF_FUNC, p, size, align);
+	return p;
+}
+
+void ffmem_alignfree(void *ptr)
+{
+	ffdbg_print(0, "%s(): p:%p\n", FF_FUNC, ptr);
+	_ffmem_alignfree(ptr);
+}
+#endif //FFDBG_MEM
