@@ -12,17 +12,18 @@ Copyright (c) 2013 Simon Zolin
 typedef void (*ffaio_handler)(void *udata);
 
 typedef struct ffaio_task {
+	ffaio_handler rhandler;
+	void *udata;
 	union {
 		fffd fd;
 		ffskt sk;
 	};
-	void *udata;
+	unsigned instance :1
+		, oneshot :1
+		, aiotask :1;
 
-	ffaio_handler rhandler;
 	ffaio_handler whandler;
 	int evflags;
-	unsigned instance :1
-		, oneshot :1;
 
 #if defined FF_BSD
 	ffkqu_entry *ev;
@@ -43,6 +44,7 @@ static FFINL void ffaio_init(ffaio_task *t) {
 	t->fd = FF_BADFD;
 	t->instance = inst;
 	t->oneshot = 1;
+	t->aiotask = 1;
 }
 
 /** Finalize AIO task. */
@@ -69,6 +71,8 @@ enum FFAIO_RET {
 	, FFAIO_ASYNC = -2
 };
 
+typedef struct ffaio_filetask ffaio_filetask;
+
 #ifdef FF_UNIX
 #include <FFOS/unix/aio.h>
 
@@ -78,14 +82,32 @@ enum FFAIO_RET {
 
 /** Accept client connection.
 Return FF_BADSKT on error. */
-FF_EXTN ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags);
+FF_EXTN ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, ffkev_handler handler);
 
 /** Call connect on a socket.
 Return enum FFAIO_RET. */
 FF_EXTN int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size);
 
-/** Call AIO event handlers. */
-FF_EXTN void ffaio_run1(ffkqu_entry *e);
+
+/** Initialize file async I/O task. */
+static FFINL void ffaio_finit(ffaio_filetask *ft, fffd fd, void *udata)
+{
+	ffkev_init(&ft->kev);
+	ft->kev.fd = fd;
+	ft->kev.udata = udata;
+}
+
+/** Asynchronous file I/O.
+Return the number of bytes transferred or -1 on error.
+  UNIX: Fail with ENOSYS if AIO is not supported by kernel.
+Note: cancelling is not supported.
+FreeBSD: kernel AIO must be enabled ("kldload aio").
+Linux, Windows: file must be opened with O_DIRECT.
+Linux: operations on xfs and ext4 may block (3.17).
+Windows: writing into a new file on NTFS is always blocking. */
+FF_EXTN ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler);
+FF_EXTN ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler);
+
 
 /** Return TRUE if AIO task is active. */
 #define ffaio_active(a)  ((a)->rhandler != NULL || (a)->whandler != NULL)

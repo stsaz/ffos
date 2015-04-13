@@ -42,7 +42,7 @@ int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 	return kevent(kq, &kev, 1, NULL, 0, NULL);
 }
 
-int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
+int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	size_t i;
 	struct kevent *evs;
@@ -51,8 +51,6 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handl
 	int f = EV_ADD | EV_ENABLE;
 
 	if (handler == NULL) {
-		if (kq == FF_BADFD || nsigs == 0)
-			return 0;
 		f = EV_DELETE;
 	}
 
@@ -60,9 +58,9 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handl
 	if (evs == NULL)
 		return -1;
 
-	t->rhandler = handler;
+	t->handler = handler;
 	t->oneshot = 0;
-	udata = ffaio_kqudata(t);
+	udata = ffkev_ptr(t);
 	for (i = 0;  i < nsigs;  i++) {
 		EV_SET(&evs[i], sigs[i], EVFILT_SIGNAL, f, 0, 0, udata);
 	}
@@ -70,6 +68,9 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handl
 		r = -1;
 
 	ffmem_free(evs);
+
+	if (handler == NULL)
+		ffkev_fin(t);
 	return r;
 }
 
@@ -115,4 +116,84 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 done:
 	*_sent = sent;
 	return (int)r;
+}
+
+
+static ssize_t _ffaio_fresult(ffaio_filetask *ft)
+{
+	int r = aio_error(&ft->acb);
+	if (r == EINPROGRESS) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	ft->kev.pending = 0;
+	if (r == -1)
+		return -1;
+
+	return aio_return(&ft->acb);
+}
+
+static void _ffaio_fprepare(ffaio_filetask *ft, void *data, size_t len, uint64 off)
+{
+	fffd kq;
+	struct aiocb *acb = &ft->acb;
+
+	kq = acb->aio_sigevent.sigev_notify_kqueue;
+	ffmem_tzero(acb);
+	acb->aio_sigevent.sigev_notify_kqueue = kq;
+	/* kevent.filter == EVFILT_AIO
+	(struct aiocb *)kevent.ident */
+	acb->aio_sigevent.sigev_notify = SIGEV_KEVENT;
+	acb->aio_sigevent.sigev_notify_kevent_flags = EV_CLEAR;
+	acb->aio_sigevent.sigev_value.sigval_ptr = ffkev_ptr(&ft->kev);
+
+	acb->aio_fildes = ft->kev.fd;
+	acb->aio_buf = data;
+	acb->aio_nbytes = len;
+	acb->aio_offset = off;
+}
+
+ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler)
+{
+	ssize_t r;
+
+	if (ft->kev.pending)
+		return _ffaio_fresult(ft);
+
+	_ffaio_fprepare(ft, (void*)data, len, off);
+	ft->acb.aio_lio_opcode = LIO_WRITE;
+	if (0 != aio_write(&ft->acb)) {
+		if (errno == EAGAIN) //no resources for this I/O operation
+			return fffile_pwrite(ft->kev.fd, data, len, off);
+		return -1;
+	}
+
+	ft->kev.pending = 1;
+	r = _ffaio_fresult(ft);
+	if (ft->kev.pending)
+		ft->kev.handler = handler;
+	return r;
+}
+
+ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler)
+{
+	ssize_t r;
+
+	if (ft->kev.pending)
+		return _ffaio_fresult(ft);
+
+	_ffaio_fprepare(ft, data, len, off);
+	ft->acb.aio_lio_opcode = LIO_READ;
+	if (0 != aio_read(&ft->acb)) {
+		if (errno == EAGAIN)
+			return fffile_pread(ft->kev.fd, data, len, off);
+		return -1;
+	}
+
+	ft->kev.pending = 1;
+	r = _ffaio_fresult(ft);
+	if (ft->kev.pending)
+		ft->kev.handler = handler;
+	return r;
 }

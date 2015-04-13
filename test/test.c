@@ -176,21 +176,35 @@ static int test_lock()
 	return 0;
 }
 
-int test_all()
+extern int test_fileaio(void);
+
+struct test_s {
+	const char *nm;
+	int (*func)();
+};
+
+#define F(nm) { #nm, &test_ ## nm }
+static const struct test_s _ffostests[] = {
+	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
+	, F(skt), F(timer), F(kqu), F(fileaio)
+};
+#undef F
+
+int main(int argc, const char **argv)
 {
+	size_t i, iarg;
 	ffos_init();
 
-	CALL(test_types());
-	CALL(test_atomic());
-	CALL(test_lock());
-	CALL(test_mem());
-	CALL(test_time());
+	fftestobj.flags |= FFTEST_FATALERR;
+
+	if (argc == 1) {
+		//run all tests
+		for (i = 0;  i < FFCNT(_ffostests);  i++) {
+			FFTEST_TIMECALL(_ffostests[i].func());
+		}
+
 	CALL(test_file(TMP_PATH));
 	CALL(test_dir(TMP_PATH));
-	CALL(test_thd());
-	CALL(test_skt());
-	CALL(test_timer());
-	CALL(test_kqu());
 
 #ifdef FF_LINUX
 	CALL(test_ps(TEXT("/bin/echo")));
@@ -205,14 +219,20 @@ int test_all()
 	CALL(test_dl("kernel32.dll", "CreateFileW"));
 #endif
 
-	CALL(test_sconf());
-	test_rnd();
+	} else {
+		//run the specified tests only
+
+		for (iarg = 1;  iarg < argc;  iarg++) {
+			for (i = 0;  i < FFCNT(_ffostests);  i++) {
+
+				if (!strcmp(argv[iarg], _ffostests[i].nm)) {
+					FFTEST_TIMECALL(_ffostests[i].func());
+					break;
+				}
+			}
+		}
+	}
 
 	printf("%u tests were run, failed: %u.\n", fftestobj.nrun, fftestobj.nfail);
 	return 0;
-}
-
-int main(int argc, const char **argv)
-{
-	return test_all();
 }

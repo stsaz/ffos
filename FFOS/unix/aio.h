@@ -4,6 +4,48 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/error.h>
 
+#ifdef FF_LINUX
+#include <linux/aio_abi.h>
+#else
+#include <aio.h>
+#endif
+
+
+#if defined FF_LINUX
+
+/** Initialize file I/O context. */
+FF_EXTN int ffaio_fctxinit(void);
+
+FF_EXTN void ffaio_fctxclose(void);
+
+struct ffaio_filetask {
+	ffkevent kev;
+	struct iocb cb;
+	int result;
+};
+
+/** Attach ffaio_filetask to kqueue.
+Linux: not thread-safe; only 1 kernel queue is supported for ALL AIO operations. */
+FF_EXTN int ffaio_fattach(ffaio_filetask *ft, fffd kq);
+
+#else //bsd:
+
+#define ffaio_fctxinit()  (0)
+#define ffaio_fctxclose()
+
+struct ffaio_filetask {
+	ffkevent kev;
+	struct aiocb acb;
+};
+
+static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq)
+{
+	ft->acb.aio_sigevent.sigev_notify_kqueue = kq;
+	return 0;
+}
+
+#endif
+
 
 /** Get AIO task result.
 If 'canceled' flag is set, reset it and return -1. */
@@ -16,23 +58,17 @@ static FFINL int ffaio_result(ffaio_task *t) {
 	return 0;
 }
 
-typedef ffaio_task ffaio_acceptor;
+typedef ffkevent ffaio_acceptor;
 
 /** Initialize connection acceptor. */
 static FFINL int ffaio_acceptinit(ffaio_acceptor *acc, fffd kq, ffskt lsk, void *udata, int family, int sktype)
 {
-	ffaio_init(acc);
+	ffkev_init(acc);
 	acc->sk = lsk;
 	acc->udata = udata;
 	(void)family;
 	(void)sktype;
-	return ffaio_attach(acc, kq, FFKQU_READ);
-}
-
-/** Begin accepting. */
-static FFINL int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler) {
-	acc->rhandler = handler;
-	return FFAIO_ASYNC;
+	return ffkqu_attach(kq, acc->sk, ffkev_ptr(acc), FFKQU_ADD | FFKQU_READ);
 }
 
 /** Close acceptor. */

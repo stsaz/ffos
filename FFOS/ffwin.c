@@ -9,6 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/timer.h>
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
+#include <FFOS/sig.h>
 
 #include <time.h>
 #ifndef FF_MSVC
@@ -82,14 +83,15 @@ fffd fffile_open(const char *filename, int flags)
 
 int fffile_trunc(fffd f, uint64 pos)
 {
+	int r = 0;
 	int64 curpos = fffile_seek(f, 0, SEEK_CUR);
 	if (curpos == -1 || -1 == fffile_seek(f, pos, SEEK_SET))
 		return -1;
 	if (!SetEndOfFile(f))
-		return -1;
+		r = -1;
 	if (-1 == fffile_seek(f, curpos, SEEK_SET))
-		return -1;
-	return 0;
+		r = -1;
+	return r;
 }
 
 int fffile_infofn(const char *fn, fffileinfo *fi)
@@ -546,9 +548,8 @@ int _ffwsaGetFuncs()
 }
 
 
-int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler)
+static int _ffaio_acceptbegin(ffaio_acceptor *acc)
 {
-	ffaio_task *t = &acc->task;
 	ffskt sk;
 	BOOL b;
 	DWORD r;
@@ -557,8 +558,8 @@ int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler)
 	if (sk == FF_BADSKT)
 		return FFAIO_ERROR;
 
-	ffmem_tzero(&t->rovl);
-	b = _ffwsaAcceptEx(t->sk, sk, acc->addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &r, &t->rovl);
+	ffmem_tzero(&acc->kev.ovl);
+	b = _ffwsaAcceptEx(acc->kev.sk, sk, acc->addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &r, &acc->kev.ovl);
 	if (0 != fferr_ioret(b)) {
 		int er = fferr_last();
 		(void)ffskt_close(sk);
@@ -567,7 +568,6 @@ int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler)
 	}
 
 	acc->csk = sk;
-	t->rhandler = handler;
 	return FFAIO_ASYNC;
 }
 
@@ -585,21 +585,26 @@ static FFINL void getNAddrs(byte *addrs, ffaddr *local, ffaddr *peer)
 	peer->len = lenP;
 }
 
-ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags)
+ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, ffkev_handler handler)
 {
-	ffaio_task *t = &acc->task;
 	ffskt sk = FF_BADSKT;
 	int er = 0;
 
 	if (acc->csk == FF_BADSKT) {
 		peer->len = FFADDR_MAXLEN;
-		sk = ffskt_accept(t->sk, &peer->a, &peer->len, flags);
+		sk = ffskt_accept(acc->kev.sk, &peer->a, &peer->len, flags);
 		if (sk != FF_BADSKT)
 			(void)ffskt_local(sk, local);
+
+		else if (fferr_again(fferr_last()) && FFAIO_ASYNC == _ffaio_acceptbegin(acc)) {
+			acc->kev.handler = handler;
+			fferr_set(WSAEWOULDBLOCK);
+		}
+
 		return sk;
 	}
 
-	if (0 == ffio_result(&t->rovl)) {
+	if (0 == ffio_result(&acc->kev.ovl)) {
 		sk = acc->csk;
 		if (flags & SOCK_NONBLOCK)
 			(void)ffskt_nblock(sk, 1);
@@ -737,6 +742,53 @@ int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
 }
 
 
+ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler)
+{
+	BOOL b;
+
+	if (ft->kev.pending) {
+		ft->kev.pending = 0;
+		return ffio_result(&ft->kev.ovl);
+	}
+
+	ffmem_tzero(&ft->kev.ovl);
+	ft->kev.ovl.Offset = (uint)off;
+	ft->kev.ovl.OffsetHigh = (uint)(off >> 32);
+	b = WriteFile(ft->kev.fd, data, FF_TOINT(len), NULL, &ft->kev.ovl);
+
+	if (0 != fferr_ioret(b))
+		return -1;
+
+	ft->kev.pending = 1;
+	ft->kev.handler = handler;
+	fferr_set(EAGAIN);
+	return -1;
+}
+
+ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler)
+{
+	BOOL b;
+
+	if (ft->kev.pending) {
+		ft->kev.pending = 0;
+		return ffio_result(&ft->kev.ovl);
+	}
+
+	ffmem_tzero(&ft->kev.ovl);
+	ft->kev.ovl.Offset = (uint)off;
+	ft->kev.ovl.OffsetHigh = (uint)(off >> 32);
+	b = ReadFile(ft->kev.fd, data, FF_TOINT(len), NULL, &ft->kev.ovl);
+
+	if (0 != fferr_ioret(b))
+		return -1;
+
+	ft->kev.pending = 1;
+	ft->kev.handler = handler;
+	fferr_set(EAGAIN);
+	return -1;
+}
+
+
 void ffclk_diff(const fftime *start, fftime *diff)
 {
 	LARGE_INTEGER freq
@@ -803,13 +855,15 @@ static void pipename(ffsyschar *dst, size_t cap, int pid)
 	*dst = L'\0';
 }
 
-int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
+int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	ffsyschar name[64];
 	BOOL b;
 
 	if (handler == NULL) {
-		FF_SAFECLOSE(t->fd, FF_BADFD, (void)ffpipe_close);
+		if (t->fd == FF_BADFD)
+			ffpipe_close(t->fd);
+		ffkev_fin(t);
 		return 0;
 	}
 
@@ -818,20 +872,20 @@ int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handl
 	if (t->fd == FF_BADFD)
 		return 1;
 
-	if (0 != ffaio_attach(t, kq, FFKQU_READ))
+	if (0 != ffkqu_attach(kq, t->fd, ffkev_ptr(t), 0))
 		return 1;
 
-	ffmem_tzero(&t->wovl);
-	b = ConnectNamedPipe(t->fd, &t->wovl);
+	ffmem_tzero(&t->ovl);
+	b = ConnectNamedPipe(t->fd, &t->ovl);
 	if (0 != fferr_ioret(b))
 		return -1;
 
-	t->whandler = handler;
+	t->handler = handler;
 	t->oneshot = 0;
 	return 0;
 }
 
-int ffsig_read(ffaio_task *t)
+int ffsig_read(ffsignal *t)
 {
 	ssize_t r;
 	byte b;
@@ -841,10 +895,12 @@ int ffsig_read(ffaio_task *t)
 		return b;
 
 	ffpipe_disconnect(t->fd);
-	ffmem_tzero(&t->wovl);
-	b = ConnectNamedPipe(t->fd, &t->wovl);
-	// if (0 != fferr_ioret(b))
-		// return -1;
+	ffmem_tzero(&t->ovl);
+	b = ConnectNamedPipe(t->fd, &t->ovl);
+	if (0 == fferr_ioret(b)) {
+		fferr_set(EAGAIN);
+		return -1;
+	}
 	return -1;
 }
 

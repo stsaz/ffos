@@ -21,5 +21,3 @@ FF_EXTN int test_ps();
 #else
 #define TMP_PATH "."
 #endif
-
-FF_EXTN int test_all();

@@ -157,7 +157,7 @@ size_t ffiov_copyhdtr(ffiovec *dst, size_t cap, const sf_hdtr *hdtr)
 }
 
 
-void ffaio_run1(ffkqu_entry *e)
+static void _ffaio_run1(ffkqu_entry *e)
 {
 	size_t udata = (size_t)ffkqu_data(e);
 	ffaio_task *t = (void*)(udata & ~1);
@@ -191,6 +191,49 @@ void ffaio_run1(ffkqu_entry *e)
 		if (t->oneshot)
 			t->whandler = NULL;
 		func(t->udata);
+	}
+}
+
+void ffkev_call(ffkqu_entry *e)
+{
+	size_t udata = (size_t)ffkqu_data(e);
+	ffkevent *kev = (void*)(udata & ~1);
+
+	if (kev->aiotask) {
+		_ffaio_run1(e);
+		return;
+	}
+
+	if ((udata & 1) != kev->side) {
+		/* kev.side is modified in ffkev_fin() every time an event is closed or reused for another operation.
+		This event was cached in userspace and it's no longer valid. */
+		return;
+	}
+
+#ifdef FFDBG_KEVENT
+	{
+	uint evflags;
+#if defined FF_LINUX
+	evflags = e->events;
+#elif defined FF_BSD
+	evflags = e->flags;
+#else
+	evflags = 0;
+#endif
+	ffdbg_print(0, "%s(): task:%p, fd:%L, evflags:%xu, handler:%p\n"
+		, FF_FUNC, kev, (size_t)kev->fd, evflags, kev->handler);
+	}
+#endif
+
+#ifndef FF_WIN
+	kev->ev = e;
+#endif
+
+	if (kev->handler != NULL) {
+		ffkev_handler func = kev->handler;
+		if (kev->oneshot)
+			kev->handler = NULL;
+		func(kev->udata);
 	}
 }
 

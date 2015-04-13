@@ -89,13 +89,12 @@ static void do_accept(void *udata)
 		ffaddr local
 			, peer;
 
-		sk = ffaio_accept(&srv->acc, &local, &peer, SOCK_NONBLOCK);
+		sk = ffaio_accept(&srv->acc, &local, &peer, SOCK_NONBLOCK, &do_accept);
 
 		if (sk == FF_BADSKT) {
 			printf("server: accept() returned %d" FF_NEWLN, (int)fferr_last());
 
 			if (fferr_again(fferr_last())) {
-				x(FFAIO_ASYNC == ffaio_acceptbegin(&srv->acc, &do_accept));
 				break;
 
 			} else if (fferr_fdlim(fferr_last())) {
@@ -282,7 +281,7 @@ int test_kqu()
 		nevents = ffkqu_wait(kq, ents, FFCNT(ents), kqtm);
 
 		for (n = 0;  n < nevents;  n++) {
-			ffaio_run1(&ents[n]);
+			ffkev_call(&ents[n]);
 		}
 
 		if (nevents == -1 && fferr_last() != EINTR) {

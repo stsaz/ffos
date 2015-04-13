@@ -164,13 +164,15 @@ fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyscha
 }
 
 
-ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags)
+ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, ffkev_handler handler)
 {
 	ffskt sk;
 	peer->len = FFADDR_MAXLEN;
 	sk = ffskt_accept(acc->sk, &peer->a, &peer->len, flags);
 	if (sk != FF_BADSKT)
 		ffskt_local(sk, local);
+	else if (fferr_again(errno))
+		acc->handler = handler;
 	return sk;
 }
 

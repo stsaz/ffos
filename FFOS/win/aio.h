@@ -2,8 +2,20 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+
+#define ffaio_fctxinit()  (0)
+#define ffaio_fctxclose()
+
+struct ffaio_filetask {
+	ffkevent kev;
+};
+
+#define ffaio_fattach(ft, kq) \
+	ffkqu_attach(kq, (ft)->kev.fd, ffkev_ptr(&(ft)->kev), 0)
+
+
 typedef struct ffaio_acceptor {
-	ffaio_task task;
+	ffkevent kev;
 	int family;
 	int sktype;
 
@@ -13,18 +25,16 @@ typedef struct ffaio_acceptor {
 
 static FFINL int ffaio_acceptinit(ffaio_acceptor *acc, fffd kq, ffskt lsk, void *udata, int family, int sktype)
 {
-	ffaio_init(&acc->task);
-	acc->task.sk = lsk;
-	acc->task.udata = udata;
+	ffkev_init(&acc->kev);
+	acc->kev.sk = lsk;
+	acc->kev.udata = udata;
 
 	acc->family = family;
 	acc->sktype = sktype;
 	acc->csk = FF_BADSKT;
 	ffmem_zero(acc->addrs, sizeof(acc->addrs));
-	return ffaio_attach(&acc->task, kq, FFKQU_READ);
+	return ffkqu_attach(kq, acc->kev.sk, ffkev_ptr(&acc->kev), 0);
 }
-
-FF_EXTN int ffaio_acceptbegin(ffaio_acceptor *acc, ffaio_handler handler);
 
 static FFINL void ffaio_acceptfin(ffaio_acceptor *acc) {
 	if (acc->csk != FF_BADSKT) {

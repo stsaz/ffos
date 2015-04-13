@@ -22,34 +22,62 @@ static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
 	}
 	return sigprocmask(how, &mask, NULL);
 }
+
+#else
+
+#ifdef FF_MSVC
+enum {
+	SIG_BLOCK
+	, SIG_UNBLOCK
+};
 #endif
 
-/** If 'handler' is set, initialize kernel event for signals.
-If 'handler' is NULL, close signal fd.  If 'kq' and 'nsigs' are also specified, remove event from the kernel. */
-FF_EXTN int ffsig_ctl(ffaio_task *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler);
+static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
+	return 0;
+}
 
+#endif
+
+typedef ffkevent ffsignal;
+
+#define ffsig_init  ffkev_init
+
+/** If 'handler' is set, initialize kernel event for signals.
+If 'handler' is NULL, remove event from the kernel. */
+FF_EXTN int ffsig_ctl(ffsignal *sig, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler);
 
 #if defined FF_LINUX
 
-/** Get signal number. */
-static FFINL int ffsig_read(const ffaio_task *t) {
+/** Get signal number.
+Return -1 on error. */
+static FFINL int ffsig_read(ffsignal *t)
+{
 	struct signalfd_siginfo fdsi;
 	ssize_t r = read(t->fd, &fdsi, sizeof(struct signalfd_siginfo));
-	if (r != sizeof(struct signalfd_siginfo))
+	if (r != sizeof(struct signalfd_siginfo)) {
+		if (r != -1)
+			errno = EAGAIN;
 		return -1;
+	}
+
 	return fdsi.ssi_signo;
 }
 
 #elif defined FF_BSD
 
-static FFINL int ffsig_read(const ffaio_task *t) {
+static FFINL int ffsig_read(ffsignal *t)
+{
 	int ident = t->ev->ident;
+	if (t->ev->ident == -1) {
+		errno = EAGAIN;
+		return -1;
+	}
 	t->ev->ident = -1;
 	return ident;
 }
 
 #elif defined FF_WIN
 
-FF_EXTN int ffsig_read(ffaio_task *t);
+FF_EXTN int ffsig_read(ffsignal *sig);
 
 #endif

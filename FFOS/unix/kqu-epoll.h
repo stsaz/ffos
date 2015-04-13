@@ -63,7 +63,7 @@ Return the number of signaled events.
 Return 0 on timeout.
 Return -1 on error. */
 #define ffkqu_wait(kq, events, eventsSize, /* const ffkqu_time* */ tmoutMs)\
-	epoll_wait((kq), (events), FF_TOINT(eventsSize), *(tmoutMs));
+	epoll_wait((kq), (events), FF_TOINT(eventsSize), *(tmoutMs))
 
 /** Close kernel queue. */
 #define ffkqu_close  close
