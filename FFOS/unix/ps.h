@@ -43,6 +43,12 @@ FF_EXTN int ffps_wait(fffd h, uint, int *exit_code);
 /** Get ID of the current process. */
 #define ffps_curid  getpid
 
+/** Get filename of the current process. */
+static FFINL const char* ffps_filename(char *name, size_t cap, const char *argv0)
+{
+	return argv0;
+}
+
 /** Exit the current process. */
 #define ffps_exit  _exit
 

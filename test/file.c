@@ -42,7 +42,7 @@ static int test_std()
 	FFTEST_FUNC;
 
 	x(FFSLEN(HELLO) == fffile_write(ffstdout, FFSTR(HELLO)));
-	x(FFSLEN(HELLO) == ffstd_write(ffstdout, FFSTRQ(HELLO)));
+	x(FFSLEN(HELLO) == ffstd_write(ffstdout, FFSTR(HELLO)));
 	return 0;
 }
 

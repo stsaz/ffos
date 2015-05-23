@@ -18,6 +18,9 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap) {
 }
 #endif
 
+/** Get pointer to a system error message. */
+#define fferr_strp  strerror
+
 /** Get last system error code. */
 #define fferr_last()  errno
 

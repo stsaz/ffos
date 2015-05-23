@@ -11,6 +11,8 @@ static FFINL void ffos_init() {
 	setlocale(LC_CTYPE, "en_US.UTF-8"); //for ff_wtou()
 }
 
+#define ffmem_init()
+
 /** Allocate heap memory region. */
 #define _ffmem_alloc  malloc
 

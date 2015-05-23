@@ -9,6 +9,10 @@ static FFINL void ffos_init() {
 	_ffheap = GetProcessHeap();
 }
 
+/** Initialize heap memory. */
+#define ffmem_init() \
+	_ffheap = GetProcessHeap()
+
 #define _ffmem_alloc(size)  HeapAlloc(_ffheap, 0, size)
 
 #define _ffmem_calloc(numElements, szofElement)\

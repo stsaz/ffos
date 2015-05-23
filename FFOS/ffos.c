@@ -9,6 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/error.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/atomic.h>
+#include <FFOS/process.h>
 
 
 int ffdir_rmakeq(ffsyschar *path, size_t off)
@@ -239,6 +240,15 @@ void ffkev_call(ffkqu_entry *e)
 
 
 uint _ffsc_ncpu;
+
+void fflk_setup(void)
+{
+	ffsysconf sc;
+	if (_ffsc_ncpu != 0)
+		return;
+	ffsc_init(&sc);
+	_ffsc_ncpu = ffsc_get(&sc, _SC_NPROCESSORS_ONLN);
+}
 
 enum { FFLK_SPIN = 2048 };
 

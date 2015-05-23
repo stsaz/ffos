@@ -154,6 +154,22 @@ int fffile_rm(const char *name)
 }
 
 
+ssize_t ffstd_write(fffd h, const char *s, size_t len)
+{
+	wchar_t ws[1024];
+	size_t r = FFCNT(ws);
+	DWORD wr;
+	if (GetConsoleMode(h, &wr)) {
+		wchar_t *w = ffs_utow(ws, &r, s, len);
+		BOOL b = WriteConsole(h, w, FF_TOINT(r), &wr, NULL);
+		if (w != ws)
+			ffmem_free(w);
+		return b ? len : -1;
+	}
+	return fffile_write(h, s, len);
+}
+
+
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t len)
 {
@@ -259,6 +275,14 @@ int fferr_strq(int code, ffsyschar *dst, size_t dst_cap)
 		dst[n] = L'\0';
 	}
 	return n;
+}
+
+const char* fferr_strp(int code)
+{
+	static char se[255];
+	if (0 == fferr_str(code, se, sizeof(se)))
+		return "";
+	return se;
 }
 
 
@@ -924,6 +948,17 @@ int ffps_sig(int pid, int sig)
 
 	(void)ffpipe_close(p);
 	return 0;
+}
+
+const char* ffps_filename(char *name, size_t cap, const char *argv0)
+{
+	ffsyschar fnw[FF_MAXPATH];
+	size_t n = GetModuleFileName(NULL, fnw, FFCNT(fnw));
+	n = ff_wtou(name, cap, fnw, n, 0);
+	if (n == 0 || n == cap)
+		return NULL;
+	name[n] = '\0';
+	return name;
 }
 
 

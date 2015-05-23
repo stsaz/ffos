@@ -18,6 +18,8 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap)
 	return (int)ff_wtou(dst, dst_cap, w, e, 0);
 }
 
+FF_EXTN const char* fferr_strp(int code);
+
 #define fferr_again(code)  (code == WSAEWOULDBLOCK)
 
 #define fferr_fdlim(code)  (0)

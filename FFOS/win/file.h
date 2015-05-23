@@ -147,12 +147,15 @@ static FFINL ssize_t ffstd_read(fffd h, ffsyschar * s, size_t len) {
 	return 0;
 }
 
-static FFINL ssize_t ffstd_write(fffd h, const ffsyschar *s, size_t len) {
+static FFINL ssize_t ffstd_writeq(fffd h, const ffsyschar *s, size_t len) {
 	DWORD wr;
 	if (0 != WriteConsole(h, s, FF_TOINT(len), &wr, NULL))
 		return wr;
 	return 0;
 }
+
+/** Write UTF-8 data into standard output/error handle. */
+FF_EXTN ssize_t ffstd_write(fffd h, const char *s, size_t len);
 
 
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {

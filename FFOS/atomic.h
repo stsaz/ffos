@@ -27,6 +27,9 @@ typedef struct fflock {
 
 FF_EXTN uint _ffsc_ncpu;
 
+/** Store the number of active CPUs for spinlock. */
+FF_EXTN void fflk_setup(void);
+
 /** Initialize fflock object. */
 #define fflk_init(lk) \
 	(lk)->lock = 0
