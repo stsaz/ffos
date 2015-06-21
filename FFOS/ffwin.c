@@ -322,7 +322,7 @@ void fftime_split(ffdtm *dt, const fftime *t, enum FF_TIMEZONE tz)
 	if (tz == FFTIME_TZLOCAL) {
 		struct tm Tm;
 		time_t tt = t->s;
-#ifdef FF_MSVC
+#if defined FF_MSVC || defined FF_MINGW
 		localtime_s(&Tm, &tt);
 #else
 		localtime_r(&tt, &Tm);

@@ -77,7 +77,7 @@ typedef int ffbool;
 	#define ffhton32  bswap_32
 	#define ffhton16  bswap_16
 
-#elif defined FF_MSVC
+#elif defined FF_MSVC || defined FF_MINGW
 	#define ffhton64  _byteswap_uint64
 	#define ffhton32  _byteswap_ulong
 	#define ffhton16  _byteswap_ushort

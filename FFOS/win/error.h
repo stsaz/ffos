@@ -34,6 +34,21 @@ static FFINL ffbool fferr_nofile(int e) {
 		|| e == ERROR_NOT_READY || e == ERROR_INVALID_NAME;
 }
 
+#ifdef FF_MINGW
+#undef EINVAL
+#undef EEXIST
+#undef EOVERFLOW
+#undef ENOSPC
+#undef EBADF
+#undef ENOMEM
+#undef EACCES
+#undef ENOTEMPTY
+#undef ETIMEDOUT
+#undef EAGAIN
+#undef ECANCELED
+#undef EINTR
+#endif
+
 enum FF_ERRORS {
 	EINVAL = ERROR_INVALID_PARAMETER
 	, EEXIST = ERROR_ALREADY_EXISTS //ERROR_FILE_EXISTS

@@ -6,6 +6,10 @@ Copyright (c) 2013 Simon Zolin
 	#define FF_MSVC
 #endif
 
+#if defined __MINGW64__
+	#define FF_MINGW
+#endif
+
 #ifndef UNICODE
 	#define UNICODE
 #endif
@@ -48,6 +52,9 @@ typedef unsigned int uint;
 #ifdef FF_MSVC
 	typedef __int64 int64;
 	typedef unsigned __int64 uint64;
+#elif defined FF_MINGW
+	typedef long long int64;
+	typedef unsigned long long uint64;
 #else
 	typedef int64_t int64;
 	typedef uint64_t uint64;
