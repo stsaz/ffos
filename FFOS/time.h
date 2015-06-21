@@ -85,6 +85,8 @@ static FFINL void fftime_setmcs(fftime *t, uint64 mcsecs) {
 /** Add milliseconds. */
 FF_EXTN void fftime_addms(fftime *t, uint64 ms);
 
+FF_EXTN void fftime_add(fftime *t, const fftime *t2);
+
 /** Get time value in microseconds. */
 static FFINL uint64 fftime_mcs(const fftime *t) {
 	return (uint64)t->s * 1000000 + t->mcs;

@@ -48,3 +48,9 @@ FF_EXTN void ffmem_alignfree(void *ptr);
 #define ffmem_align _ffmem_align
 #define ffmem_alignfree _ffmem_alignfree
 #endif
+
+#define ffmem_safefree(p) \
+do { \
+	if (p != NULL) \
+		ffmem_free(p); \
+} while (0)

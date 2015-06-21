@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #ifndef FF_VER
 
-#define FF_VER  0x010c0000
+#define FF_VER  0x010d0000
 
 #if defined __LP64__ || defined _WIN64
 	#define FF_64

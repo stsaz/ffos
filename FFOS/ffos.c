@@ -106,6 +106,16 @@ void fftime_addms(fftime *t, uint64 ms)
 	}
 }
 
+void fftime_add(fftime *t, const fftime *t2)
+{
+	t->s += t2->s;
+	t->mcs += t2->mcs;
+	if (t->mcs >= 1000000) {
+		t->mcs -= 1000000;
+		t->s++;
+	}
+}
+
 void fftime_diff(const fftime *start, fftime *stop)
 {
 	if (stop->mcs >= start->mcs) {
