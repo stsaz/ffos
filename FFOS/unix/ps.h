@@ -66,6 +66,9 @@ Return NULL on error. */
 Return NULL on error. */
 #define ffdl_addr  dlsym
 
+/** Get last error message. */
+#define ffdl_errstr  dlerror
+
 /** Close the library. */
 #define ffdl_close  dlclose
 

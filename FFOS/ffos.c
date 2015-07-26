@@ -309,6 +309,9 @@ static const char *const err_ops[] = {
 	, "non-blocking mode set"
 	, "process fork"
 
+	, "library open"
+	, "library symbol address"
+
 	, "socket create"
 	, "socket bind"
 	, "socket option"

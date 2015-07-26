@@ -52,6 +52,8 @@ FF_EXTN fffd ffdl_open(const char *filename, int flags);
 
 #define ffdl_addr  GetProcAddress
 
+#define ffdl_errstr()  fferr_strp(fferr_last())
+
 static FFINL int ffdl_close(fffd h) {
 	return 0 == FreeLibrary(h);
 }
