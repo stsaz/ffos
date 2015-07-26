@@ -24,6 +24,7 @@ Copyright (c) 2013 Simon Zolin
 
 #define NOMINMAX
 #define _CRT_SECURE_NO_WARNINGS
+#define OEMRESOURCE //gui
 #include <winsock2.h>
 #include <assert.h>
 
