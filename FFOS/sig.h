@@ -25,7 +25,7 @@ static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
 
 #else
 
-#ifdef FF_MSVC
+#if defined FF_MSVC || defined FF_MINGW
 enum {
 	SIG_BLOCK
 	, SIG_UNBLOCK
