@@ -197,7 +197,7 @@ int ffdir_make(const char *name)
 
 	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return -1;
-	r = ffdir_makeq(ws);
+	r = ffdir_makeq(w);
 	if (w != ws)
 		ffmem_free(w);
 	return r;
@@ -211,7 +211,7 @@ int ffdir_rmake(const char *path, size_t off)
 
 	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
 		return -1;
-	r = ffdir_rmakeq(ws, off);
+	r = ffdir_rmakeq(w, off);
 	if (w != ws)
 		ffmem_free(w);
 	return r;
@@ -225,7 +225,7 @@ int ffdir_rm(const char *name)
 
 	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return -1;
-	r = ffdir_rmq(ws);
+	r = ffdir_rmq(w);
 	if (w != ws)
 		ffmem_free(w);
 	return r;
@@ -399,12 +399,12 @@ WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 
 	if (dst != NULL) {
 		wlen = ff_utow(dst, *dstlen, s, len, 0);
-		if (wlen != 0)
+		if (wlen != 0 || len == 0)
 			goto done;
 	}
 
 	//not enough space in the provided buffer.  Allocate a new one.
-	wlen = (len == -1) ? strlen(s) + 1 : len;
+	wlen = (len == -1) ? strlen(s) + 1 : len + 1;
 	dst = ffmem_talloc(WCHAR, wlen);
 	if (dst == NULL)
 		return NULL;
