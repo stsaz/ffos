@@ -23,6 +23,7 @@ __asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
 #define FFINL  inline
 
 #define FF_EXP  __attribute__((visibility("default")))
+#define FF_IMP
 
 enum {
 	FF_BADFD = -1

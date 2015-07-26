@@ -39,6 +39,7 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 #define FF_EXP  __declspec(dllexport)
+#define FF_IMP  __declspec(dllimport)
 
 #define FF_BADFD  INVALID_HANDLE_VALUE
 
