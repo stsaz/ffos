@@ -20,7 +20,7 @@ Return -1 on error. */
 
 /** Create a new process.
 Return FF_BADFD on error. */
-FF_EXTN fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env);
+FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env);
 
 /** Get process ID by process handle. */
 #define ffps_id(h)  ((uint)(h))

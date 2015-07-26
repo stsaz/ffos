@@ -152,7 +152,7 @@ void ffthd_sleep(uint ms)
 	}
 }
 
-fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env)
+fffd ffps_exec(const char *filename, const char **argv, const char **env)
 {
 	pid_t p = vfork();
 	if (p == 0) {

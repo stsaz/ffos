@@ -463,42 +463,60 @@ static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
 	return dst;
 }
 
-fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env)
+fffd ffps_exec(const char *filename, const char **argv, const char **env)
 {
 	BOOL b;
 	PROCESS_INFORMATION info;
 	STARTUPINFOW si = { 0 };
-	ffsyschar *args
+	ffsyschar wfn_s[255], *wfn, *args
 		, *s;
 	ffbool has_space;
-	size_t cap = 0;
-	const ffsyschar **a;
+	size_t cap = 0, i;
 
 	si.cb = sizeof(STARTUPINFOW);
 
-	for (a = argv + 1;  *a != NULL;  a++) {
-		cap += ffq_len(*a) + sizeof("\"\" ")-1;
+	cap = FFCNT(wfn_s);
+	if (NULL == (wfn = ffs_utow(wfn_s, &cap, filename, -1)))
+		return FF_BADFD;
+
+	cap += FFSLEN("\"\" ");
+	for (i = 0;  argv[i] != NULL;  i++) {
+		cap += ff_utow(NULL, 0, argv[i], -1, 0) + FFSLEN("\"\" ");
 	}
 
 	args = ffmem_alloc((cap + 1) * sizeof(ffsyschar));
-	if (args == NULL)
+	if (args == NULL) {
+		if (wfn != wfn_s)
+			ffmem_free(wfn);
 		return FF_BADFD;
+	}
 	s = args;
 
-	for (a = argv + 1;  *a != NULL;  a++) {
-		has_space = (NULL != wcschr(*a, ' '));
+	has_space = (NULL != strchr(filename, ' '));
+	if (has_space)
+		*s++ = '"';
+	s = scopyz(s, wfn);
+	if (has_space)
+		*s++ = '"';
+	*s++ = ' ';
+
+	for (i = 0;  argv[i] != NULL;  i++) {
+		has_space = (NULL != strchr(argv[i], ' '));
 		if (has_space)
 			*s++ = '"';
-		s = scopyz(s, *a);
+		ff_utow(s, args + cap - s, argv[i], -1, 0);
+		s += ffq_len(s);
 		if (has_space)
 			*s++ = '"';
 		*s++ = ' ';
 	}
 	*s = '\0';
 
-	b = CreateProcess(filename, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
+	b = CreateProcess(wfn, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
 		, NULL /*startup dir*/, &si, &info);
 
+	if (wfn != wfn_s)
+		ffmem_free(wfn);
 	ffmem_free(args);
 	if (!b)
 		return FF_BADFD;

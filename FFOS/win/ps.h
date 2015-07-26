@@ -16,7 +16,7 @@ static FFINL size_t ffenv_expand(const ffsyschar *src, ffsyschar *dst, size_t ca
 /**
 argv: quotes in arguments are not escaped.
 env: not implemented. */
-FF_EXTN fffd ffps_exec(const ffsyschar *filename, const ffsyschar **argv, const ffsyschar **env);
+FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env);
 
 #define ffps_id  GetProcessId
 

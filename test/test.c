@@ -32,12 +32,12 @@ int test_thd()
 	return 0;
 }
 
-int test_ps(const ffsyschar *fn)
+static int test_ps(void)
 {
 	fffd h;
 	int cod;
-	const ffsyschar *args[6];
-	const ffsyschar *env[4];
+	const char *args[6];
+	const char *env[4];
 
 	FFTEST_FUNC;
 
@@ -47,8 +47,8 @@ int test_ps(const ffsyschar *fn)
 		(void)ffps_kill(ffps_curhdl());
 	}
 
-	args[0] = fn;
 #ifdef FF_UNIX
+	args[0] = "/bin/echo";
 	args[1] = "good";
 	args[2] = "day";
 	args[3] = "";
@@ -56,15 +56,16 @@ int test_ps(const ffsyschar *fn)
 	env[0] = NULL;
 
 #else
-	args[1] = TEXT("/c");
-	args[2] = TEXT("echo");
-	args[3] = TEXT("very good");
-	args[4] = TEXT("day");
+	args[0] = "c:\\windows\\system32\\cmd.exe";
+	args[1] = "/c";
+	args[2] = "echo";
+	args[3] = "very good";
+	args[4] = "day";
 	args[5] = NULL;
 	env[0] = NULL;
 #endif
 
-	h = ffps_exec(fn, args, env);
+	h = ffps_exec(args[0], args, env);
 	x(h != FF_BADFD);
 	printf("\ncreated process: %d\n", (int)ffps_id(h));
 	ffthd_sleep(100);
@@ -186,7 +187,7 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(fileaio)
+	, F(skt), F(timer), F(kqu), F(fileaio), F(ps)
 };
 #undef F
 
@@ -207,15 +208,12 @@ int main(int argc, const char **argv)
 	CALL(test_dir(TMP_PATH));
 
 #ifdef FF_LINUX
-	CALL(test_ps(TEXT("/bin/echo")));
 	CALL(test_dl("/lib64/libc.so.6", "open"));
 
 #elif defined FF_BSD
-	CALL(test_ps(TEXT("/bin/echo")));
 	CALL(test_dl("/lib/libc.so.7", "open"));
 
 #else
-	CALL(test_ps(TEXT("c:\\windows\\system32\\cmd.exe")));
 	CALL(test_dl("kernel32.dll", "CreateFileW"));
 #endif
 
