@@ -15,8 +15,7 @@ int fftest_chk(int res, const char *file, uint line, const char *func, const cha
 
 	if ((fftestobj.flags & FFTEST_TRACE) || res == 0) {
 		char msg[1024];
-		size_t n = fferr_str(fferr_last(), msg, sizeof(msg)-1);
-		msg[n] = '\0';
+		fferr_str(fferr_last(), msg, sizeof(msg)-1);
 		printf("%s\tat %s:%u in %s():\t%s\t(%d) %s\n"
 			, (res == 0) ? "FAIL" : "OK", file, (int)line, func, sexp, (int)fferr_last(), msg);
 	}

@@ -14,7 +14,7 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap) {
 		return 0;
 	dst[0] = '\0';
 	strerror_r(code, dst, dst_cap);
-	return strlen(dst);
+	return 0;
 }
 #endif
 

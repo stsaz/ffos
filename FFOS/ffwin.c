@@ -274,14 +274,13 @@ int fferr_strq(int code, ffsyschar *dst, size_t dst_cap)
 		n -= FFSLEN(". ");
 		dst[n] = L'\0';
 	}
-	return n;
+	return 0;
 }
 
 const char* fferr_strp(int code)
 {
 	static char se[255];
-	if (0 == fferr_str(code, se, sizeof(se)))
-		return "";
+	fferr_str(code, se, sizeof(se));
 	return se;
 }
 

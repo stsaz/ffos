@@ -16,7 +16,7 @@ static int test_str()
 	FFTEST_FUNC;
 
 	fferr_set(EINVAL);
-	x(0 != fferr_str(fferr_last(), su, FFCNT(su)));
+	x(0 == fferr_str(fferr_last(), su, FFCNT(su)));
 
 	x(0 == ffq_icmpnz(TEXT("asdf"), FFSTRQ("ASDF")));
 	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));

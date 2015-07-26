@@ -26,9 +26,9 @@ int fferr_str(int code, char *dst, size_t dst_cap) {
 		ssize_t len = ffmin(dst_cap - 1, strlen(dst2));
 		memcpy(dst, dst2, len);
 		dst[len] = '\0';
-		return len;
+		return 0;
 	}
-	return strlen(dst);
+	return 0;
 }
 
 
