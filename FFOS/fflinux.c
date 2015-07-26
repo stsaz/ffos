@@ -12,7 +12,6 @@ Copyright (c) 2013 Simon Zolin
 
 #include <time.h>
 #include <signal.h>
-#include <sys/wait.h>
 #include <sys/sendfile.h>
 #include <sys/syscall.h>
 #include <sys/eventfd.h>
@@ -32,20 +31,6 @@ int fferr_str(int code, char *dst, size_t dst_cap) {
 	return strlen(dst);
 }
 
-int ffps_wait(fffd h, uint timeout, int *exit_code)
-{
-	siginfo_t s;
-	int r;
-	(void)timeout;
-
-	r = waitid(P_PID, (id_t)h, &s, WEXITED | WNOWAIT);
-	if (r != 0)
-		return -1;
-
-	if (exit_code != NULL)
-		*exit_code = s.si_status;
-	return 0;
-}
 
 int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 {

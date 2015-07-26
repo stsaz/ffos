@@ -68,7 +68,20 @@ static int test_ps(void)
 	h = ffps_exec(args[0], args, env);
 	x(h != FF_BADFD);
 	printf("\ncreated process: %d\n", (int)ffps_id(h));
-	ffthd_sleep(100);
+	x(0 == ffps_wait(h, -1, &cod));
+	printf("process exited with code %d\n", (int)cod);
+
+
+#ifdef FF_UNIX
+	args[0] = "/bin/sh";
+	args[1] = NULL;
+#else
+	args[0] = "c:\\windows\\system32\\cmd.exe";
+	args[1] = NULL;
+#endif
+
+	x(FF_BADFD != (h = ffps_exec(args[0], args, env)));
+	x(0 != ffps_wait(h, 0, &cod) && fferr_last() == ETIMEDOUT);
 	(void)ffps_kill(h);
 	x(0 == ffps_wait(h, -1, &cod));
 	printf("process exited with code %d\n", (int)cod);

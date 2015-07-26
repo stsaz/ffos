@@ -6,6 +6,7 @@
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
 
+#include <sys/wait.h>
 #if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
 #endif
@@ -161,6 +162,34 @@ fffd ffps_exec(const char *filename, const char **argv, const char **env)
 		return 0;
 	}
 	return p;
+}
+
+int ffps_wait(fffd h, uint timeout, int *exit_code)
+{
+	siginfo_t s;
+	int r, f = 0;
+
+	if (timeout != (uint)-1) {
+		f = WNOHANG;
+		s.si_pid = 0;
+	}
+
+	r = waitid(P_PID, (id_t)h, &s, WEXITED | f);
+	if (r != 0)
+		return -1;
+
+	if (s.si_pid == 0) {
+		errno = ETIMEDOUT;
+		return -1;
+	}
+
+	if (exit_code != NULL) {
+		if (s.si_code == CLD_EXITED)
+			*exit_code = s.si_status;
+		else
+			*exit_code = -s.si_status;
+	}
+	return 0;
 }
 
 

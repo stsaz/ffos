@@ -23,7 +23,7 @@ FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env
 /** Send signal to a process.  Works only if the other process has called ffsig_ctl(). */
 FF_EXTN int ffps_sig(int pid, int sig);
 
-#define ffps_kill(h)  (0 == TerminateProcess(h, -1))
+#define ffps_kill(h)  (0 == TerminateProcess(h, -9 /*-SIGKILL*/))
 
 static FFINL int ffps_close(fffd h) {
 	return 0 == CloseHandle(h);

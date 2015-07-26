@@ -453,7 +453,7 @@ int ffps_wait(fffd h, uint timeout_ms, int *exit_code)
 		r = 0;
 	}
 	else if (r == WAIT_TIMEOUT)
-		r = ETIMEDOUT;
+		fferr_set(ETIMEDOUT);
 	return r;
 }
 

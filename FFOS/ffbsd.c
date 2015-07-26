@@ -10,22 +10,6 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/wait.h>
 
 
-int ffps_wait(fffd h, uint timeout, int *exit_code)
-{
-	int st = 0;
-	(void)timeout;
-
-	do {
-		if (-1 == waitpid(h, &st, WNOWAIT))
-			return -1;
-	} while (!WIFEXITED(st) && !WIFSIGNALED(st)); // exited or killed
-
-	if (exit_code != NULL)
-		*exit_code = (WIFEXITED(st) ? WEXITSTATUS(st) : -1);
-
-	return 0;
-}
-
 int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 {
 	struct kevent kev;
