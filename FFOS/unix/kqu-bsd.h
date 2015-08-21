@@ -61,8 +61,6 @@ static FFINL const ffkqu_time * ffkqu_settm(ffkqu_time *t, uint ms) {
 	return t;
 }
 
-#define ffkqu_runtimer()
-
 #define ffkqu_wait(kq, events, eventsSize, tmout)\
 	kevent((kq), NULL, 0, (events), FF_TOINT(eventsSize), (tmout))
 

@@ -15,5 +15,7 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 /** Start timer.
-Windows: this function must be called inside the same thread that runs event loop. */
+@period_ms: if negative, timer will fire just once.
+Note: Windows: a separate thread is created that starts a kernel timer and sleeps in an alertable
+ state to process timer events. */
 FF_EXTN int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms);

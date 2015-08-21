@@ -56,8 +56,6 @@ static FFINL const ffkqu_time * ffkqu_settm(ffkqu_time *t, uint ms) {
 	return t;
 }
 
-#define ffkqu_runtimer()
-
 /** Wait for an event from kernel.
 Return the number of signaled events.
 Return 0 on timeout.

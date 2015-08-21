@@ -872,17 +872,55 @@ void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHig
 	ffkqu_post(t->kq, t->data, NULL);
 }
 
-int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
+static int __stdcall _fftmr_thd(void *param)
 {
-	uint period = periodMs;
-	int64 due_ns100 = (int64)periodMs * 1000 * -10;
-	if (periodMs < 0) {
+	fftmr_s *tmr = param;
+	uint period = tmr->period;
+	int64 due_ns100 = (int64)tmr->period * 1000 * -10;
+	if (tmr->period < 0) {
 		period = 0;
 		due_ns100 = -due_ns100;
 	}
+	SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, 1);
+
+	for (;;) {
+		SleepEx(INFINITE, 1 /*alertable*/);
+	}
+	return 0;
+}
+
+int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
+{
 	tmr->kq = qu;
 	tmr->data = data;
-	return 0 == SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, 1);
+	tmr->period = periodMs;
+
+	FF_ASSERT(tmr->thd == NULL);
+	if (NULL == (tmr->thd = ffthd_create(&_fftmr_thd, tmr, 0)))
+		return FF_BADTMR;
+	return 0;
+}
+
+int fftmr_stop(fftmr tmr, fffd kq)
+{
+	TerminateThread(tmr->thd, -1);
+	ffthd_detach(tmr->thd);
+	tmr->thd = NULL;
+
+	return 0 == CancelWaitableTimer(tmr->htmr);
+}
+
+int fftmr_close(fftmr tmr, fffd kq)
+{
+	int r = (0 == CloseHandle(tmr->htmr));
+
+	if (tmr->thd != NULL) {
+		TerminateThread(tmr->thd, -1);
+		ffthd_detach(tmr->thd);
+	}
+
+	ffmem_free(tmr);
+	return r;
 }
 
 

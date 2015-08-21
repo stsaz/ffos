@@ -39,9 +39,6 @@ static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
 	return t;
 }
 
-/** Execute timer handler function. */
-#define ffkqu_runtimer()  SleepEx(0, 1)
-
 static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 	ULONG num = 0;
 	BOOL b = GetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);

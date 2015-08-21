@@ -4,6 +4,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/time.h>
 #include <FFOS/mem.h>
+#include <FFOS/thread.h>
 
 
 static FFINL int ffclk_get(fftime *result) {
@@ -23,6 +24,8 @@ typedef struct {
 	fffd htmr;
 	fffd kq;
 	void *data;
+	int period;
+	ffthd thd;
 } fftmr_s, * fftmr;
 
 #define FF_BADTMR  NULL
@@ -33,12 +36,6 @@ FF_EXTN fftmr fftmr_create(int flags);
 
 #define fftmr_read(tmr)
 
-static FFINL int fftmr_stop(fftmr tmr, fffd qu) {
-	return 0 == CancelWaitableTimer(tmr->htmr);
-}
+FF_EXTN int fftmr_stop(fftmr tmr, fffd kq);
 
-static FFINL int fftmr_close(fftmr tmr, fffd qu) {
-	int r = (0 == CloseHandle(tmr->htmr));
-	ffmem_free(tmr);
-	return r;
-}
+FF_EXTN int fftmr_close(fftmr tmr, fffd kq);

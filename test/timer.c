@@ -85,8 +85,6 @@ int test_timer()
 			x(0);
 			break;
 		}
-
-		ffkqu_runtimer();
 	}
 
 	(void)fftmr_stop(tmr1, kq);
