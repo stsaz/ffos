@@ -39,6 +39,33 @@ void* _ffmem_align(size_t size, size_t align)
 }
 
 
+char* ffenv_expand(char *dst, size_t cap, const char *src)
+{
+	ffsyschar *wsrc, *wdst = NULL;
+	size_t wlen;
+
+	if (NULL == (wsrc = ffs_utow(NULL, NULL, src, -1)))
+		return NULL;
+
+	wlen = ExpandEnvironmentStrings(wsrc, NULL, 0);
+	if (NULL == (wdst = ffq_alloc(wlen)))
+		goto done;
+	ExpandEnvironmentStrings(wsrc, wdst, wlen);
+
+	if (dst == NULL) {
+		cap = ff_wtou(dst, cap, wdst, wlen + 1, 0);
+		if (NULL == (dst = ffmem_alloc(cap)))
+			goto done;
+	}
+	ff_wtou(dst, cap, wdst, wlen + 1, 0);
+
+done:
+	ffmem_free(wsrc);
+	ffmem_safefree(wdst);
+	return dst;
+}
+
+
 fffd fffile_openq(const ffsyschar *filename, int flags)
 {
 	enum { share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE };

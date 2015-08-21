@@ -5,12 +5,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/file.h>
 
 
-static FFINL size_t ffenv_expand(const ffsyschar *src, ffsyschar *dst, size_t cap) {
-	size_t r = ExpandEnvironmentStrings(src, dst, FF_TOINT(cap));
-	if (r > cap)
-		return 0;
-	return r;
-}
+FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
 
 
 /**
