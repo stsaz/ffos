@@ -57,12 +57,7 @@ typedef struct ffdirentry {
 
 FF_EXTN ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent);
 
-static FFINL ffdir ffdir_open(char *path, size_t cap, ffdirentry *ent) {
-	ffsyschar wname[FF_MAXPATH];
-	if (0 == ff_utow(wname, FFCNT(wname), path, -1, 0))
-		return 0;
-	return ffdir_openq(wname, FF_MAXPATH, ent);
-}
+FF_EXTN ffdir ffdir_open(char *path, size_t cap, ffdirentry *ent);
 
 FF_EXTN int ffdir_read(ffdir dir, ffdirentry *ent);
 

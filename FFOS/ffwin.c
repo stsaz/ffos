@@ -279,6 +279,27 @@ ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 	return dir;
 }
 
+ffdir ffdir_open(char *path, size_t cap, ffdirentry *ent)
+{
+	ffdir d;
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n;
+
+	n = ff_utow(NULL, 0, path, -1, 0) + FFSLEN("/*") + 1;
+
+	w = ws;
+	if (n > FFCNT(ws)
+		&& NULL == (w = ffq_alloc(n)))
+		return NULL;
+
+	ff_utow(w, n, path, -1, 0);
+
+	d = ffdir_openq(w, FF_MAXPATH, ent);
+	if (w != ws)
+		ffmem_free(w);
+	return d;
+}
+
 int ffdir_read(ffdir dir, ffdirentry *ent)
 {
 	if (ent->next) {
