@@ -43,20 +43,20 @@ int ffdir_rmakeq(ffsyschar *path, size_t off)
 
 static const byte month_days[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-ffbool fftime_chk(const ffdtm *dt)
+ffbool fftime_chk(const ffdtm *dt, uint flags)
 {
-	if (dt->month == 0 || dt->month > 12
-		|| dt->weekday > 6
-		|| dt->day == 0 || dt->day > month_days[dt->month - 1]
-		|| dt->hour > 23
-		|| dt->min > 59
-		|| dt->sec > 59)
+	if ((flags == FFTIME_CHKBOTH || (flags & FFTIME_CHKDATE))
+		&& (dt->month == 0 || dt->month > 12
+			|| dt->weekday > 6
+			|| dt->day == 0 || dt->day > month_days[dt->month - 1]
+			|| (dt->month == 2 && 0 != (dt->year % 4) && dt->day > 28)))
 		return 0;
 
-	if (dt->month == 2 && 0 != (dt->year % 4)
-		&& dt->day > 28)
+	if ((flags == FFTIME_CHKBOTH || (flags & FFTIME_CHKTIME))
+		&& (dt->hour > 23
+			|| dt->min > 59
+			|| dt->sec > 59))
 		return 0;
-
 	return 1;
 }
 

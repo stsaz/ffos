@@ -17,6 +17,7 @@ typedef struct fftime {
 enum FF_TIMEZONE {
 	FFTIME_TZUTC
 	, FFTIME_TZLOCAL
+	, FFTIME_TZNODATE
 };
 
 typedef struct ffdtm {
@@ -103,5 +104,13 @@ FF_EXTN int fftime_cmp(const fftime *t1, const fftime *t2);
 /** Get time difference. */
 FF_EXTN void fftime_diff(const fftime *start, fftime *stop);
 
-/** Return TRUE if a valid date-time object. */
-FF_EXTN ffbool fftime_chk(const ffdtm *dt);
+enum FFTIME_CHK {
+	FFTIME_CHKBOTH,
+	FFTIME_CHKDATE = 1,
+	FFTIME_CHKTIME = 2,
+};
+
+/**
+@flags: enum FFTIME_CHK.
+Return TRUE if a valid date-time object. */
+FF_EXTN ffbool fftime_chk(const ffdtm *dt, uint flags);

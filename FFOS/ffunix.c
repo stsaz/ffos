@@ -59,6 +59,13 @@ void fftime_split(ffdtm *dt, const fftime *_t, enum FF_TIMEZONE tz)
 fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
 {
 	struct tm tt;
+
+	if (tz == FFTIME_TZNODATE) {
+		t->s = dt->hour * 24 * 60 + dt->min * 60 + dt->sec;
+		t->mcs = dt->msec * 1000;
+		return t;
+	}
+
 	FF_ASSERT(dt->year >= 1970);
 	fftime_totm(&tt, dt);
 	if (tz == FFTIME_TZUTC)
