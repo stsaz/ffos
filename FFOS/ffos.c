@@ -60,6 +60,22 @@ ffbool fftime_chk(const ffdtm *dt, uint flags)
 	return 1;
 }
 
+void fftime_norm(ffdtm *dt)
+{
+	if (dt->msec >= 1000) {
+		dt->sec += dt->msec / 1000;
+		dt->msec %= 1000;
+	}
+	if (dt->sec >= 60) {
+		dt->min += dt->sec / 60;
+		dt->sec %= 60;
+	}
+	if (dt->min >= 60) {
+		dt->hour += dt->min / 60;
+		dt->min %= 60;
+	}
+}
+
 int fftime_cmp(const fftime *t1, const fftime *t2)
 {
 	if (t1->s == t2->s) {

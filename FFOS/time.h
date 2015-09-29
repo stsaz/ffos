@@ -114,3 +114,6 @@ enum FFTIME_CHK {
 @flags: enum FFTIME_CHK.
 Return TRUE if a valid date-time object. */
 FF_EXTN ffbool fftime_chk(const ffdtm *dt, uint flags);
+
+/** Normalize values that exceed limits. */
+FF_EXTN void fftime_norm(ffdtm *dt);
