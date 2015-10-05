@@ -908,7 +908,7 @@ void ffclk_diff(const fftime *start, fftime *diff)
 
 fftmr fftmr_create(int flags)
 {
-	fftmr tmr = ffmem_alloc(sizeof(fftmr_s));
+	fftmr tmr = ffmem_tcalloc1(fftmr_s);
 	if (tmr == NULL)
 		return FF_BADTMR;
 
