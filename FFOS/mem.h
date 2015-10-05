@@ -54,3 +54,5 @@ do { \
 	if (p != NULL) \
 		ffmem_free(p); \
 } while (0)
+
+#define ffmem_safefree0(p)  FF_SAFECLOSE(p, NULL, ffmem_free)
