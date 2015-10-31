@@ -196,6 +196,19 @@ ssize_t ffstd_write(fffd h, const char *s, size_t len)
 	return fffile_write(h, s, len);
 }
 
+void ffstd_echo(fffd fd, uint enable)
+{
+	DWORD mode;
+	if (!GetConsoleMode(fd, &mode))
+		return;
+
+	if (enable)
+		mode |= ENABLE_ECHO_INPUT;
+	else
+		mode &= ~ENABLE_ECHO_INPUT;
+	SetConsoleMode(fd, mode);
+}
+
 
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t len)

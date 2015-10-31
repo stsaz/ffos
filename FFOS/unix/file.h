@@ -190,6 +190,10 @@ enum FFSTD {
 /** Print to console. */
 #define ffstd_write  fffile_write
 
+FF_EXTN void ffstd_echo(fffd fd, uint enable);
+
+FF_EXTN void ffstd_keypress(fffd fd, uint enable);
+
 
 /** Create pipe. */
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {

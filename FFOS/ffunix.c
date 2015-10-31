@@ -11,7 +11,37 @@
 #include <pthread_np.h>
 #endif
 
+#include <termios.h>
 #include <string.h>
+
+
+void ffstd_echo(fffd fd, uint enable)
+{
+	struct termios t;
+	if (0 != tcgetattr(fd, &t))
+		return;
+
+	if (enable)
+		t.c_lflag |= ECHO;
+	else
+		t.c_lflag &= ~ECHO;
+	tcsetattr(fd, TCSANOW, &t);
+}
+
+void ffstd_keypress(fffd fd, uint enable)
+{
+	struct termios t;
+	if (0 != tcgetattr(fd, &t))
+		return;
+
+	if (enable) {
+		t.c_lflag &= ~ICANON;
+		t.c_cc[VTIME] = 0;
+		t.c_cc[VMIN] = 1;
+	} else
+		t.c_lflag |= ICANON;
+	tcsetattr(0, TCSANOW, &t);
+}
 
 
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
