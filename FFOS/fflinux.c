@@ -148,6 +148,53 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 }
 
 
+static ffkevent *_ffev;
+
+static void _ffev_handler(void *udata)
+{
+	void *p;
+	if (sizeof(void*) != fffile_read(_ffev->fd, &p, sizeof(void*))) {
+		FFDBG_PRINT(0, "%s(): fffile_read() error.  evfd: %d\n", FF_FUNC, _ffev->fd);
+		return;
+	}
+}
+
+int ffkqu_post_attach(fffd kq)
+{
+	if (kq == FF_BADFD) {
+		fffile_close(_ffev->fd);
+		ffmem_free(_ffev);
+		_ffev = NULL;
+		return 0;
+	}
+
+	if (NULL == (_ffev = ffmem_tcalloc1(ffkevent)))
+		return -1;
+	if (FF_BADFD == (_ffev->fd = eventfd(0, EFD_NONBLOCK)))
+		goto fail;
+
+	_ffev->handler = &_ffev_handler;
+
+	if (0 != ffkev_attach(_ffev, kq, FFKQU_READ)) {
+		fffile_close(_ffev->fd);
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	ffmem_free(_ffev);
+	return -1;
+}
+
+int ffkqu_post(fffd kq, void *data, void *unused)
+{
+	if (sizeof(void*) != fffile_write(_ffev->fd, data, sizeof(void*)))
+		return -1;
+	return 0;
+}
+
+
 static FFINL int io_setup(unsigned nr_events, aio_context_t *ctx_idp)
 {
 	return syscall(SYS_io_setup, nr_events, ctx_idp);

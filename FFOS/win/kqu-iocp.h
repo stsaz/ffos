@@ -45,6 +45,8 @@ static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, con
 	return b ? num : -1;
 }
 
+#define ffkqu_post_attach(kq)
+
 static FFINL int ffkqu_post(fffd ioq, void* data, OVERLAPPED *ovl) {
 	return (0 == PostQueuedCompletionStatus(ioq, 0 /*bytes transferred*/, (ULONG_PTR)data, ovl));
 }

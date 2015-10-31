@@ -65,3 +65,7 @@ Return -1 on error. */
 
 /** Close kernel queue. */
 #define ffkqu_close  close
+
+FF_EXTN int ffkqu_post_attach(fffd kq);
+
+FF_EXTN int ffkqu_post(fffd kq, void *data, void *unused);
