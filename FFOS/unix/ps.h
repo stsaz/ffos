@@ -7,11 +7,9 @@ Copyright (c) 2013 Simon Zolin
 
 
 /** Expand environment variables in a string.
-This is a stub for UNIX. */
-static FFINL char* ffenv_expand(char *dst, size_t cap, const char *src)
-{
-	return (char*)src;
-}
+@dst: expanded string
+Return 'dst' or a new allocated buffer (if dst == NULL). */
+FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
 
 
 /** Process fork.
