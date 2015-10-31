@@ -84,20 +84,6 @@ typedef int ffbool;
 #endif
 #endif
 
-static FFINL void ffint_hton16(void *dst, ushort i) {
-	*((ushort*)dst) = ffhton16(i);
-}
-static FFINL void ffint_hton32(void *dst, uint i) {
-	*((uint*)dst) = ffhton32(i);
-}
-
-static FFINL ushort ffint_ntoh16(const void *p) {
-	return ffhton16(*(ushort*)p);
-}
-static FFINL uint ffint_ntoh32(const void *p) {
-	return ffhton32(*(uint*)p);
-}
-
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 
 #define FF_SAFECLOSE(obj, def, func)\
