@@ -42,7 +42,7 @@ static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
 static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 	ULONG num = 0;
 	BOOL b = GetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);
-	return b ? num : -1;
+	return b ? (int)num : -1;
 }
 
 #define ffkqu_post_attach(kq)

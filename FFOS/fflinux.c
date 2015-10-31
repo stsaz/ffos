@@ -78,7 +78,7 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 		}
 
 		sent = r;
-		if (r != hsz)
+		if ((size_t)r != hsz)
 			goto end;
 	}
 
@@ -236,7 +236,7 @@ static void _ffaio_fctxhandler(void *udata)
 	r = fffile_read(fx->kev.fd, &ev_n, sizeof(uint64));
 	if (r != sizeof(uint64)) {
 #ifdef FFDBG_AIO
-		ffdbg_print(0, "%s(): read error from eventfd: %L, errno: %d", FF_FUNC, r, errno);
+		ffdbg_print(0, "%s(): read error from eventfd: %L, errno: %d\n", FF_FUNC, r, errno);
 #endif
 		return;
 	}
@@ -247,7 +247,7 @@ static void _ffaio_fctxhandler(void *udata)
 		if (r <= 0) {
 #ifdef FFDBG_AIO
 			if (r < 0)
-				ffdbg_print(0, "%s(): io_getevents() error: %d", FF_FUNC, errno);
+				ffdbg_print(0, "%s(): io_getevents() error: %d\n", FF_FUNC, errno);
 #endif
 			return;
 		}

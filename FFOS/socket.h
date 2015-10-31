@@ -96,16 +96,24 @@ static FFINL void ffip4_set(ffaddr *adr, const struct in_addr *net_addr) {
 Example:
 ffip4_setint(&ip4, INADDR_LOOPBACK); */
 static FFINL void ffip4_setint(ffaddr *adr, int net_addr) {
-	net_addr = ffhton32(net_addr);
-	ffip4_set(adr, (struct in_addr*)&net_addr);
+	union {
+		struct in_addr a;
+		uint i;
+	} un;
+	un.i = ffhton32(net_addr);
+	ffip4_set(adr, &un.a);
 }
 
 /** Set IPv4-mapped address (host byte order). */
 static FFINL void ffip6_setv4mapped(ffaddr *adr, int net_addr) {
-	int *a = (int*)&adr->ip6.sin6_addr;
-	a[0] = a[1] = 0;
-	a[2] = ffhton32(0x0000ffff);
-	a[3] = ffhton32(net_addr);
+	union {
+		struct in6_addr *a;
+		uint *i;
+	} un;
+	un.a = &adr->ip6.sin6_addr;
+	un.i[0] = un.i[1] = 0;
+	un.i[2] = ffhton32(0x0000ffff);
+	un.i[3] = ffhton32(net_addr);
 	adr->a.sa_family = AF_INET6;
 	adr->len = sizeof(struct sockaddr_in6);
 }
@@ -132,8 +140,15 @@ static FFINL void ffaddr_setany(ffaddr *adr, int family) {
 
 /** Convert IPv4-mapped address to IPv4. */
 static FFINL void ffip_v4mapped_tov4(ffaddr *a) {
+	union {
+		struct in6_addr *a6;
+		struct in_addr *a;
+		char *b;
+	} un;
 	a->ip4.sin_port = a->ip6.sin6_port;
-	ffip4_set(a, (struct in_addr*)(((byte*)&a->ip6.sin6_addr) + 12));
+	un.a6 = &a->ip6.sin6_addr;
+	un.b += 12;
+	ffip4_set(a, un.a);
 }
 
 

@@ -7,9 +7,11 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/error.h>
 
+
+#define FF_BADSKT  ((SOCKET)-1)
+
 enum {
-	FF_BADSKT = -1
-	, FF_MAXIP4 = INET_ADDRSTRLEN
+	FF_MAXIP4 = INET_ADDRSTRLEN
 	, FF_MAXIP6 = INET6_ADDRSTRLEN
 
 	, SOCK_NONBLOCK = 1

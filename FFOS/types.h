@@ -158,4 +158,10 @@ void _ffdl_oninit(void) \
 /** Print FF debug messages. */
 extern int ffdbg_print(int t, const char *fmt, ...);
 
+#ifdef _DEBUG
+#define FFDBG_PRINT  ffdbg_print
+#else
+#define FFDBG_PRINT(...)
+#endif
+
 #endif //FF_VER

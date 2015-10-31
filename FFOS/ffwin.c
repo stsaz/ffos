@@ -191,7 +191,7 @@ ssize_t ffstd_write(fffd h, const char *s, size_t len)
 		BOOL b = WriteConsole(h, w, FF_TOINT(r), &wr, NULL);
 		if (w != ws)
 			ffmem_free(w);
-		return b ? len : -1;
+		return b ? (ssize_t)len : -1;
 	}
 	return fffile_write(h, s, len);
 }
@@ -457,7 +457,7 @@ WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 	}
 
 	//not enough space in the provided buffer.  Allocate a new one.
-	wlen = (len == -1) ? strlen(s) + 1 : len + 1;
+	wlen = (len == (size_t)-1) ? strlen(s) + 1 : len + 1;
 	dst = ffmem_talloc(WCHAR, wlen);
 	if (dst == NULL)
 		return NULL;

@@ -27,4 +27,4 @@ static FFINL void *ffmap_open(fffd fd, uint64 offset, size_t size, int prot, int
 #define ffmap_unmap  munmap
 
 /** Close a file mapping. */
-#define ffmap_close(h)
+#define ffmap_close(h)  ((void)h)
