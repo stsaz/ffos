@@ -209,6 +209,10 @@ void ffstd_echo(fffd fd, uint enable)
 	SetConsoleMode(fd, mode);
 }
 
+void ffstd_keypress(fffd fd, uint enable)
+{
+}
+
 
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t len)

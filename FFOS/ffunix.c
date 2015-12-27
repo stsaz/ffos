@@ -43,6 +43,44 @@ void ffstd_keypress(fffd fd, uint enable)
 	tcsetattr(0, TCSANOW, &t);
 }
 
+// ESC [ 1;N
+static const uint _ffstd_key_esc1[] = {
+	FFKEY_SHIFT /*N == 2*/, FFKEY_ALT, FFKEY_SHIFT | FFKEY_ALT,
+	FFKEY_CTRL, FFKEY_CTRL | FFKEY_SHIFT, FFKEY_CTRL | FFKEY_ALT, FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT,
+};
+
+/** Parse key received from terminal. */
+int ffstd_key(const char *data, size_t *len)
+{
+	int r = 0;
+	const char *d = data;
+	if (*len == 0)
+		return -1;
+
+	if (d[0] == '\x1b' && *len >= 3 && d[1] == '[') {
+
+		if (d[2] == '1' && *len > 5 && d[3] == ';') {
+			uint m = (byte)d[4];
+			if (m - '2' >= FFCNT(_ffstd_key_esc1))
+				return -1;
+			r = _ffstd_key_esc1[m - '2'];
+			d += FFSLEN("1;N");
+		}
+		d += 2;
+
+		if (*d >= 'A' && *d <= 'D') {
+			*len = d - data + 1;
+			r |= FFKEY_UP + *d - 'A';
+			return r;
+		}
+
+		return -1;
+	}
+
+	*len = 1;
+	return d[0];
+}
+
 
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
 	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {

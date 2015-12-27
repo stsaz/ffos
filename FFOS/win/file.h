@@ -165,6 +165,8 @@ FF_EXTN ssize_t ffstd_write(fffd h, const char *s, size_t len);
 
 FF_EXTN void ffstd_echo(fffd fd, uint enable);
 
+FF_EXTN void ffstd_keypress(fffd fd, uint enable);
+
 
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	SECURITY_ATTRIBUTES sa = {
