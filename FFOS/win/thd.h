@@ -8,6 +8,8 @@ typedef int (FFTHDCALL *ffthdproc)(void *);
 
 typedef HANDLE ffthd;
 
+#define FFTHD_INV NULL
+
 static FFINL ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size) {
 	return CreateThread(NULL, stack_size, (PTHREAD_START_ROUTINE)proc, param, 0, NULL);
 }

@@ -12,7 +12,10 @@ typedef int (FFTHDCALL *ffthdproc)(void *);
 
 typedef pthread_t ffthd;
 
+#define FFTHD_INV 0
+
 /** Create a thread.
+@stack_size: 0=default.
 Return 0 on error. */
 FF_EXTN ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size);
 

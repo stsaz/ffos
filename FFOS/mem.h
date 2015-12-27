@@ -49,6 +49,18 @@ FF_EXTN void ffmem_alignfree(void *ptr);
 #define ffmem_alignfree _ffmem_alignfree
 #endif
 
+/** Safely reallocate memory buffer.
+Return NULL on error and free the original buffer. */
+static FFINL void* ffmem_saferealloc(void *ptr, size_t newsize)
+{
+	void *p = ffmem_realloc(ptr, newsize);
+	if (p == NULL) {
+		ffmem_free(ptr);
+		return NULL;
+	}
+	return p;
+}
+
 #define ffmem_safefree(p) \
 do { \
 	if (p != NULL) \
@@ -56,3 +68,9 @@ do { \
 } while (0)
 
 #define ffmem_safefree0(p)  FF_SAFECLOSE(p, NULL, ffmem_free)
+
+#define ffmem_free0(p) \
+do { \
+	ffmem_free(p); \
+	p = NULL; \
+} while (0)

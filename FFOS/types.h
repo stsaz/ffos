@@ -106,9 +106,8 @@ static FFINL size_t ffmin(size_t i0, size_t i1) {
 	return (i0 > i1 ? i1 : i0);
 }
 
-static FFINL uint64 ffmax64(uint64 i0, uint64 i1) {
-	return (i0 < i1 ? i1 : i0);
-}
+#define ffmax(i0, i1) \
+	(((i0) < (i1)) ? (i1) : (i0))
 
 #if defined FF_SAFECAST_SIZE_T && !defined FF_64
 	/** Safer cast 'uint64' to 'size_t'. */
@@ -159,7 +158,14 @@ void _ffdl_oninit(void) \
 extern int ffdbg_print(int t, const char *fmt, ...);
 
 #ifdef _DEBUG
-#define FFDBG_PRINT  ffdbg_print
+extern int ffdbg_mask;
+
+#define FFDBG_PRINT(t, ...) \
+do { \
+	if (ffdbg_mask >= t) \
+		ffdbg_print(t, __VA_ARGS__); \
+} while (0)
+
 #else
 #define FFDBG_PRINT(...)
 #endif
