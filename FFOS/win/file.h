@@ -120,6 +120,12 @@ typedef uint64 fffileid;
 
 #define fffile_infoid(fi)  (((uint64)(fi)->nFileIndexHigh << 32) | (fi)->nFileIndexLow)
 
+static FFINL int fffile_settime(fffd fd, const fftime *last_write)
+{
+	FILETIME ft = _ff_timeToFt(last_write);
+	return 0 == SetFileTime(fd, NULL, NULL, &ft);
+}
+
 
 #define fffile_renameq(src, dst)  (0 == MoveFileEx(src, dst, /*MOVEFILE_COPY_ALLOWED*/ MOVEFILE_REPLACE_EXISTING))
 

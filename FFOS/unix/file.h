@@ -9,7 +9,9 @@ Copyright (c) 2013 Simon Zolin
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <errno.h>
+
 
 enum {
 	FF_MAXPATH = 4096
@@ -166,6 +168,16 @@ typedef ino_t fffileid;
 
 /** Get file ID. */
 #define fffile_infoid(fi)  (fi)->st_ino
+
+static FFINL int fffile_settime(fffd fd, const fftime *last_write)
+{
+	struct timeval tv[2];
+	tv[0].tv_sec = last_write->s;
+	tv[0].tv_usec = last_write->mcs;
+	tv[1].tv_sec = last_write->s;
+	tv[1].tv_usec = last_write->mcs;
+	return futimes(fd, tv);
+}
 
 
 /** Change the name or location of a file. */
