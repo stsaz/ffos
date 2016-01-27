@@ -166,8 +166,15 @@ do { \
 		ffdbg_print(t, __VA_ARGS__); \
 } while (0)
 
+#define FFDBG_PRINTLN(t, fmt, ...) \
+do { \
+	if (ffdbg_mask >= t) \
+		ffdbg_print(t, "%s(): " fmt "\n", FF_FUNC, __VA_ARGS__); \
+} while (0)
+
 #else
 #define FFDBG_PRINT(...)
+#define FFDBG_PRINTLN(...)
 #endif
 
 #endif //FF_VER

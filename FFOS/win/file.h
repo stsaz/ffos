@@ -4,7 +4,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/time.h>
 #include <FFOS/error.h>
-#include <FFOS/win/str.h>
+#include <FFOS/string.h>
 
 enum {
 	FF_MAXPATH = 4096
