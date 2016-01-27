@@ -321,27 +321,3 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 
 	return 0;
 }
-
-
-size_t ff_wtou(char *dst, size_t dst_cap, const wchar_t *src, size_t srclen, int flags)
-{
-	mbstate_t state;
-	size_t r;
-	const wchar_t *srcend = src + srclen;
-	const char *dsto = dst;
-	const char *dstend = dst + dst_cap;
-	(void)flags;
-
-	memset(&state, 0, sizeof(mbstate_t));
-	for (;  src != srcend;  src++)
-	{
-		if (dst + 4 > dstend)
-			return 0;
-		r = wcrtomb(dst, *src, &state);
-		if (r == 0 || r == (size_t)-1)
-			return 0;
-		dst += r;
-	}
-
-	return dst - dsto;
-}

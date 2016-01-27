@@ -491,12 +491,30 @@ done:
 	return dst;
 }
 
+#ifdef FF_USE_SYS_WTOU
 size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags)
 {
 	int r;
 	r = WideCharToMultiByte(CP_UTF8, 0, src, FF_TOINT(srclen), dst, FF_TOINT(dst_cap), NULL, NULL);
 	return r;
 }
+
+#else
+FF_EXTN size_t ffutf8_encode(char *dst, size_t cap, const char *src, size_t *len, uint flags);
+size_t ff_wtou(char *dst, size_t cap, const wchar_t *src, size_t len, int flags)
+{
+	enum {
+		FFU_UTF16LE = 1,
+		FFU_FWHOLE = 1 << 31
+	};
+	len = (len != (size_t)-1) ? 2 * len : 2 * (ffq_len(src) + 1);
+	size_t ln = len;
+	size_t r = ffutf8_encode(dst, cap, (char*)src, &ln, FFU_UTF16LE | FFU_FWHOLE);
+	if (ln != len)
+		return 0; //not enough output space
+	return r;
+}
+#endif
 
 
 int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)

@@ -3,12 +3,10 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <stdlib.h>
-#include <locale.h>
 #include <errno.h>
 
 /** Initialize FFOS. */
 static FFINL void ffos_init() {
-	setlocale(LC_CTYPE, "en_US.UTF-8"); //for ff_wtou()
 }
 
 #define ffmem_init()
