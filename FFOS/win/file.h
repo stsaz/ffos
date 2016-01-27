@@ -178,12 +178,15 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 }
 
 /// return FF_BADFD on error
-static FFINL fffd ffpipe_createnamed(const ffsyschar *name) {
+static FFINL fffd ffpipe_create_namedq(const ffsyschar *name)
+{
 	return CreateNamedPipe(name
 		, PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED
-		, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT | PIPE_ACCEPT_REMOTE_CLIENTS
+		, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT
 		, PIPE_UNLIMITED_INSTANCES, 512, 512, 0, NULL);
 }
+
+FF_EXTN fffd ffpipe_create_named(const char *name);
 
 /// Server kicks the client from the pipe
 #define ffpipe_disconnect  DisconnectNamedPipe

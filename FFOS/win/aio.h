@@ -61,3 +61,16 @@ static FFINL int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iovs
 }
 
 FF_EXTN int _ffaio_events(ffaio_task *t, const ffkqu_entry *e);
+
+
+/** Listen for inbound connections to a named pipe. */
+static FFINL int ffaio_pipe_listen(ffkevent *kev, ffkev_handler handler)
+{
+	ffmem_tzero(&kev->ovl);
+	BOOL b = ConnectNamedPipe(kev->fd, &kev->ovl);
+	if (0 != fferr_ioret(b))
+		return -1;
+	if (!b)
+		kev->handler = handler;
+	return 0;
+}

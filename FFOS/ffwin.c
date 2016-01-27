@@ -214,6 +214,21 @@ void ffstd_keypress(fffd fd, uint enable)
 }
 
 
+fffd ffpipe_create_named(const char *name)
+{
+	fffd f;
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+		return FF_BADFD;
+
+	f = ffpipe_create_namedq(ws);
+	if (w != ws)
+		ffmem_free(w);
+	return f;
+}
+
+
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t len)
 {
@@ -1029,7 +1044,6 @@ static void pipename(ffsyschar *dst, size_t cap, int pid)
 int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	ffsyschar name[64];
-	BOOL b;
 
 	if (handler == NULL) {
 		if (t->fd == FF_BADFD)
@@ -1039,19 +1053,16 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	}
 
 	pipename(name, FFCNT(name), ffps_curid());
-	t->fd = ffpipe_createnamed(name);
+	t->fd = ffpipe_create_namedq(name);
 	if (t->fd == FF_BADFD)
 		return 1;
 
 	if (0 != ffkqu_attach(kq, t->fd, ffkev_ptr(t), 0))
 		return 1;
 
-	ffmem_tzero(&t->ovl);
-	b = ConnectNamedPipe(t->fd, &t->ovl);
-	if (0 != fferr_ioret(b))
+	if (0 != ffaio_pipe_listen(t, handler))
 		return -1;
 
-	t->handler = handler;
 	t->oneshot = 0;
 	return 0;
 }
@@ -1066,9 +1077,7 @@ int ffsig_read(ffsignal *t)
 		return b;
 
 	ffpipe_disconnect(t->fd);
-	ffmem_tzero(&t->ovl);
-	b = ConnectNamedPipe(t->fd, &t->ovl);
-	if (0 == fferr_ioret(b)) {
+	if (0 == ffaio_pipe_listen(t, t->handler)) {
 		fferr_set(EAGAIN);
 		return -1;
 	}
