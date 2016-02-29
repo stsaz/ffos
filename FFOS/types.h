@@ -94,9 +94,11 @@ do { \
 	} \
 } while (0)
 
-static FFINL size_t ffabs(ssize_t n) {
-	return (n >= 0) ? n : -n;
-}
+#define ffabs(n) \
+({ \
+	__typeof__(n) _n = (n); \
+	(_n >= 0) ? _n : -_n; \
+})
 
 static FFINL uint64 ffmin64(uint64 i0, uint64 i1) {
 	return (i0 > i1 ? i1 : i0);
