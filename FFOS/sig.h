@@ -48,24 +48,33 @@ FF_EXTN int ffsig_ctl(ffsignal *sig, fffd kq, const int *sigs, size_t nsigs, ffa
 
 #if defined FF_LINUX
 
+typedef struct signalfd_siginfo ffsiginfo;
+
+#define ffsiginfo_fd(si)  ((si)->ssi_fd)
+
 /** Get signal number.
+@si: optional
 Return -1 on error. */
-static FFINL int ffsig_read(ffsignal *t)
+static FFINL int ffsig_read(ffsignal *t, ffsiginfo *si)
 {
 	struct signalfd_siginfo fdsi;
-	ssize_t r = read(t->fd, &fdsi, sizeof(struct signalfd_siginfo));
+	if (si == NULL)
+		si = &fdsi;
+	ssize_t r = read(t->fd, si, sizeof(struct signalfd_siginfo));
 	if (r != sizeof(struct signalfd_siginfo)) {
 		if (r != -1)
 			errno = EAGAIN;
 		return -1;
 	}
 
-	return fdsi.ssi_signo;
+	return si->ssi_signo;
 }
 
 #elif defined FF_BSD
 
-static FFINL int ffsig_read(ffsignal *t)
+typedef int ffsiginfo;
+
+static FFINL int ffsig_read(ffsignal *t, ffsiginfo *si)
 {
 	int ident = t->ev->ident;
 	if (t->ev->ident == -1) {
@@ -78,6 +87,8 @@ static FFINL int ffsig_read(ffsignal *t)
 
 #elif defined FF_WIN
 
-FF_EXTN int ffsig_read(ffsignal *sig);
+typedef int ffsiginfo;
+
+FF_EXTN int ffsig_read(ffsignal *sig, ffsiginfo *si);
 
 #endif

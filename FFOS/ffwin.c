@@ -1067,7 +1067,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	return 0;
 }
 
-int ffsig_read(ffsignal *t)
+int ffsig_read(ffsignal *t, ffsiginfo *si)
 {
 	ssize_t r;
 	byte b;
