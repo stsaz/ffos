@@ -270,6 +270,10 @@ int ffdir_rmake(const char *path, size_t off)
 
 	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
 		return -1;
+
+	if (off == 0 && ffpath_abs(path, strlen(path)))
+		off = FFSLEN("c:"); // don't try to make directory "drive:"
+
 	r = ffdir_rmakeq(w, off);
 	if (w != ws)
 		ffmem_free(w);
