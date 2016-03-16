@@ -23,19 +23,6 @@ static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
 	return sigprocmask(how, &mask, NULL);
 }
 
-#else
-
-#if defined FF_MSVC || defined FF_MINGW
-enum {
-	SIG_BLOCK
-	, SIG_UNBLOCK
-};
-#endif
-
-static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs) {
-	return 0;
-}
-
 #endif
 
 typedef ffkevent ffsignal;
@@ -43,7 +30,9 @@ typedef ffkevent ffsignal;
 #define ffsig_init  ffkev_init
 
 /** If 'handler' is set, initialize kernel event for signals.
-If 'handler' is NULL, remove event from the kernel. */
+If 'handler' is NULL, remove event from the kernel.
+Windows: Ctrl-events handling sequence: ctrl_handler() -> pipe -> kqueue -> sig_handler()
+*/
 FF_EXTN int ffsig_ctl(ffsignal *sig, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler);
 
 #if defined FF_LINUX
@@ -87,8 +76,6 @@ static FFINL int ffsig_read(ffsignal *t, ffsiginfo *si)
 
 #elif defined FF_WIN
 
-typedef int ffsiginfo;
-
-FF_EXTN int ffsig_read(ffsignal *sig, ffsiginfo *si);
+#include <FFOS/win/sig.h>
 
 #endif

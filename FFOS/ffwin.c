@@ -1041,11 +1041,35 @@ static void pipename(ffsyschar *dst, size_t cap, int pid)
 	*dst = L'\0';
 }
 
+static BOOL __stdcall _ffsig_ctrlhandler(DWORD ctrl)
+{
+	FFDBG_PRINTLN(5, "CTRL event: %u", ctrl);
+
+	if (ctrl == CTRL_C_EVENT) {
+		ffps_sig(ffps_curid(), SIGINT);
+		return 1;
+	}
+	return 0;
+}
+
 int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	ffsyschar name[64];
+	ffbool ctrl_c = 0;
+	size_t n;
+
+	for (n = 0;  n != nsigs;  n++) {
+		if (sigs[n] == SIGINT) {
+			ctrl_c = 1;
+			break;
+		}
+	}
 
 	if (handler == NULL) {
+		if (ctrl_c) {
+			SetConsoleCtrlHandler(&_ffsig_ctrlhandler, 0);
+		}
+
 		if (t->fd == FF_BADFD)
 			ffpipe_close(t->fd);
 		ffkev_fin(t);
@@ -1064,6 +1088,11 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 		return -1;
 
 	t->oneshot = 0;
+
+	if (ctrl_c) {
+		SetConsoleCtrlHandler(&_ffsig_ctrlhandler, 1);
+	}
+
 	return 0;
 }
 
