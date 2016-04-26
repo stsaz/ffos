@@ -15,32 +15,31 @@
 #include <string.h>
 
 
-void ffstd_echo(fffd fd, uint enable)
+int ffstd_attr(fffd fd, uint attr, uint val)
 {
 	struct termios t;
 	if (0 != tcgetattr(fd, &t))
-		return;
+		return -1;
 
-	if (enable)
-		t.c_lflag |= ECHO;
-	else
-		t.c_lflag &= ~ECHO;
+	if (attr & FFSTD_ECHO) {
+		if (val & FFSTD_ECHO)
+			t.c_lflag |= ECHO;
+		else
+			t.c_lflag &= ~ECHO;
+	}
+
+	if (attr & FFSTD_LINEINPUT) {
+		if (val & FFSTD_LINEINPUT)
+			t.c_lflag |= ICANON;
+		else {
+			t.c_lflag &= ~ICANON;
+			t.c_cc[VTIME] = 0;
+			t.c_cc[VMIN] = 1;
+		}
+	}
+
 	tcsetattr(fd, TCSANOW, &t);
-}
-
-void ffstd_keypress(fffd fd, uint enable)
-{
-	struct termios t;
-	if (0 != tcgetattr(fd, &t))
-		return;
-
-	if (enable) {
-		t.c_lflag &= ~ICANON;
-		t.c_cc[VTIME] = 0;
-		t.c_cc[VMIN] = 1;
-	} else
-		t.c_lflag |= ICANON;
-	tcsetattr(0, TCSANOW, &t);
+	return 0;
 }
 
 // ESC [ 1;N

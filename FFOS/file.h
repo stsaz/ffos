@@ -17,3 +17,15 @@ Copyright (c) 2013 Simon Zolin
 
 /** Write constant string to a file. */
 #define fffile_writecz(fd, csz)  fffile_write(fd, csz, sizeof(csz)-1)
+
+
+enum FFSTD_ATTR {
+	FFSTD_ECHO = 1,
+	FFSTD_LINEINPUT = 2,
+};
+
+/** Set attribute on a terminal.
+@attr: enum FFSTD_ATTR.
+@val: enum FFSTD_ATTR.
+*/
+FF_EXTN int ffstd_attr(fffd fd, uint attr, uint val);

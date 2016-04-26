@@ -196,17 +196,28 @@ ssize_t ffstd_write(fffd h, const char *s, size_t len)
 	return fffile_write(h, s, len);
 }
 
-void ffstd_echo(fffd fd, uint enable)
+int ffstd_attr(fffd fd, uint attr, uint val)
 {
 	DWORD mode;
 	if (!GetConsoleMode(fd, &mode))
-		return;
+		return -1;
 
-	if (enable)
-		mode |= ENABLE_ECHO_INPUT;
-	else
-		mode &= ~ENABLE_ECHO_INPUT;
+	if (attr & FFSTD_ECHO) {
+		if (val & FFSTD_ECHO)
+			mode |= ENABLE_ECHO_INPUT;
+		else
+			mode &= ~ENABLE_ECHO_INPUT;
+	}
+
+	if (attr & FFSTD_LINEINPUT) {
+		if (val & FFSTD_LINEINPUT)
+			mode |= ENABLE_LINE_INPUT;
+		else
+			mode &= ~ENABLE_LINE_INPUT;
+	}
+
 	SetConsoleMode(fd, mode);
+	return 0;
 }
 
 void ffstd_keypress(fffd fd, uint enable)

@@ -202,10 +202,6 @@ enum FFSTD {
 /** Print to console. */
 #define ffstd_write  fffile_write
 
-FF_EXTN void ffstd_echo(fffd fd, uint enable);
-
-FF_EXTN void ffstd_keypress(fffd fd, uint enable);
-
 enum FFKEY {
 	/* single character: 0..0xff */
 
