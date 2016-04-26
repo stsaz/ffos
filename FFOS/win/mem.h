@@ -5,10 +5,6 @@ Copyright (c) 2013 Simon Zolin
 /** Heap handle used by ffmem* functions. */
 FF_EXTN HANDLE _ffheap;
 
-static FFINL void ffos_init() {
-	_ffheap = GetProcessHeap();
-}
-
 /** Initialize heap memory. */
 #define ffmem_init() \
 	_ffheap = GetProcessHeap()

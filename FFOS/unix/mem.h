@@ -5,9 +5,6 @@ Copyright (c) 2013 Simon Zolin
 #include <stdlib.h>
 #include <errno.h>
 
-/** Initialize FFOS. */
-static FFINL void ffos_init() {
-}
 
 #define ffmem_init()
 
