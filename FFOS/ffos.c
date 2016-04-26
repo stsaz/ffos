@@ -41,15 +41,17 @@ int ffdir_rmakeq(ffsyschar *path, size_t off)
 }
 
 
-static const byte month_days[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+#define year_leap(year)  (((year) % 4) == 0 && (((year) % 100) || ((year) % 400) == 0))
+
+static const byte month_days[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 ffbool fftime_chk(const ffdtm *dt, uint flags)
 {
 	if ((flags == FFTIME_CHKBOTH || (flags & FFTIME_CHKDATE))
-		&& (dt->month == 0 || dt->month > 12
-			|| dt->weekday > 6
-			|| dt->day == 0 || dt->day > month_days[dt->month - 1]
-			|| (dt->month == 2 && 0 != (dt->year % 4) && dt->day > 28)))
+		&& !((uint)dt->month - 1 < 12
+			&& dt->weekday <= 6
+			&& ((uint)dt->day - 1 < month_days[dt->month - 1]
+				|| (dt->day == 29 && dt->month == 2 && year_leap(dt->year)))))
 		return 0;
 
 	if ((flags == FFTIME_CHKBOTH || (flags & FFTIME_CHKTIME))
