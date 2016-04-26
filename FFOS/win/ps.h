@@ -7,6 +7,8 @@ Copyright (c) 2013 Simon Zolin
 
 FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
 
+FF_EXTN int ffenv_update(void);
+
 
 /**
 argv: quotes in arguments are not escaped.

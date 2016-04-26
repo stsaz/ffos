@@ -65,6 +65,12 @@ done:
 	return dst;
 }
 
+int ffenv_update(void)
+{
+	DWORD_PTR r;
+	return !SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)L"Environment", SMTO_ABORTIFHUNG , 5000, &r);
+}
+
 
 fffd fffile_openq(const ffsyschar *filename, int flags)
 {
