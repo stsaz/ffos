@@ -80,6 +80,20 @@ int ffstd_key(const char *data, size_t *len)
 	return d[0];
 }
 
+int ffstd_event(fffd fd, ffstd_ev *ev)
+{
+	ssize_t r = fffile_read(fd, ev->buf, sizeof(ev->buf));
+	if (r < 0 && fferr_again(fferr_last()))
+		return 0;
+	else if (r == 0) {
+		errno = EBADFD;
+		return -1;
+	}
+	ev->data = ev->buf;
+	ev->datalen = r;
+	return 1;
+}
+
 
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
 	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {

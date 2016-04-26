@@ -202,6 +202,17 @@ enum FFSTD {
 /** Print to console. */
 #define ffstd_write  fffile_write
 
+typedef struct ffstd_ev {
+	char buf[8];
+
+	char *data;
+	size_t datalen;
+} ffstd_ev;
+
+/** Read keyboard event from terminal.
+Return 1 on success;  0 if queue is empty;  -1 on error. */
+FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
+
 
 /** Create pipe. */
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {

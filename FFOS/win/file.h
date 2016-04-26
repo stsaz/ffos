@@ -163,6 +163,18 @@ static FFINL ssize_t ffstd_writeq(fffd h, const ffsyschar *s, size_t len) {
 /** Write UTF-8 data into standard output/error handle. */
 FF_EXTN ssize_t ffstd_write(fffd h, const char *s, size_t len);
 
+typedef struct ffstd_ev {
+	uint state;
+	INPUT_RECORD rec[8];
+	uint irec;
+	uint nrec;
+
+	char *data;
+	size_t datalen;
+} ffstd_ev;
+
+FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
+
 
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	SECURITY_ATTRIBUTES sa = {

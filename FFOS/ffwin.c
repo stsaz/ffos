@@ -266,6 +266,51 @@ int ffstd_key(const char *data, size_t *len)
 	return r;
 }
 
+int ffstd_event(fffd fd, ffstd_ev *ev)
+{
+	DWORD n;
+	int r;
+	enum { I_READ, I_NEXT };
+
+	for (;;) {
+	switch (ev->state) {
+
+	case I_READ:
+		r = WaitForSingleObject(fd, INFINITE);
+		if (r != WAIT_OBJECT_0)
+			return -1;
+
+		if (!GetNumberOfConsoleInputEvents(fd, &n))
+			return -1;
+		if (n == 0)
+			return 0;
+
+		if (!ReadConsoleInput(fd, ev->rec, ffmin(n, FFCNT(ev->rec)), &n))
+			return -1;
+		if (n == 0)
+			return 0;
+		ev->nrec = n;
+		ev->irec = 0;
+		ev->state = I_NEXT;
+		// break
+
+	case I_NEXT:
+		if (ev->irec == ev->nrec) {
+			ev->state = I_READ;
+			continue;
+		}
+		if (!(ev->rec[ev->irec].EventType == KEY_EVENT && ev->rec[ev->irec].Event.KeyEvent.bKeyDown)) {
+			ev->irec++;
+			continue;
+		}
+		ev->data = (void*)&ev->rec[ev->irec].Event.KeyEvent;
+		ev->datalen = sizeof(ev->rec[ev->irec].Event.KeyEvent);
+		ev->irec++;
+		return 1;
+	}
+	}
+}
+
 
 fffd ffpipe_create_named(const char *name)
 {
