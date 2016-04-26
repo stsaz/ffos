@@ -202,24 +202,6 @@ enum FFSTD {
 /** Print to console. */
 #define ffstd_write  fffile_write
 
-enum FFKEY {
-	/* single character: 0..0xff */
-
-	FFKEY_UP = 0x100,
-	FFKEY_DOWN,
-	FFKEY_RIGHT,
-	FFKEY_LEFT,
-
-	FFKEY_CTRL = 0x1 << 24,
-	FFKEY_SHIFT = 0x2 << 24,
-	FFKEY_ALT = 0x4 << 24,
-	FFKEY_MODMASK = FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT,
-};
-
-/** Parse key received from terminal.
-Return enum FFKEY;  -1 on error. */
-FF_EXTN int ffstd_key(const char *data, size_t *len);
-
 
 /** Create pipe. */
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {

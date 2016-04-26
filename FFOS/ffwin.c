@@ -220,8 +220,50 @@ int ffstd_attr(fffd fd, uint attr, uint val)
 	return 0;
 }
 
-void ffstd_keypress(fffd fd, uint enable)
+// VK_* -> FFKEY_*
+static const byte vkeys[] = {
+	VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN,
+};
+static const byte ffkeys[] = {
+	(byte)FFKEY_LEFT, (byte)FFKEY_UP, (byte)FFKEY_RIGHT, (byte)FFKEY_DOWN,
+};
+
+static ssize_t ffint_binfind1(const byte *arr, size_t n, uint search)
 {
+	size_t i, start = 0;
+	while (start != n) {
+		i = start + (n - start) / 2;
+		if (search == arr[i])
+			return i;
+		else if (search < arr[i])
+			n = i;
+		else
+			start = i + 1;
+	}
+	return -1;
+}
+
+int ffstd_key(const char *data, size_t *len)
+{
+	const KEY_EVENT_RECORD *k = (void*)data;
+	uint r, ctl = k->dwControlKeyState;
+
+	if (k->uChar.AsciiChar != 0)
+		r = k->uChar.AsciiChar;
+	else {
+		if ((uint)-1 == (r = ffint_binfind1(vkeys, FFCNT(vkeys), k->wVirtualKeyCode)))
+			return -1;
+		r = FFKEY_VIRT | ffkeys[r];
+	}
+
+	if (ctl & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
+		r |= FFKEY_ALT;
+	if (ctl & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
+		r |= FFKEY_CTRL;
+	if (ctl & SHIFT_PRESSED)
+		r |= FFKEY_SHIFT;
+
+	return r;
 }
 
 
