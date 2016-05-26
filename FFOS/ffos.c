@@ -348,18 +348,21 @@ const char * fferr_opstr(enum FFERR e)
 }
 
 
-#ifdef FFDBG_MEM
+#ifdef _DEBUG
+static ffatomic _ffmem_total; //accumulated size of (re)allocated memory; NOT the currently allocated memory size
 void* ffmem_alloc(size_t size)
 {
 	void *p = _ffmem_alloc(size);
-	ffdbg_print(0, "%s(): p:%p, size:%L\n", FF_FUNC, p, size);
+	ffatom_add(&_ffmem_total, size);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L [%LK]", p, size, _ffmem_total / 1024);
 	return p;
 }
 
 void* ffmem_calloc(size_t n, size_t sz)
 {
 	void *p = _ffmem_calloc(n, sz);
-	ffdbg_print(0, "%s(): p:%p, size:%L*%L\n", FF_FUNC, p, n, sz);
+	ffatom_add(&_ffmem_total, n * sz);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L*%L [%LK]", p, n, sz, _ffmem_total / 1024);
 	return p;
 }
 
@@ -367,29 +370,28 @@ void* ffmem_realloc(void *ptr, size_t newsize)
 {
 	void *p;
 	p = _ffmem_realloc(ptr, newsize);
-	if (p == ptr)
-		ffdbg_print(0, "%s(): p:%p, size:%L\n", FF_FUNC, p, newsize);
-	else
-		ffdbg_print(0, "%s(): p:%p, size:%L, oldp:%p\n", FF_FUNC, p, newsize, ptr);
+	ffatom_add(&_ffmem_total, newsize);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, oldp:%p [%LK]", p, newsize, ptr, _ffmem_total / 1024);
 	return p;
 }
 
 void ffmem_free(void *ptr)
 {
-	ffdbg_print(0, "%s(): p:%p\n", FF_FUNC, ptr);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p", ptr);
 	_ffmem_free(ptr);
 }
 
 void* ffmem_align(size_t size, size_t align)
 {
-	void *p = _ffmem_align(size);
-	ffdbg_print(0, "%s(): p:%p, size:%L, align:%L\n", FF_FUNC, p, size, align);
+	void *p = _ffmem_align(size, align);
+	ffatom_add(&_ffmem_total, size);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, align:%L [%LK]", p, size, align, _ffmem_total / 1024);
 	return p;
 }
 
 void ffmem_alignfree(void *ptr)
 {
-	ffdbg_print(0, "%s(): p:%p\n", FF_FUNC, ptr);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p", ptr);
 	_ffmem_alignfree(ptr);
 }
-#endif //FFDBG_MEM
+#endif //_DEBUG
