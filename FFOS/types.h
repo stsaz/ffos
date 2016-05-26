@@ -133,7 +133,7 @@ static FFINL size_t ffmin(size_t i0, size_t i1) {
 
 /** Align number to upper boundary.
 @align: must be a power of 2. */
-#define ff_align(n, align)  (((n) & ~((align) - 1)) + (align))
+#define ff_align(n, align)  (((n) & ((align) - 1)) ? ((n) & ~((align) - 1)) + (align) : (n))
 
 
 #if defined FF_MSVC
