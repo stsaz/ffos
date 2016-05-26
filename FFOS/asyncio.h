@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 
 typedef void (*ffaio_handler)(void *udata);
 
+/** The extended version of ffkevent: allows full duplex I/O and cancellation. */
 typedef struct ffaio_task {
 	ffaio_handler rhandler;
 	void *udata;
@@ -20,18 +21,18 @@ typedef struct ffaio_task {
 	};
 	unsigned instance :1
 		, oneshot :1
-		, aiotask :1;
+		, aiotask :1
+		, rpending :1
+		, wpending :1
+		, udp :1 // Windows: set for UDP socket
+		, canceled :1
+		;
 
 	ffaio_handler whandler;
-	int evflags;
-
-#if defined FF_BSD
 	ffkqu_entry *ev;
 
-#elif defined FF_WIN
-	unsigned canceled :1
-		, rsig :1;
-	int result;
+#if defined FF_WIN
+	byte sendbuf[1]; //allows transient buffer to be used for ffaio_send()
 	OVERLAPPED rovl;
 	OVERLAPPED wovl;
 #endif
@@ -43,7 +44,6 @@ static FFINL void ffaio_init(ffaio_task *t) {
 	ffmem_tzero(t);
 	t->fd = FF_BADFD;
 	t->instance = inst;
-	t->oneshot = 1;
 	t->aiotask = 1;
 }
 
@@ -78,6 +78,18 @@ typedef struct ffaio_filetask ffaio_filetask;
 #else
 #include <FFOS/win/aio.h>
 #endif
+
+/** Async socket receive.
+Windows: async operation is scheduled with an empty buffer.
+Return bytes received or enum FFAIO_RET. */
+FF_EXTN int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap);
+
+/** Async socket send.
+Windows: no more than 1 byte is sent using async operation.
+Return bytes sent or enum FFAIO_RET. */
+FF_EXTN int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len);
+
+FF_EXTN int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iov, size_t iovcnt);
 
 /** Accept client connection.
 Return FF_BADSKT on error. */

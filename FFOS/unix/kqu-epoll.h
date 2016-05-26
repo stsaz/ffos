@@ -2,10 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/socket.h>
-
 #include <sys/epoll.h>
-#include <errno.h>
 
 
 enum FFKQU_F {
@@ -23,13 +20,9 @@ typedef struct epoll_event ffkqu_entry;
 /** Get user data from the kernel event structure. */
 #define ffkqu_data(ev)  ((ev)->data.ptr)
 
-/** Get signaled events and flags.
-Set the last socket error in 'errno' if needed. */
-static FFINL int ffkqu_result(const ffkqu_entry *e, fffd fd) {
+/** Get signaled events and flags. */
+static FFINL int ffkqu_result(const ffkqu_entry *e) {
 	if (e->events & EPOLLERR) {
-		int er;
-		(void)ffskt_getopt(fd, SOL_SOCKET, SO_ERROR, &er);
-		errno = er;
 		return e->events | FFKQU_READ | FFKQU_WRITE;
 	}
 	return e->events;

@@ -186,6 +186,20 @@ size_t ffiov_copyhdtr(ffiovec *dst, size_t cap, const sf_hdtr *hdtr)
 }
 
 
+/*
+AIO:
+1. ffaio_attach()
+2. ffaio_*() -> non-blocking I/O -> EAGAIN -> set ffaio_task.handler, begin async operation (Windows)
+3. signal from kqueue/epoll/IOCP -> ffkev_call() -> ffaio_task.handler() <-> ffaio_*() -> real I/O
+
+Cancellation on UNIX:
+ffaio_cancelasync() -> ffaio_task.handler() <-> ffaio_*() (errno=ECANCELED)
+
+Cancellation on Windows:
+1. ffaio_cancelasync() -> cancel async operation
+2. signal from IOCP -> ffkev_call() -> ffaio_task.handler() <-> ffaio_*() (errno=ECANCELED)
+*/
+
 static void _ffaio_run1(ffkqu_entry *e)
 {
 	size_t udata = (size_t)ffkqu_data(e);
@@ -193,32 +207,27 @@ static void _ffaio_run1(ffkqu_entry *e)
 	ffaio_handler func;
 	uint r, w;
 
+	uint evflags = _ffaio_events(t, e);
+	r = 0 != (evflags & FFKQU_READ);
+	w = 0 != (evflags & FFKQU_WRITE);
+
+	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%I, evflags:%xu, r:%u, w:%u, rhandler:%p, whandler:%p, stale:%u"
+		, t, (size_t)t->fd, (int)evflags, r, w, t->rhandler, t->whandler, (udata & 1) != t->instance);
+
 	if ((udata & 1) != t->instance)
 		return; //cached event has signaled
 
-	t->evflags = _ffaio_events(t, e);
-	r = 0 != (t->evflags & FFKQU_READ);
-	w = 0 != (t->evflags & FFKQU_WRITE);
-#ifdef FF_BSD
-	t->ev = e;
-#endif
-
-#ifdef FFDBG_AIO
-	ffdbg_print(0, "%s(): task:%p, fd:%L, evflags:%xu, r:%u, w:%u, rhandler:%p, whandler:%p\n"
-		, FF_FUNC, t, (size_t)t->fd, (int)t->evflags, r, w, t->rhandler, t->whandler);
-#endif
-
 	if (r && t->rhandler != NULL) {
 		func = t->rhandler;
-		if (t->oneshot)
-			t->rhandler = NULL;
+		t->rhandler = NULL;
+		t->ev = e;
 		func(t->udata);
 	}
 
 	if (w && t->whandler != NULL) {
 		func = t->whandler;
-		if (t->oneshot)
-			t->whandler = NULL;
+		t->whandler = NULL;
+		t->ev = e;
 		func(t->udata);
 	}
 }
@@ -233,14 +242,6 @@ void ffkev_call(ffkqu_entry *e)
 		return;
 	}
 
-	if ((udata & 1) != kev->side) {
-		/* kev.side is modified in ffkev_fin() every time an event is closed or reused for another operation.
-		This event was cached in userspace and it's no longer valid. */
-		return;
-	}
-
-#ifdef FFDBG_KEVENT
-	{
 	uint evflags;
 #if defined FF_LINUX
 	evflags = e->events;
@@ -249,14 +250,15 @@ void ffkev_call(ffkqu_entry *e)
 #else
 	evflags = 0;
 #endif
-	ffdbg_print(0, "%s(): task:%p, fd:%L, evflags:%xu, handler:%p\n"
-		, FF_FUNC, kev, (size_t)kev->fd, evflags, kev->handler);
-	}
-#endif
+	(void)evflags;
+	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%I, evflags:%xu, handler:%p, stale:%u"
+		, kev, (size_t)kev->fd, evflags, kev->handler, (udata & 1) != kev->side);
 
-#ifndef FF_WIN
-	kev->ev = e;
-#endif
+	if ((udata & 1) != kev->side) {
+		/* kev.side is modified in ffkev_fin() every time an event is closed or reused for another operation.
+		This event was cached in userspace and it's no longer valid. */
+		return;
+	}
 
 	if (kev->handler != NULL) {
 		ffkev_handler func = kev->handler;

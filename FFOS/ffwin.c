@@ -878,6 +878,12 @@ int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *a
 	BOOL b;
 	DWORD r;
 	ffaddr a;
+
+	if (t->wpending) {
+		t->wpending = 0;
+		return _ffaio_result(t);
+	}
+
 	ffaddr_init(&a);
 	ffaddr_setany(&a, addr->sa_family);
 	if (0 != ffskt_bind(t->sk, &a.a, a.len))
@@ -890,10 +896,12 @@ int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *a
 		goto fail;
 
 	t->whandler = handler;
+	t->wpending = 1;
+	FFDBG_PRINTLN(FFDBG_KEV | 9, "task:%p, fd:%L, rhandler:%p, whandler:%p\n"
+		, t, (size_t)t->fd, t->rhandler, t->whandler);
 	return FFAIO_ASYNC;
 
 fail:
-	t->result = -1;
 	return FFAIO_ERROR;
 }
 
@@ -901,25 +909,37 @@ int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 {
 	BOOL b;
 	DWORD rd;
+	ssize_t r;
 
-	if (t->rsig && cap == 0) {
-		/* Reuse the previous 'read' operation.
-		There's no need to cancel the previous and start a new one. */
-		t->rhandler = handler;
-		return FFAIO_ASYNC;
+	if (t->rpending) {
+		t->rpending = 0;
+		r = _ffaio_result(t);
+		if (!(!t->udp && r == 0))
+			return r;
+	}
+
+	r = ffskt_recv(t->sk, d, cap, 0);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	if (!t->udp) {
+		/* For TCP socket we just wait until input data is available (or until peer sends FIN),
+		 but for UDP socket the whole packet must be read at once, so the buffer must be valid until reading is done. */
+		d = NULL;
+		cap = 0;
 	}
 
 	ffmem_tzero(&t->rovl);
 	b = ReadFile(t->fd, d, FF_TOINT(cap), &rd, &t->rovl);
 
 	if (0 != fferr_ioret(b)) {
-		t->result = -1;
 		return FFAIO_ERROR;
 	}
 
 	t->rhandler = handler;
-	if (cap == 0)
-		t->rsig = 1;
+	t->rpending = 1;
+	FFDBG_PRINTLN(FFDBG_KEV | 9, "task:%p, fd:%L, rhandler:%p, whandler:%p\n"
+		, t, (size_t)t->fd, t->rhandler, t->whandler);
 	return FFAIO_ASYNC;
 }
 
@@ -927,16 +947,65 @@ int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len)
 {
 	BOOL b;
 	DWORD wr;
+	ssize_t r;
 
+	if (t->wpending) {
+		t->wpending = 0;
+		if (0 != _ffaio_result(t))
+			return FFAIO_ERROR;
+	}
+
+	r = ffskt_send(t->sk, d, len, 0);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	t->sendbuf[0] = *(byte*)d;
 	ffmem_tzero(&t->wovl);
-	b = WriteFile(t->fd, d, (int)ffmin(len, 1), &wr, &t->wovl);
+	b = WriteFile(t->fd, t->sendbuf, 1, &wr, &t->wovl);
 
 	if (0 != fferr_ioret(b)) {
-		t->result = -1;
 		return FFAIO_ERROR;
 	}
 
 	t->whandler = handler;
+	t->wpending = 1;
+	FFDBG_PRINTLN(FFDBG_KEV | 9, "task:%p, fd:%L, rhandler:%p, whandler:%p\n"
+		, t, (size_t)t->fd, t->rhandler, t->whandler);
+	return FFAIO_ASYNC;
+}
+
+int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iovs, size_t iovcnt)
+{
+	BOOL b;
+	DWORD wr;
+	ssize_t r;
+
+	if (t->wpending) {
+		t->wpending = 0;
+		if (0 != _ffaio_result(t))
+			return FFAIO_ERROR;
+	}
+
+	r = ffskt_sendv(t->sk, iovs, iovcnt);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	ffiovec *v;
+	// skip empty iovec's
+	for (v = iovs;  v->iov_len == 0;  v++) {
+	}
+	t->sendbuf[0] = *(byte*)v->iov_base;
+	ffmem_tzero(&t->wovl);
+	b = WriteFile(t->fd, t->sendbuf, 1, &wr, &t->wovl);
+
+	if (0 != fferr_ioret(b)) {
+		return FFAIO_ERROR;
+	}
+
+	t->whandler = handler;
+	t->wpending = 1;
+	FFDBG_PRINTLN(FFDBG_KEV | 9, "task:%p, fd:%L, rhandler:%p, whandler:%p\n"
+		, t, (size_t)t->fd, t->rhandler, t->whandler);
 	return FFAIO_ASYNC;
 }
 
@@ -962,32 +1031,33 @@ int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
 {
 	int ev = 0;
 
-	if (e->lpOverlapped != NULL) {
-		t->result = ffio_result(e->lpOverlapped);
-		if (t->result == -1)
-			ev |= FFKQU_ERR;
-	}
-
 	if (e->lpOverlapped == &t->wovl)
 		ev |= FFKQU_WRITE;
 	else {
-		if (t->rsig)
-			t->rsig = 0;
-
 		ev |= FFKQU_READ;
 	}
 
-	if (t->canceled) {
-		t->result = -1;
-		ev |= FFKQU_ERR;
-		fferr_set(ECANCELED); //overwrite errno even if operation has completed successfully
+	return ev;
+}
 
-		if (((ev & FFKQU_WRITE) && t->rhandler == NULL)
-			|| ((ev & FFKQU_READ) && t->whandler == NULL))
+int _ffaio_result(ffaio_task *t)
+{
+	int r;
+
+	if (t->canceled) {
+		fferr_set(ECANCELED);
+
+		if (t->rhandler == NULL && t->whandler == NULL)
 			t->canceled = 0; //reset flag only if both handlers have signaled
+		r = -1;
+		goto done;
 	}
 
-	return ev;
+	r = ffio_result(t->ev->lpOverlapped);
+
+done:
+	t->ev = NULL;
+	return r;
 }
 
 

@@ -31,9 +31,6 @@ typedef struct ffkevent {
 		, aiotask :1 //compatibility with ffaio_task
 		, pending :1
 		;
-#ifndef FF_WIN
-	ffkqu_entry *ev;
-#endif
 
 #if defined FF_WIN
 	OVERLAPPED ovl;

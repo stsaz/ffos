@@ -281,6 +281,65 @@ int ffps_wait(fffd h, uint timeout, int *exit_code)
 }
 
 
+int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
+{
+	ssize_t r;
+
+	if (t->rpending) {
+		t->rpending = 0;
+		if (0 != _ffaio_result(t))
+			return -1;
+	}
+
+	r = ffskt_recv(t->sk, d, cap, 0);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	t->rhandler = handler;
+	t->rpending = 1;
+	FFDBG_PRINTLN(FFDBG_KEV | 9, "task:%p, fd:%L, rhandler:%p, whandler:%p\n"
+		, t, (size_t)t->fd, t->rhandler, t->whandler);
+	return FFAIO_ASYNC;
+}
+
+int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len)
+{
+	ssize_t r;
+
+	if (t->wpending) {
+		t->wpending = 0;
+		if (0 != _ffaio_result(t))
+			return -1;
+	}
+
+	r = ffskt_send(t->sk, d, len, 0);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	t->whandler = handler;
+	t->wpending = 1;
+	return FFAIO_ASYNC;
+}
+
+int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iov, size_t iovcnt)
+{
+	ssize_t r;
+
+	if (t->wpending) {
+		t->wpending = 0;
+		if (0 != _ffaio_result(t))
+			return -1;
+	}
+
+	r = ffskt_sendv(t->sk, iov, iovcnt);
+	if (!(r < 0 && fferr_again(fferr_last())))
+		return r;
+
+	t->whandler = handler;
+	t->wpending = 1;
+	return FFAIO_ASYNC;
+}
+
 ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, ffkev_handler handler)
 {
 	ffskt sk;
@@ -295,15 +354,20 @@ ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, 
 
 int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size)
 {
+	if (t->wpending) {
+		t->wpending = 0;
+		return _ffaio_result(t);
+	}
+
 	if (0 == ffskt_connect(t->fd, addr, addr_size))
 		return 0;
 
 	if (errno == EINPROGRESS) {
 		t->whandler = handler;
+		t->wpending = 1;
 		return FFAIO_ASYNC;
 	}
 
-	t->evflags |= FFKQU_ERR;
 	return FFAIO_ERROR;
 }
 
@@ -312,11 +376,7 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 	uint w = (t->whandler != NULL);
 	ffaio_handler func;
 
-#ifdef FF_BSD
-	t->ev = NULL;
-#endif
-	t->evflags |= FFKQU_ERR;
-	errno = ECANCELED;
+	t->canceled = 1;
 
 	if ((op & FFAIO_READ) && t->rhandler != NULL) {
 		func = ((oncancel != NULL) ? oncancel : t->rhandler);
@@ -327,10 +387,40 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 	if ((op & FFAIO_WRITE) && w && t->whandler != NULL) {
 		func = ((oncancel != NULL) ? oncancel : t->whandler);
 		t->whandler = NULL;
-		t->evflags |= FFKQU_ERR;
-		errno = ECANCELED;
 		func(t->udata);
 	}
 
 	return 0;
+}
+
+int _ffaio_result(ffaio_task *t)
+{
+	int r = -1;
+
+	if (t->canceled) {
+		t->canceled = 0;
+		fferr_set(ECANCELED);
+		goto done;
+	}
+
+#if defined FF_BSD
+	if (t->ev->flags & EV_ERROR) {
+		fferr_set(t->ev->data);
+		goto done;
+	}
+
+#elif defined FF_LINUX
+	if (t->ev->events & EPOLLERR) {
+		int er = 0;
+		(void)ffskt_getopt(t->sk, SOL_SOCKET, SO_ERROR, &er);
+		fferr_set(er);
+		goto done;
+	}
+#endif
+
+	r = 0;
+
+done:
+	t->ev = NULL;
+	return r;
 }

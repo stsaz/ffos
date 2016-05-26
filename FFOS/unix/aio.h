@@ -49,14 +49,7 @@ static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq)
 
 /** Get AIO task result.
 If 'canceled' flag is set, reset it and return -1. */
-static FFINL int ffaio_result(ffaio_task *t) {
-	if (t->evflags & FFKQU_ERR) {
-		if (errno == ECANCELED)
-			t->evflags &= ~FFKQU_ERR;
-		return -1;
-	}
-	return 0;
-}
+FF_EXTN int _ffaio_result(ffaio_task *t);
 
 typedef ffkevent ffaio_acceptor;
 
@@ -74,24 +67,5 @@ static FFINL int ffaio_acceptinit(ffaio_acceptor *acc, fffd kq, ffskt lsk, void 
 /** Close acceptor. */
 #define ffaio_acceptfin(acc)
 
-/** Begin async receive. */
-static FFINL int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap) {
-	(void)d;
-	(void)cap;
-	t->rhandler = handler;
-	return FFAIO_ASYNC;
-}
-
-/** Begin async send. */
-static FFINL ssize_t ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len) {
-	(void)d;
-	(void)len;
-	t->whandler = handler;
-	return FFAIO_ASYNC;
-}
-
-#define ffaio_sendv(aiotask, handler, iov, iovcnt) \
-	ffaio_send(aiotask, handler, NULL, 0)
-
 /** Get signaled events and flags of a kernel event structure. */
-#define _ffaio_events(task, kqent)  ffkqu_result(kqent, (task)->fd)
+#define _ffaio_events(task, kqent)  ffkqu_result(kqent)

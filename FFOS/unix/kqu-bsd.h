@@ -3,7 +3,6 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <sys/event.h>
-#include <errno.h>
 
 
 enum FFKQU_F {
@@ -21,12 +20,8 @@ typedef struct kevent ffkqu_entry;
 
 #define ffkqu_data(ev)  ((ev)->udata)
 
-static FFINL int ffkqu_result(const ffkqu_entry *e, fffd fd) {
-	(void)fd;
+static FFINL int ffkqu_result(const ffkqu_entry *e) {
 	int r = FFKQU_READ;
-	if (e->flags & EV_ERROR)
-		errno = e->data;
-
 	if (e->filter == EVFILT_WRITE)
 		r = FFKQU_WRITE;
 	return r | e->flags;
