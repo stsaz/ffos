@@ -1174,7 +1174,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 			SetConsoleCtrlHandler(&_ffsig_ctrlhandler, 0);
 		}
 
-		if (t->fd == FF_BADFD)
+		if (t->fd != FF_BADFD)
 			ffpipe_close(t->fd);
 		ffkev_fin(t);
 		return 0;
