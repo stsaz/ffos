@@ -24,7 +24,8 @@ enum {
 /** Prepare using sockets.
 flags: enum FFSKT_INIT. */
 static FFINL int ffskt_init(int flags) {
-	signal(SIGPIPE, SIG_IGN);
+	if (flags & FFSKT_SIGPIPE)
+		signal(SIGPIPE, SIG_IGN);
 	return 0;
 }
 
@@ -52,7 +53,7 @@ static FFINL ssize_t ffskt_send(ffskt fd, const void *buf, size_t size, int flag
 typedef struct iovec ffiovec;
 
 /** Send data from multiple buffers. */
-#define ffskt_sendv  writev
+#define ffskt_sendv(sk, iov, iovcnt)  writev(sk, iov, iovcnt)
 
 typedef struct sf_hdtr sf_hdtr;
 

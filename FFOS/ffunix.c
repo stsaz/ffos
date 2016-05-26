@@ -296,7 +296,7 @@ ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, 
 int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size)
 {
 	if (0 == ffskt_connect(t->fd, addr, addr_size))
-		return FFAIO_OK;
+		return 0;
 
 	if (errno == EINPROGRESS) {
 		t->whandler = handler;

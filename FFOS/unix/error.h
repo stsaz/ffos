@@ -29,6 +29,8 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap) {
 
 #define fferr_again(code)  ((code) == EAGAIN || (code) == EWOULDBLOCK)
 
+#define fferr_exist(code)  ((code) == EEXIST)
+
 #define fferr_nofile(code)  ((code) == ENOENT)
 
 /** Return TRUE if reached system limit of opened file descriptors. */

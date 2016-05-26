@@ -757,7 +757,7 @@ LPFN_CONNECTEX _ffwsaConnectEx;
 LPFN_ACCEPTEX _ffwsaAcceptEx;
 LPFN_GETACCEPTEXSOCKADDRS _ffwsaGetAcceptExSockaddrs;
 
-static const void *const _procs[] = {
+static const void **_procs[] = {
 	(void*)&_ffwsaDisconnectEx, (void*)&_ffwsaConnectEx
 	, (void*)&_ffwsaAcceptEx, (void*)&_ffwsaGetAcceptExSockaddrs
 };
@@ -766,16 +766,15 @@ static const GUID _guids[] = {
 	, WSAID_ACCEPTEX, WSAID_GETACCEPTEXSOCKADDRS
 };
 
-static FFINL int getWsaFunc(ffskt sk, void **func, const GUID *guid)
+static FFINL void* wsa_getfunc(ffskt sk, const GUID *guid)
 {
+	void *func = NULL;
 	DWORD b;
 	WSAIoctl(sk, SIO_GET_EXTENSION_FUNCTION_POINTER, (void*)guid, sizeof(GUID)
-		, func, sizeof(func), &b, 0, 0);
-	if (*func == NULL) {
+		, &func, sizeof(void*), &b, 0, 0);
+	if (func == NULL)
 		fferr_set(ERROR_PROC_NOT_FOUND);
-		return -1;
-	}
-	return 0;
+	return func;
 }
 
 int _ffwsaGetFuncs()
@@ -784,14 +783,11 @@ int _ffwsaGetFuncs()
 	size_t i;
 	ffskt sk;
 
-	if (_ffwsaGetAcceptExSockaddrs != NULL)
-		return 0;
-
 	sk = ffskt_create(AF_INET, SOCK_STREAM, 0);
 	if (sk == FF_BADSKT)
 		return -1;
 	for (i = 0;  i < FFCNT(_guids);  i++) {
-		if (0 != getWsaFunc(sk, (void **)_procs[i], &_guids[i])) {
+		if (NULL == (*_procs[i] = wsa_getfunc(sk, &_guids[i]))) {
 			rc = -1;
 			break;
 		}

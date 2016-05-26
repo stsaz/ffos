@@ -66,8 +66,7 @@ static FFINL void * ffaio_kqudata(ffaio_task *t) {
 	ffkqu_attach(kq, (task)->fd, ffaio_kqudata(task), FFKQU_ADD | (ev))
 
 enum FFAIO_RET {
-	FFAIO_OK = 0
-	, FFAIO_ERROR = -1
+	FFAIO_ERROR = -1
 	, FFAIO_ASYNC = -2
 };
 
@@ -84,8 +83,8 @@ typedef struct ffaio_filetask ffaio_filetask;
 Return FF_BADSKT on error. */
 FF_EXTN ffskt ffaio_accept(ffaio_acceptor *acc, ffaddr *local, ffaddr *peer, int flags, ffkev_handler handler);
 
-/** Call connect on a socket.
-Return enum FFAIO_RET. */
+/** Connect to a remote server.
+Return 0 on success or enum FFAIO_RET. */
 FF_EXTN int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *addr, socklen_t addr_size);
 
 

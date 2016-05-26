@@ -20,8 +20,9 @@ typedef char * ffsktopt_t;
 #endif
 
 enum FFSKT_INIT {
-	FFSKT_WSA = 1
-	, FFSKT_WSAFUNCS = 2
+	FFSKT_SIGPIPE = 1, // UNIX: ignore SIGPIPE.  Use once per process.
+	FFSKT_WSA = 1, // Windows: initialize WSA library.  Use once per process.
+	FFSKT_WSAFUNCS = 2, // Windows: get WSA functions.  Use once per module.
 };
 
 
