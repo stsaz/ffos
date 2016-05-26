@@ -156,21 +156,27 @@ void _ffdl_oninit(void) \
 #endif
 
 
-/** Print FF debug messages. */
+enum FFDBG_T {
+	FFDBG_MEM = 0x10,
+	FFDBG_KEV = 0x20,
+	FFDBG_PARSE = 0x100,
+};
+
+/** Print FF debug messages.
+@t: enum FFDBG_T + level. */
 extern int ffdbg_print(int t, const char *fmt, ...);
 
 #ifdef _DEBUG
-extern int ffdbg_mask;
-
+extern int ffdbg_mask; //~(enum FFDBG_T) + level
 #define FFDBG_PRINT(t, ...) \
 do { \
-	if (ffdbg_mask >= t) \
+	if ((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f)) \
 		ffdbg_print(t, __VA_ARGS__); \
 } while (0)
 
 #define FFDBG_PRINTLN(t, fmt, ...) \
 do { \
-	if (ffdbg_mask >= t) \
+	if ((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f)) \
 		ffdbg_print(t, "%s(): " fmt "\n", FF_FUNC, __VA_ARGS__); \
 } while (0)
 
