@@ -21,6 +21,7 @@ Return the number of bytes read. */
 FF_EXTN int ffwreg_readstr(ffwreg k, const char *name, char *d, size_t *cap);
 
 #if 1
+#include <FF/array.h>
 FF_EXTN int ffwreg_readbuf(ffwreg k, const char *name, ffarr *buf);
 #endif
 

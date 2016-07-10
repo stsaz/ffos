@@ -1,0 +1,109 @@
+# multi-platform build configuration for GNU make
+# Simon Zolin, 2016
+
+# set initial values for:
+# . OS: linux/bsd/windows
+# . compiler: gcc
+# . packaging: tar.xz/zip
+
+
+# set OS
+ifndef OS
+uname := $(shell uname)
+ifeq ($(uname),Linux)
+OS := linux
+endif
+endif
+
+
+C := gcc
+LD := $(C)
+CXX := g++
+LDXX := $(CXX)
+CFLAGS := -c -pipe
+LDFLAGS := -pipe
+OBJCOPY := objcopy
+STRIP := strip
+OPT ?= LTO
+DEBUG ?= 1
+
+# set debug options
+ifeq ($(DEBUG),1)
+CFLAGS += -g
+LDFLAGS += -g
+else
+LDFLAGS += -s
+endif
+
+# set optimization options
+ifeq ($(OPT),0)
+CFLAGS += -D_DEBUG
+
+else ifeq ($(OPT),SECTIONS)
+
+CFLAGS += -O2
+ifneq ($(OS),win)
+CFLAGS += -ffunction-sections -fdata-sections
+LDFLAGS += -Wl,-gc-sections
+endif
+
+else ifeq ($(OPT),LTO)
+CFLAGS += -O2 -flto -fno-asynchronous-unwind-tables
+LDFLAGS += -O2 -flto -fno-asynchronous-unwind-tables
+
+else ifeq ($(OPT),LTO3)
+CFLAGS += -O3 -flto -fno-asynchronous-unwind-tables
+LDFLAGS += -O3 -flto -fno-asynchronous-unwind-tables
+
+endif #OPT
+
+
+# set OS-specific values
+ifeq ($(OS),win)
+ARCH := x64
+LD_LWS2_32 := -lws2_32
+SO := dll
+CP := cp -u -v -p
+PACK := zip -9 -r -v
+PACK_EXT := zip
+WINDRES := windres
+
+ifeq ($(COMPILER),mingw)
+C := x86_64-w64-mingw32-gcc
+LD := $(C)
+CXX := x86_64-w64-mingw32-g++
+LDXX := $(CXX)
+WINDRES := x86_64-w64-mingw32-windres
+OBJCOPY := x86_64-w64-mingw32-objcopy
+STRIP := x86_64-w64-mingw32-strip
+endif
+
+else #OS
+
+ARCH := amd64
+CFLAGS += -fpic -fvisibility=hidden
+LDFLAGS += -fpic
+LD_LPTHREAD := -pthread
+SO := so
+PACK_EXT := tar.xz
+
+ifeq ($(OS),linux)
+LD_LDL := -ldl
+CP := cp -u -v -p
+PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
+
+else ifeq ($(OS),bsd)
+CP := cp -v
+PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+
+endif
+
+endif #OS
+
+
+# rule for separate .debug files
+%.debug: %
+	$(OBJCOPY) --only-keep-debug $< $@
+	$(STRIP) $<
+	$(OBJCOPY) --add-gnu-debuglink=$@ $<
+	touch $@

@@ -4,8 +4,11 @@
 # FFOS_OBJ_DIR = .
 
 FFOS_SRC = $(FFOS)/FFOS/ffos.c \
-	$(FFOS)/FFOS/ff$(OSTYPE).c \
 	$(FFOS)/FFOS/ff$(OS).c
+
+ifneq ($(OS),win)
+FFOS_SRC += $(FFOS)/FFOS/ffunix.c
+endif
 
 FFOS_HDR = $(wildcard $(FFOS)/*.h) \
 	$(wildcard $(FFOS)/$(OS)/*.h)

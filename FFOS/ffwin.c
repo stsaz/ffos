@@ -10,6 +10,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/sig.h>
+#include <FFOS/win/reg.h>
 
 #include <time.h>
 #ifndef FF_MSVC
@@ -1341,10 +1342,6 @@ int ffpath_infoinit(const char *path, ffpathinfo *st)
 	return 0;
 }
 
-
-typedef HKEY ffwreg;
-
-#define FFWREG_BADKEY  ((HKEY)-1)
 
 ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 {
