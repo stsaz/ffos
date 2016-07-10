@@ -96,6 +96,8 @@ static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 
 #define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
 
+#define fffile_chown(fd, uid, gid)
+
 
 typedef BY_HANDLE_FILE_INFORMATION fffileinfo;
 

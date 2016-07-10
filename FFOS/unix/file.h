@@ -136,6 +136,9 @@ static FFINL int64 fffile_size(fffd fd) {
 /** Set file attributes by file name. */
 #define fffile_attrsetfn  chmod
 
+/** Change ownership of a file. */
+#define fffile_chown(fd, uid, gid)  fchown(fd, uid, gid)
+
 
 /** File information. */
 typedef struct stat fffileinfo;
