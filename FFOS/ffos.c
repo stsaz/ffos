@@ -320,6 +320,7 @@ static const char *const err_ops[] = {
 	, "file rename"
 
 	, "directory open"
+	, "directory make"
 
 	, "timer init"
 	, "kqueue create"
