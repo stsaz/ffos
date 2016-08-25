@@ -34,7 +34,7 @@ void* _ffmem_align(size_t size, size_t align)
 	if (buf == NULL)
 		return NULL;
 
-	al = (void*)ff_align((size_t)buf + sizeof(void*), align);
+	al = (void*)ff_align_ceil((size_t)buf + sizeof(void*), align);
 	*((void**)al - 1) = buf; //remember the original pointer
 	return al;
 }

@@ -131,12 +131,15 @@ static FFINL size_t ffmin(size_t i0, size_t i1) {
 
 #define FF_HI32(i64)  ((int)(((i64) >> 32) & 0xffffffff))
 
-#define ff_align_floor(n, align)  ((n) & ~((align) - 1))
 
-/** Align number to upper boundary.
-@align: must be a power of 2. */
-#define ff_align(n, align)  (((n) & ((align) - 1)) ? ((n) & ~((align) - 1)) + (align) : (n))
-#define ff_align_ceil  ff_align
+/** Align number to lower/upper boundary. */
+
+/** @align: must be a power of 2. */
+#define ff_align_floor2(n, align)  ((n) & ~((align) - 1))
+#define ff_align_ceil2(n, align)  (((n) & ((align) - 1)) ? ff_align_floor2(n, align) + (align) : (n))
+
+#define ff_align_floor(n, align)  ((n) - ((n) % (align)))
+#define ff_align_ceil(n, align)  ((((n) % (align)) != 0) ? ff_align_floor(n, align) + (align) : (n))
 
 
 #if defined FF_MSVC
