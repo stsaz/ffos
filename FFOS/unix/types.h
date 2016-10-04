@@ -11,8 +11,20 @@ __asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
 
 #include <byteswap.h>
 
+#include <asm/byteorder.h>
+#if defined __LITTLE_ENDIAN
+#define FF_LITTLE_ENDIAN
+#elif defined __BIG_ENDIAN
+#define FF_BIG_ENDIAN
+#endif
+
 #elif defined FF_BSD
 #include <sys/endian.h>
+#if _BYTE_ORDER == _LITTLE_ENDIAN
+#define FF_LITTLE_ENDIAN
+#elif _BYTE_ORDER == _BIG_ENDIAN
+#define FF_BIG_ENDIAN
+#endif
 
 #endif
 

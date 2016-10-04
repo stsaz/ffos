@@ -32,6 +32,8 @@ Copyright (c) 2013 Simon Zolin
 	#include <sys/types.h>
 #endif
 
+#define FF_LITTLE_ENDIAN
+
 #ifdef FF_MSVC
 	#define FFINL //msvc9 doesn't like "static inline func()"
 #else
