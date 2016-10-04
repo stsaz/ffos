@@ -83,7 +83,7 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 		sent = r;
 
 		if (hdtr->trl_cnt != 0
-			&& r != ffiov_size(hdtr->headers, hdtr->hdr_cnt))
+			&& (size_t)r != ffiov_size(hdtr->headers, hdtr->hdr_cnt))
 			goto done; //headers are not sent yet completely
 	}
 

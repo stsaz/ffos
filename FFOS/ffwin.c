@@ -614,7 +614,7 @@ done:
 	return dst;
 }
 
-#ifdef FF_USE_SYS_WTOU
+#ifdef FF_FFOS_ONLY
 size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags)
 {
 	int r;
@@ -870,7 +870,7 @@ int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
 
 	FF_ASSERT(tmr->thd == NULL);
 	if (NULL == (tmr->thd = ffthd_create(&_fftmr_thd, tmr, 0)))
-		return FF_BADTMR;
+		return -1;
 	return 0;
 }
 

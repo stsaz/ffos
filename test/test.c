@@ -207,7 +207,7 @@ static const struct test_s _ffostests[] = {
 int main(int argc, const char **argv)
 {
 	size_t i, iarg;
-	ffos_init();
+	ffmem_init();
 
 	fftestobj.flags |= FFTEST_FATALERR;
 

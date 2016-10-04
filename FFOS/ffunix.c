@@ -86,7 +86,7 @@ int ffstd_event(fffd fd, ffstd_ev *ev)
 	if (r < 0 && fferr_again(fferr_last()))
 		return 0;
 	else if (r == 0) {
-		errno = EBADFD;
+		errno = EINVAL;
 		return -1;
 	}
 	ev->data = ev->buf;

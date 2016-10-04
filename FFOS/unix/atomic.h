@@ -11,7 +11,7 @@ typedef ssize_t ffatomic;
 
 /** Set new value and return old value. */
 static FFINL ssize_t ffatom_xchg(ffatomic *a, ssize_t val) {
-	asm volatile(
+	__asm__ volatile(
 		// no lock
 		"xchg %0, %1\n"
 		: "+r" (val), "+m" (*a)
@@ -23,7 +23,7 @@ static FFINL ssize_t ffatom_xchg(ffatomic *a, ssize_t val) {
 Return 1 if equal. */
 static FFINL int ffatom_cmpxchg(ffatomic *a, ssize_t old, ssize_t newval) {
 	ssize_t ret;
-	asm volatile(
+	__asm__ volatile(
 		LOCK "cmpxchg %2, %1\n"
 		: "=a" (ret), "+m" (*a)
 		: "r" (newval), "0" (old)
@@ -34,7 +34,7 @@ static FFINL int ffatom_cmpxchg(ffatomic *a, ssize_t old, ssize_t newval) {
 
 /** Add integer. */
 static FFINL void ffatom_add(ffatomic *a, ssize_t add) {
-	asm volatile(
+	__asm__ volatile(
 		LOCK "add %1, %0;"
 		: "+m" (*a)
 		: "ir" (add));
@@ -43,12 +43,12 @@ static FFINL void ffatom_add(ffatomic *a, ssize_t add) {
 /** Increment. */
 static FFINL void ffatom_inc(ffatomic *a) {
 #ifdef FF_64
-	asm volatile(
+	__asm__ volatile(
 		LOCK "incq %0"
 		: "+m" (*a));
 
 #else
-	asm volatile(
+	__asm__ volatile(
 		LOCK "incl %0"
 		: "+m" (*a));
 #endif
@@ -57,12 +57,12 @@ static FFINL void ffatom_inc(ffatomic *a) {
 /** Decrement. */
 static FFINL void ffatom_dec(ffatomic *a) {
 #ifdef FF_64
-	asm volatile(
+	__asm__ volatile(
 		LOCK "decq %0"
 		: "+m" (*a));
 
 #else
-	asm volatile(
+	__asm__ volatile(
 		LOCK "decl %0"
 		: "+m" (*a));
 #endif
@@ -71,7 +71,7 @@ static FFINL void ffatom_dec(ffatomic *a) {
 /** Add integer and return new value. */
 static FFINL ssize_t ffatom_addret(ffatomic *a, ssize_t add) {
 	ssize_t r = add;
-	asm volatile(
+	__asm__ volatile(
 		LOCK "xadd %0, %1;"
 		: "+r" (r), "+m" (*a)
 		: : "memory", "cc");
@@ -88,9 +88,9 @@ static FFINL ssize_t ffatom_addret(ffatomic *a, ssize_t add) {
 
 
 /** Optimization barrier. */
-#define ffmem_barrier()  asm volatile ("" : : : "memory")
+#define ffmem_barrier()  __asm__ volatile ("" : : : "memory")
 
-#define ffcpu_pause()  asm ("pause")
+#define ffcpu_pause()  __asm__ ("pause")
 
 /** Switch CPU to another task. */
 #define ffcpu_yield  sched_yield

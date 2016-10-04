@@ -31,6 +31,7 @@ enum FFFILE_OPEN {
 
 /** Open or create a file.
 flags: O_*.
+Linux: may fail with EPERM when O_NOATIME is used.
 Linux: may fail with EINVAL when O_DIRECT is used.
 Return FF_BADFD on error. */
 static FFINL fffd fffile_open(const char *filename, int flags) {
@@ -75,7 +76,9 @@ Return -1 on error. */
 
 #endif
 
-/** Truncate a file to a specified length. */
+/** Truncate a file to a specified length.
+Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PARAMETER
+ due to un-aligned seeking request. */
 #define fffile_trunc  ftruncate
 
 /** Set file non-blocking mode. */

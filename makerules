@@ -1,31 +1,30 @@
-# FFOS v1.4 compile rules for GNU make
+# FFOS compile rules
 
 # FFOS = .
 # FFOS_OBJ_DIR = .
+FFOS_CFLAGS ?= -c \
+	-Werror -Wall -Wextra -Wno-unused-parameter \
+	-I$(FFOS)
 
-FFOS_SRC = $(FFOS)/FFOS/ffos.c \
+
+FFOS_SRC := $(FFOS)/FFOS/ffos.c \
 	$(FFOS)/FFOS/ff$(OS).c
 
-ifneq ($(OS),win)
+ifeq ($(OS),win)
+FFOS_SRC += $(FFOS)/FFOS/ffwin-skt.o
+
+else
 FFOS_SRC += $(FFOS)/FFOS/ffunix.c
 endif
 
-FFOS_HDR = $(wildcard $(FFOS)/*.h) \
+FFOS_HDR := $(wildcard $(FFOS)/*.h) \
 	$(wildcard $(FFOS)/$(OS)/*.h)
 
 # FFOS_OBJ=$(FFOS_SRC:.c=.o)
-FFOS_OBJ=$(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_SRC)))))
+FFOS_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_SRC)))))
 
-FFOS_TEST_HDR = $(wildcard $(FFOS)/test/*.h)
-FFOS_TEST_SRC = $(wildcard $(FFOS)/test/*.c)
-FFOS_TEST_OBJ = $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_TEST_SRC)))))
-
-
-$(TEST_BIN): $(FFOS_HDR) $(FFOS_OBJ) $(FFOS_OBJ_DIR)/fftest.o  $(FFOS_TEST_HDR) $(FFOS_TEST_OBJ)
-	$(LD) $(FFOS_OBJ) $(FFOS_OBJ_DIR)/fftest.o $(FFOS_TEST_OBJ) $(LDFLAGS) $(LIBS) $(O_LD)$@
 
 $(FFOS_OBJ_DIR)/%.o: $(FFOS)/FFOS/%.c $(FFOS_HDR)
-	$(C) $(CFLAGS) $(C1FLAGS) $< $(O)$@
+	$(C) $(FFOS_CFLAGS)  $< -o$@
 
-$(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR)
-	$(C) $(CFLAGS) $(C1FLAGS) $< $(O)$@
+ffos: $(FFOS_OBJ)

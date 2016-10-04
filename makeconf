@@ -93,6 +93,7 @@ CP := cp -u -v -p
 PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
 
 else ifeq ($(OS),bsd)
+CFLAGS += -std=c99
 CP := cp -v
 PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
 

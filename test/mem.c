@@ -21,10 +21,10 @@ static int test_str()
 	x(0 == ffq_icmpnz(TEXT("asdf"), FFSTRQ("ASDF")));
 	x(FFSLEN("asdf") == ffq_len(TEXT("asdf")));
 
+#ifdef FF_WIN
 	{
 		char s[1024];
 		size_t n;
-#ifdef FF_WIN
 		WCHAR *pw;
 		ffsyschar ss[1024];
 		n = ff_utow(ss, FFCNT(ss), FFSTR("asdf"), 0);
@@ -40,10 +40,10 @@ static int test_str()
 		x(pw != NULL && pw != ss);
 		x(n == FFSLEN("asdf")+1 && !ffq_cmpz(pw, L"asdf"));
 		ffmem_free(pw);
-#endif
 		n = ff_wtou(s, FFCNT(s), L"asdf", 4, 0);
 		x(n == 4 && !memcmp(s, "asdf", 4));
 	}
+#endif
 
 	return 0;
 }
