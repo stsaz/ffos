@@ -31,6 +31,7 @@ enum FFFILE_OPEN {
 
 /** Open or create a file.
 flags: O_*.
+Linux: may fail with EINVAL when O_DIRECT is used.
 Return FF_BADFD on error. */
 static FFINL fffd fffile_open(const char *filename, int flags) {
 #ifdef FF_LINUX
@@ -47,21 +48,6 @@ static FFINL fffd fffile_createtemp(const char *filename, int flags) {
 }
 
 #define fffile_createtempq  fffile_createtemp
-
-#ifdef FF_LINUX
-/** Try to open a file with O_DIRECT.
-Linux: If opened without O_DIRECT, AIO operations will always block. */
-static FFINL fffd fffile_opendirect(const char *filename, uint flags)
-{
-	fffd f = fffile_open(filename, flags | O_DIRECT);
-	if (f == FF_BADFD && errno == EINVAL)
-		f = fffile_open(filename, flags);
-	return f;
-}
-
-#else //bsd:
-#define fffile_opendirect(filename, flags)  fffile_open(filename, flags | O_DIRECT)
-#endif
 
 /** Read from a file descriptor.
 Return -1 on error. */

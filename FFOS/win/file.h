@@ -39,8 +39,6 @@ FF_EXTN fffd fffile_open(const char *filename, int flags);
 #define fffile_createtemp(filename, flags) \
 	fffile_open(filename, FFO_CREATENEW | FILE_FLAG_DELETE_ON_CLOSE | (flags))
 
-#define fffile_opendirect(filename, flags)  fffile_open(filename, flags | O_DIRECT)
-
 
 static FFINL ssize_t fffile_read(fffd fd, void *buf, size_t size) {
 	DWORD read;

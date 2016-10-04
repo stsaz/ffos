@@ -293,7 +293,9 @@ int test_fileaio(void)
 	faio.bsize = ffpath_info(&fsst, FFPATH_BSIZE);
 	}
 
-	x(FF_BADFD != (f = fffile_opendirect(fn, O_CREAT | O_RDWR)));
+	uint flags = 0;
+	flags |= O_DIRECT;
+	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_RDWR | flags)));
 	x(FF_BADFD != (faio.kq = ffkqu_create()));
 	faio.pkqtm = ffkqu_settm(&faio.kqtm, -1);
 
@@ -305,7 +307,7 @@ int test_fileaio(void)
 	x(0 == fffile_trunc(f, faio.len));
 
 	ffaio_finit(&tfil, f, &tfil);
-	x(0 == ffaio_fattach(&tfil, faio.kq));
+	x(0 == ffaio_fattach(&tfil, faio.kq, !!(flags & O_DIRECT)));
 
 //write
 	fffile_writecz(ffstdout, "ffaio_fwrite...");
@@ -318,7 +320,15 @@ int test_fileaio(void)
 	x(faio.ok == 2);
 
 //read
+#ifdef FF_WIN
+	fffd f2;
+	x(FF_BADFD != (f2 = fffile_open(fn, O_RDWR)));
+	x(0 == fffile_trunc(f2, faio.len - 1));
+	fffile_close(f2);
+
+#else
 	x(0 == fffile_trunc(f, faio.len - 1));
+#endif
 	memset(faio.buf, '\0', faio.len);
 
 	fffile_writecz(ffstdout, "ffaio_fread...");

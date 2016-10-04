@@ -110,11 +110,9 @@ static FFINL void ffaio_finit(ffaio_filetask *ft, fffd fd, void *udata)
 
 /** Asynchronous file I/O.
 Return the number of bytes transferred or -1 on error.
-  UNIX: Fail with ENOSYS if AIO is not supported by kernel.
 Note: cancelling is not supported.
-FreeBSD: kernel AIO must be enabled ("kldload aio").
-Linux, Windows: file must be opened with O_DIRECT.
-Linux: operations on xfs and ext4 may block (3.17).
+FreeBSD: kernel AIO must be enabled ("kldload aio"), or operations will block.
+Linux, Windows: file must be opened with O_DIRECT, or operations will block.
 Windows: writing into a new file on NTFS is always blocking. */
 FF_EXTN ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler);
 FF_EXTN ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler);

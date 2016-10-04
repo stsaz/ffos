@@ -306,9 +306,15 @@ void ffaio_fctxclose(void)
 }
 
 /* Attach eventfd to epoll */
-int ffaio_fattach(ffaio_filetask *ft, fffd kq)
+int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
 	_ffaio_filectx *fx = &_ffaio_fctx;
+
+	if (!direct) {
+		//don't use AIO
+		ft->cb.aio_resfd = FF_BADFD;
+		return 0;
+	}
 
 	if (fx->kq == FF_BADFD) {
 		if (0 != ffkqu_attach(kq, fx->kev.fd, ffkev_ptr(&fx->kev), FFKQU_ADD | FFKQU_READ))
@@ -320,6 +326,7 @@ int ffaio_fattach(ffaio_filetask *ft, fffd kq)
 		return -1; //only 1 kq is supported
 	}
 
+	ft->cb.aio_resfd = 0;
 	return 0;
 }
 
@@ -350,8 +357,8 @@ static ssize_t _ffaio_fop(ffaio_filetask *ft, void *data, size_t len, uint64 off
 	cb->aio_offset = off;
 
 	if (1 != io_submit(_ffaio_fctx.aioctx, 1, &cb)) {
-		if (errno == EAGAIN)
-			return -3; //no resources for this I/O operation
+		if (errno == ENOSYS || errno == EAGAIN)
+			return -3; //no resources for this I/O operation or AIO isn't supported
 		return -1;
 	}
 
@@ -363,7 +370,9 @@ static ssize_t _ffaio_fop(ffaio_filetask *ft, void *data, size_t len, uint64 off
 
 ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler)
 {
-	ssize_t r = _ffaio_fop(ft, (void*)data, len, off, handler, IOCB_CMD_PWRITE);
+	ssize_t r = -3;
+	if ((int)ft->cb.aio_resfd != FF_BADFD)
+		r = _ffaio_fop(ft, (void*)data, len, off, handler, IOCB_CMD_PWRITE);
 	if (r == -3)
 		r = fffile_pwrite(ft->kev.fd, data, len, off);
 	return r;
@@ -371,7 +380,9 @@ ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 of
 
 ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler)
 {
-	ssize_t r = _ffaio_fop(ft, data, len, off, handler, IOCB_CMD_PREAD);
+	ssize_t r = -3;
+	if ((int)ft->cb.aio_resfd != FF_BADFD)
+		r = _ffaio_fop(ft, data, len, off, handler, IOCB_CMD_PREAD);
 	if (r == -3)
 		r = fffile_pread(ft->kev.fd, data, len, off);
 	return r;

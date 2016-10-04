@@ -148,7 +148,7 @@ ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 of
 	_ffaio_fprepare(ft, (void*)data, len, off);
 	ft->acb.aio_lio_opcode = LIO_WRITE;
 	if (0 != aio_write(&ft->acb)) {
-		if (errno == EAGAIN) //no resources for this I/O operation
+		if (errno == ENOSYS || errno == EAGAIN) //no resources for this I/O operation or AIO isn't supported
 			return fffile_pwrite(ft->kev.fd, data, len, off);
 		return -1;
 	}
@@ -170,7 +170,7 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 	_ffaio_fprepare(ft, data, len, off);
 	ft->acb.aio_lio_opcode = LIO_READ;
 	if (0 != aio_read(&ft->acb)) {
-		if (errno == EAGAIN)
+		if (errno == ENOSYS || errno == EAGAIN)
 			return fffile_pread(ft->kev.fd, data, len, off);
 		return -1;
 	}

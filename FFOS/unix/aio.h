@@ -26,7 +26,7 @@ struct ffaio_filetask {
 
 /** Attach ffaio_filetask to kqueue.
 Linux: not thread-safe; only 1 kernel queue is supported for ALL AIO operations. */
-FF_EXTN int ffaio_fattach(ffaio_filetask *ft, fffd kq);
+FF_EXTN int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct);
 
 #else //bsd:
 
@@ -38,7 +38,7 @@ struct ffaio_filetask {
 	struct aiocb acb;
 };
 
-static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq)
+static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
 	ft->acb.aio_sigevent.sigev_notify_kqueue = kq;
 	return 0;

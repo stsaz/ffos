@@ -10,8 +10,10 @@ struct ffaio_filetask {
 	ffkevent kev;
 };
 
-#define ffaio_fattach(ft, kq) \
-	ffkqu_attach(kq, (ft)->kev.fd, ffkev_ptr(&(ft)->kev), 0)
+#define ffaio_fattach(ft, kq, direct) \
+	((direct) \
+		? ffkqu_attach(kq, (ft)->kev.fd, ffkev_ptr(&(ft)->kev), 0) \
+		: 0)
 
 
 typedef struct ffaio_acceptor {
