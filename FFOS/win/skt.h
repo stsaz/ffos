@@ -90,18 +90,7 @@ static FFINL int ffaddr_infoq(ffaddrinfo **a, const ffsyschar *host, const ffsys
 	return GetAddrInfo(host, svc, &hints, a);
 }
 
-static FFINL int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
-{
-	ffsyschar whost[NI_MAXHOST], wsvc[NI_MAXSERV];
-
-	if (host != NULL && 0 == ff_utow(whost, FFCNT(whost), host, -1, 0))
-		return -1;
-
-	if (svc != NULL && 0 == ff_utow(wsvc, FFCNT(wsvc), svc, -1, 0))
-		return -1;
-
-	return ffaddr_infoq(a, (host != NULL) ? whost : NULL, (svc != NULL) ? wsvc : NULL, flags);
-}
+FF_EXTN int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags);
 
 #define ffaddr_free  FreeAddrInfo
 
