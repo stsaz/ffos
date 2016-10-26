@@ -831,7 +831,11 @@ fftmr fftmr_create(int flags)
 	if (tmr == NULL)
 		return FF_BADTMR;
 
+#if FF_WIN >= 0x0600
 	tmr->htmr = CreateWaitableTimerEx(NULL, NULL, flags /*CREATE_WAITABLE_TIMER_MANUAL_RESET*/, TIMER_ALL_ACCESS);
+#else
+	tmr->htmr = CreateWaitableTimer(NULL, 0, NULL);
+#endif
 	if (tmr->htmr == NULL) {
 		ffmem_free(tmr);
 		return FF_BADTMR;

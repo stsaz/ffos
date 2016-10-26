@@ -85,12 +85,14 @@ static FFINL int64 fffile_size(fffd fd) {
 
 #define fffile_isdir(file_attr)  (((file_attr) & FILE_ATTRIBUTE_DIRECTORY) != 0)
 
+#if FF_WIN >= 0x0600
 static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 	FILE_BASIC_INFO i;
 	memset(&i, 0, sizeof(FILE_BASIC_INFO));
 	i.FileAttributes = new_attr;
 	return 0 == SetFileInformationByHandle(fd, FileBasicInfo, &i, sizeof(FILE_BASIC_INFO));
 }
+#endif
 
 #define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
 

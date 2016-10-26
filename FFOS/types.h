@@ -24,7 +24,9 @@ Copyright (c) 2013 Simon Zolin
 	#include <FFOS/unix/types.h>
 
 #elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__
-	#define FF_WIN
+	#ifndef FF_WIN
+		#define FF_WIN 0x0600
+	#endif
 	#include <FFOS/win/types.h>
 
 #else

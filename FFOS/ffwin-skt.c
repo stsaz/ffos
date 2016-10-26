@@ -285,6 +285,7 @@ int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iovs, size_t iovc
 	return FFAIO_ASYNC;
 }
 
+#if FF_WIN >= 0x0600
 int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 {
 	if ((op & FFAIO_READ) && t->rhandler != NULL) {
@@ -302,6 +303,7 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 	t->canceled = 1;
 	return 0;
 }
+#endif
 
 int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
 {

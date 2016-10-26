@@ -128,7 +128,9 @@ enum FFAIO_CANCEL {
 	, FFAIO_RW = FFAIO_READ | FFAIO_WRITE
 };
 
+#if !defined FF_WIN || FF_WIN >= 0x0600
 /** Cancel AIO task.  Handler function will be called.
 @op: enum FFAIO_CANCEL.
 @oncancel: if not NULL, set new handler. */
 FF_EXTN int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel);
+#endif
