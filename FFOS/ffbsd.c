@@ -42,9 +42,9 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	if (evs == NULL)
 		return -1;
 
-	t->handler = handler;
+	t->rhandler = handler;
 	t->oneshot = 0;
-	udata = ffkev_ptr(t);
+	udata = ffaio_kqudata(t);
 	for (i = 0;  i < nsigs;  i++) {
 		EV_SET(&evs[i], sigs[i], EVFILT_SIGNAL, f, 0, 0, udata);
 	}
@@ -54,7 +54,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	ffmem_free(evs);
 
 	if (handler == NULL)
-		ffkev_fin(t);
+		ffaio_fin(t);
 	return r;
 }
 

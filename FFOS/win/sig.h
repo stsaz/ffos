@@ -19,6 +19,10 @@ enum {
 };
 #endif
 
+typedef ffkevent ffsignal;
+
+#define ffsig_init(sig)  ffkev_init(sig)
+
 static FFINL int ffsig_mask(int how, const int *sigs, size_t nsigs)
 {
 	return 0;
