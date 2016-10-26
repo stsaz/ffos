@@ -398,3 +398,12 @@ void ffmem_alignfree(void *ptr)
 	_ffmem_alignfree(ptr);
 }
 #endif //_DEBUG
+
+
+#if defined _DEBUG && defined FF_FFOS_ONLY
+int ffdbg_mask;
+int ffdbg_print(int t, const char *fmt, ...)
+{
+	return 0;
+}
+#endif

@@ -14,8 +14,9 @@ else
 TEST_BIN := ffostest
 endif
 
-override FFOS_CFLAGS += -c -g -Wall -Werror -I$(FFOS) -pthread -DFF_FFOS_ONLY
-CFLAGS := $(FFOS_CFLAGS)
+FFOS_CFLAGS := $(CFLAGS) -pthread -DFF_FFOS_ONLY
+CFLAGS += -Werror -Wall \
+	-I$(FFOS)
 override LDFLAGS += -pthread
 
 

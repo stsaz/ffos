@@ -2,7 +2,7 @@
 
 # FFOS = .
 # FFOS_OBJ_DIR = .
-FFOS_CFLAGS ?= -c \
+override FFOS_CFLAGS += \
 	-Werror -Wall -Wextra -Wno-unused-parameter \
 	-I$(FFOS)
 

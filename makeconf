@@ -3,7 +3,7 @@
 
 # set initial values for:
 # . OS: linux/bsd/windows
-# . compiler: gcc
+# . compiler: gcc/clang
 # . packaging: tar.xz/zip
 
 
@@ -12,18 +12,22 @@ ifndef OS
 uname := $(shell uname)
 ifeq ($(uname),Linux)
 OS := linux
+else ifeq ($(uname),FreeBSD)
+OS := bsd
 endif
 endif
 
 
-C := gcc
+# CPREFIX := x86_64-w64-mingw32-
+C := $(CPREFIX)gcc
 LD := $(C)
-CXX := g++
+CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS := -c -pipe
+CFLAGS := -pipe -std=c99
 LDFLAGS := -pipe
-OBJCOPY := objcopy
-STRIP := strip
+AR := $(CPREFIX)ar
+OBJCOPY := $(CPREFIX)objcopy
+STRIP := $(CPREFIX)strip
 OPT ?= LTO
 DEBUG ?= 1
 
@@ -66,17 +70,7 @@ SO := dll
 CP := cp -u -v -p
 PACK := zip -9 -r -v
 PACK_EXT := zip
-WINDRES := windres
-
-ifeq ($(COMPILER),mingw)
-C := x86_64-w64-mingw32-gcc
-LD := $(C)
-CXX := x86_64-w64-mingw32-g++
-LDXX := $(CXX)
-WINDRES := x86_64-w64-mingw32-windres
-OBJCOPY := x86_64-w64-mingw32-objcopy
-STRIP := x86_64-w64-mingw32-strip
-endif
+WINDRES := $(CPREFIX)windres
 
 else #OS
 
@@ -93,7 +87,10 @@ CP := cp -u -v -p
 PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
 
 else ifeq ($(OS),bsd)
-CFLAGS += -std=c99
+C := cc
+LD := $(C)
+CXX := c++
+LDXX := $(CXX)
 CP := cp -v
 PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
 
@@ -101,6 +98,8 @@ endif
 
 endif #OS
 
+override C += -c
+override CXX += -c
 
 # rule for separate .debug files
 %.debug: %
