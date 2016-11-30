@@ -48,7 +48,9 @@ static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, con
 #else
 	BOOL b = GetQueuedCompletionStatus(kq, &events->dwNumberOfBytesTransferred
 		, &events->lpCompletionKey, &events->lpOverlapped, *tmoutMs);
-	return b ? 1 : -1;
+	if (!b)
+		return (events->lpOverlapped == NULL) ? -1 : 0;
+	return 1;
 #endif
 }
 
