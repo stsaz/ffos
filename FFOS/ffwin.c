@@ -332,6 +332,17 @@ fffd ffpipe_create_named(const char *name)
 	return f;
 }
 
+ssize_t ffpipe_read(fffd fd, void *buf, size_t cap)
+{
+	ssize_t r;
+	if (0 > (r = fffile_read(fd, buf, cap))) {
+		if (fferr_last() == ERROR_BROKEN_PIPE)
+			return 0;
+		return -1;
+	}
+	return r;
+}
+
 
 // [/\\] | \w:[\0/\\]
 ffbool ffpath_abs(const char *path, size_t len)
@@ -806,6 +817,30 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 }
 
 
+fffd ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler)
+{
+	if (kev->pending) {
+		kev->pending = 0;
+		return kev->fd;
+	}
+
+	ffmem_tzero(&kev->ovl);
+
+	BOOL b = ConnectNamedPipe(kev->fd, &kev->ovl);
+	if (0 != fferr_ioret(b))
+		return FF_BADFD;
+
+	if (!b) {
+		kev->pending = 1;
+		kev->handler = handler;
+		fferr_set(EAGAIN);
+		return FF_BADFD;
+	}
+
+	return kev->fd;
+}
+
+
 void ffclk_diff(const fftime *start, fftime *diff)
 {
 	LARGE_INTEGER freq
@@ -957,7 +992,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	if (0 != ffkqu_attach(kq, t->fd, ffkev_ptr(t), 0))
 		return 1;
 
-	if (0 != ffaio_pipe_listen(t, handler))
+	if (FF_BADFD == ffaio_pipe_accept(t, handler) && !fferr_again(fferr_last()))
 		return -1;
 
 	t->oneshot = 0;
@@ -974,16 +1009,18 @@ int ffsig_read(ffsignal *t, ffsiginfo *si)
 	ssize_t r;
 	byte b;
 
-	r = fffile_read(t->fd, &b, 1);
-	if (r == 1)
-		return b;
+	if (t->pending)
+		ffaio_pipe_accept(t, NULL);
 
-	ffpipe_disconnect(t->fd);
-	if (0 == ffaio_pipe_listen(t, t->handler)) {
-		fferr_set(EAGAIN);
-		return -1;
+	for (;;) {
+		r = fffile_read(t->fd, &b, 1);
+		if (r == 1)
+			return b;
+
+		ffpipe_peer_close(t->fd);
+		if (FF_BADFD == ffaio_pipe_accept(t, t->handler))
+			return -1;
 	}
-	return -1;
 }
 
 int ffps_sig(int pid, int sig)
@@ -1000,11 +1037,11 @@ int ffps_sig(int pid, int sig)
 
 	b = (byte)sig;
 	if (1 != fffile_write(p, &b, 1)) {
-		(void)ffpipe_close(p);
+		ffpipe_client_close(p);
 		return 1;
 	}
 
-	(void)ffpipe_close(p);
+	ffpipe_client_close(p);
 	return 0;
 }
 

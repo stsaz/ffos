@@ -178,6 +178,8 @@ typedef struct ffstd_ev {
 FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
 
+// UNNAMED/NAMED PIPES
+
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	SECURITY_ATTRIBUTES sa = {
 		sizeof(SECURITY_ATTRIBUTES),
@@ -198,7 +200,12 @@ static FFINL fffd ffpipe_create_namedq(const ffsyschar *name)
 
 FF_EXTN fffd ffpipe_create_named(const char *name);
 
-/// Server kicks the client from the pipe
-#define ffpipe_disconnect  DisconnectNamedPipe
+#define ffpipe_peer_close(fd)  DisconnectNamedPipe(fd)
 
 #define ffpipe_close  fffile_close
+
+#define ffpipe_connect(name) fffile_open(name, O_RDWR)
+
+#define ffpipe_client_close(fd)  fffile_close(fd)
+
+FF_EXTN ssize_t ffpipe_read(fffd fd, void *buf, size_t cap);

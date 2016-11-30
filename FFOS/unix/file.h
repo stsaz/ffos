@@ -206,6 +206,8 @@ Return 1 on success;  0 if queue is empty;  -1 on error. */
 FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
 
+// UNNAMED/NAMED PIPES
+
 /** Create pipe. */
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	fffd fd[2];
@@ -216,8 +218,23 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	return 0;
 }
 
+/** Create named pipe.
+@name: UNIX: file name to be used for UNIX socket.
+@name: Windows: \\.\pipe\NAME. */
+FF_EXTN fffd ffpipe_create_named(const char *name);
+
 /** Close a pipe. */
 #define ffpipe_close  close
+
+/** Close a peer pipe fd returned by ffaio_pipe_accept(). */
+#define ffpipe_peer_close(fd)  close(fd)
+
+FF_EXTN fffd ffpipe_connect(const char *name);
+
+/** Close a client pipe fd returned by ffpipe_connect(). */
+#define ffpipe_client_close(fd)  close(fd)
+
+#define ffpipe_read(fd, buf, cap)  ffskt_recv(fd, buf, cap, 0)
 
 
 #define fffile_openq  fffile_open

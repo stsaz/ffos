@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2013 Simon Zolin
+*/
+
 #include <FFOS/time.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
@@ -11,6 +15,8 @@
 #include <pthread_np.h>
 #endif
 
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <termios.h>
 #include <string.h>
 
@@ -92,6 +98,54 @@ int ffstd_event(fffd fd, ffstd_ev *ev)
 	ev->data = ev->buf;
 	ev->datalen = r;
 	return 1;
+}
+
+
+fffd ffpipe_create_named(const char *name)
+{
+	ffskt p;
+	struct sockaddr_un a = {0};
+	a.sun_family = AF_UNIX;
+	size_t len = strlen(name);
+	if (len + 1 > sizeof(a.sun_path))
+		return FF_BADFD;
+	strcpy(a.sun_path, name);
+
+	if (FF_BADFD == (p = socket(AF_UNIX, SOCK_STREAM, 0)))
+		return FF_BADFD;
+
+	if (0 != bind(p, (void*)&a, sizeof(struct sockaddr_un)))
+		goto err;
+
+	if (0 != ffskt_listen(p, 0))
+		goto err;
+
+	return p;
+
+err:
+	ffskt_close(p);
+	return FF_BADFD;
+}
+
+fffd ffpipe_connect(const char *name)
+{
+	ffskt p;
+	struct sockaddr_un a = {0};
+	a.sun_family = AF_UNIX;
+	size_t len = strlen(name);
+	if (len + 1 > sizeof(a.sun_path))
+		return FF_BADFD;
+	strcpy(a.sun_path, name);
+
+	if (FF_BADSKT == (p = ffskt_create(AF_UNIX, SOCK_STREAM, 0)))
+		return FF_BADFD;
+
+	if (0 != ffskt_connect(p, (void*)&a, sizeof(struct sockaddr_un))) {
+		ffskt_close(p);
+		return FF_BADFD;
+	}
+
+	return p;
 }
 
 
@@ -423,4 +477,15 @@ int _ffaio_result(ffaio_task *t)
 done:
 	t->ev = NULL;
 	return r;
+}
+
+ffskt ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler)
+{
+	ffskt sk;
+	if (FF_BADSKT == (sk = ffskt_accept(kev->sk, NULL, NULL, 0))) {
+		if (fferr_again(errno))
+			kev->handler = handler;
+		return FF_BADSKT;
+	}
+	return sk;
 }

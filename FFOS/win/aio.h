@@ -48,16 +48,3 @@ static FFINL void ffaio_acceptfin(ffaio_acceptor *acc) {
 FF_EXTN int _ffaio_result(ffaio_task *t);
 
 FF_EXTN int _ffaio_events(ffaio_task *t, const ffkqu_entry *e);
-
-
-/** Listen for inbound connections to a named pipe. */
-static FFINL int ffaio_pipe_listen(ffkevent *kev, ffkev_handler handler)
-{
-	ffmem_tzero(&kev->ovl);
-	BOOL b = ConnectNamedPipe(kev->fd, &kev->ovl);
-	if (0 != fferr_ioret(b))
-		return -1;
-	if (!b)
-		kev->handler = handler;
-	return 0;
-}

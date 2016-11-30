@@ -134,3 +134,10 @@ enum FFAIO_CANCEL {
 @oncancel: if not NULL, set new handler. */
 FF_EXTN int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel);
 #endif
+
+
+/** Accept an inbound connection to a named pipe.
+Close with ffpipe_peer_close().
+Windows: the same pipe fd is returned.
+UNIX: fd to a UNIX socket's peer is returned. */
+FF_EXTN fffd ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler);
