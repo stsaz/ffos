@@ -4,11 +4,6 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/time.h>
 
-#if defined FF_LINUX
-#include <FFOS/unix/tmr-linux.h>
-#elif defined FF_BSD
-#include <FFOS/unix/tmr-bsd.h>
-#endif
 
 /** Get clock value. */
 static FFINL int ffclk_get(fftime *result) {

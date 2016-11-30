@@ -28,11 +28,11 @@ enum FFSKT_INIT {
 
 #ifdef FF_LINUX
 #include <FFOS/unix/skt.h>
-#include <FFOS/unix/skt-linux.h>
+#include <FFOS/linux/skt.h>
 
 #elif defined FF_BSD
 #include <FFOS/unix/skt.h>
-#include <FFOS/unix/skt-bsd.h>
+#include <FFOS/bsd/skt.h>
 
 #elif defined FF_WIN
 #include <FFOS/win/skt.h>

@@ -8,9 +8,9 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/socket.h>
 
 #if defined FF_BSD
-	#include <FFOS/unix/kqu-bsd.h>
+	#include <FFOS/bsd/kqu.h>
 #elif defined FF_LINUX
-	#include <FFOS/unix/kqu-epoll.h>
+	#include <FFOS/linux/kqu-epoll.h>
 #elif defined FF_WIN
 	#include <FFOS/win/kqu-iocp.h>
 #endif

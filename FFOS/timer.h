@@ -7,6 +7,12 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/queue.h>
 
+#if defined FF_LINUX
+	#include <FFOS/linux/tmr.h>
+#elif defined FF_BSD
+	#include <FFOS/bsd/tmr.h>
+#endif
+
 #if defined FF_UNIX
 #include <FFOS/unix/tmr.h>
 
