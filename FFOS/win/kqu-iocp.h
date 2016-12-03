@@ -39,20 +39,18 @@ static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
 	return t;
 }
 
-static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 #if FF_WIN >= 0x0600
+
+static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 	ULONG num = 0;
 	BOOL b = GetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);
 	return b ? (int)num : -1;
+}
 
 #else
-	BOOL b = GetQueuedCompletionStatus(kq, &events->dwNumberOfBytesTransferred
-		, &events->lpCompletionKey, &events->lpOverlapped, *tmoutMs);
-	if (!b)
-		return (events->lpOverlapped == NULL) ? -1 : 0;
-	return 1;
+FF_EXTN void ffkqu_init(void);
+FF_EXTN int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs);
 #endif
-}
 
 #define ffkqu_post_attach(kq)
 
