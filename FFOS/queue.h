@@ -33,6 +33,7 @@ typedef struct ffkevent {
 		;
 
 #if defined FF_WIN
+	unsigned faio_direct :1; //use asynchronous file I/O
 	OVERLAPPED ovl;
 #endif
 } ffkevent;

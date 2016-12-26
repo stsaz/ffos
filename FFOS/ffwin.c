@@ -812,10 +812,11 @@ ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 of
 	ft->kev.ovl.OffsetHigh = (uint)(off >> 32);
 	b = WriteFile(ft->kev.fd, data, FF_TOINT(len), NULL, &ft->kev.ovl);
 
-	if (b)
-		return ffio_result(&ft->kev.ovl);
-	else if (0 != fferr_ioret(b))
+	if (0 != fferr_ioret(b))
 		return -1;
+
+	if (!ft->kev.faio_direct)
+		return ffio_result(&ft->kev.ovl);
 
 	ft->kev.pending = 1;
 	ft->kev.handler = handler;
@@ -837,13 +838,14 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 	ft->kev.ovl.OffsetHigh = (uint)(off >> 32);
 	b = ReadFile(ft->kev.fd, data, FF_TOINT(len), NULL, &ft->kev.ovl);
 
-	if (b)
-		return ffio_result(&ft->kev.ovl);
-	else if (0 != fferr_ioret(b)) {
+	if (0 != fferr_ioret(b)) {
 		if (fferr_last() == ERROR_HANDLE_EOF)
 			return 0;
 		return -1;
 	}
+
+	if (!ft->kev.faio_direct)
+		return ffio_result(&ft->kev.ovl);
 
 	ft->kev.pending = 1;
 	ft->kev.handler = handler;

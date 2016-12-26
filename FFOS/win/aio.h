@@ -11,7 +11,7 @@ struct ffaio_filetask {
 };
 
 #define ffaio_fattach(ft, kq, direct) \
-	((direct) \
+	(((ft)->kev.faio_direct = direct) \
 		? ffkqu_attach(kq, (ft)->kev.fd, ffkev_ptr(&(ft)->kev), 0) \
 		: 0)
 
