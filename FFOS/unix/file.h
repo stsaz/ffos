@@ -190,6 +190,7 @@ enum FFSTD {
 
 /** Read console input. */
 #define ffstd_read  fffile_read
+#define ffstd_fread(fd, buf, cap)  fffile_read(fd, buf, cap)
 
 /** Print to console. */
 #define ffstd_write  fffile_write

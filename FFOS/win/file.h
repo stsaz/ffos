@@ -155,6 +155,8 @@ static FFINL ssize_t ffstd_read(fffd h, ffsyschar * s, size_t len) {
 	return 0;
 }
 
+#define ffstd_fread(fd, d, len)  ffpipe_read(fd, d, len)
+
 static FFINL ssize_t ffstd_writeq(fffd h, const ffsyschar *s, size_t len) {
 	DWORD wr;
 	if (0 != WriteConsole(h, s, FF_TOINT(len), &wr, NULL))
