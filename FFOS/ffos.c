@@ -351,7 +351,7 @@ const char * fferr_opstr(enum FFERR e)
 }
 
 
-#ifdef _DEBUG
+#ifdef FFMEM_DBG
 static ffatomic _ffmem_total; //accumulated size of (re)allocated memory; NOT the currently allocated memory size
 void* ffmem_alloc(size_t size)
 {
@@ -397,7 +397,7 @@ void ffmem_alignfree(void *ptr)
 	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p", ptr);
 	_ffmem_alignfree(ptr);
 }
-#endif //_DEBUG
+#endif //FFMEM_DBG
 
 
 #if defined _DEBUG && defined FF_FFOS_ONLY

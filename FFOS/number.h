@@ -13,6 +13,14 @@ Copyright (c) 2016 Simon Zolin
 #define FF_GETPTR(struct_T, member_name, member_ptr) \
 	((struct_T*)((char*)member_ptr - FFOFF(struct_T, member_name)))
 
+/** Set new value and return old value. */
+#define FF_SET(obj, newval) \
+({ \
+	__typeof__(*(obj)) _old = *(obj); \
+	*(obj) = newval; \
+	_old; \
+})
+
 /** Get the number of elements in array. */
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 

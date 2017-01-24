@@ -15,5 +15,5 @@ FF_EXTN int ffdir_rmakeq(ffsyschar *path, size_t off);
 #include <FFOS/win/dir.h>
 #endif
 
-/** Create directory for a file. */
-FF_EXTN int ffdir_make_path(char *fn);
+/** Create directory(s) for a file. */
+FF_EXTN int ffdir_make_path(char *fn, size_t off);

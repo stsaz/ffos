@@ -101,6 +101,25 @@ endif #OS
 override C += -c
 override CXX += -c
 
+
+CPU := $(ARCH)
+# x64 is an alias for amd64
+ifeq ($(ARCH),x64)
+CPU := amd64
+endif
+
+
+# CPU-specific options
+ifeq ($(CPU),amd64)
+CFLAGS += -m64
+LDFLAGS += -m64
+
+else ifeq ($(CPU),i686)
+CFLAGS += -m32 -march=i686
+LDFLAGS += -m32 -march=i686
+endif
+
+
 # rule for separate .debug files
 %.debug: %
 	$(OBJCOPY) --only-keep-debug $< $@

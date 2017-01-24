@@ -30,7 +30,7 @@ Copyright (c) 2013 Simon Zolin
 #define ffmem_tzero(p)  memset(p, 0, sizeof(*(p)))
 
 
-#ifdef _DEBUG
+#ifdef FFMEM_DBG
 FF_EXTN void* ffmem_alloc(size_t size);
 FF_EXTN void* ffmem_calloc(size_t n, size_t size);
 FF_EXTN void* ffmem_realloc(void *ptr, size_t newsize);

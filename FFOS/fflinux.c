@@ -255,12 +255,12 @@ static void _ffaio_fctxhandler(void *udata)
 		for (i = 0;  i < r;  i++) {
 
 			ffkqu_entry e = {0};
-			ffkevent *kev = (void*)(evs[i].data & ~1);
+			ffkevent *kev = (void*)(size_t)(evs[i].data & ~1);
 			ffaio_filetask *ft = FF_GETPTR(ffaio_filetask, kev, kev);
 			ft->result = evs[i].res;
 			//const struct iocb *cb = (void*)evs[i].obj;
 
-			e.data.ptr = (void*)evs[i].data;
+			e.data.ptr = (void*)(size_t)evs[i].data;
 			ffkev_call(&e);
 		}
 
@@ -346,13 +346,13 @@ static ssize_t _ffaio_fop(ffaio_filetask *ft, void *data, size_t len, uint64 off
 	}
 
 	ffmem_tzero(cb);
-	cb->aio_data = (uint64)ffkev_ptr(&ft->kev);
+	cb->aio_data = (uint64)(size_t)ffkev_ptr(&ft->kev);
 	cb->aio_lio_opcode = op;
 	cb->aio_flags = IOCB_FLAG_RESFD;
 	cb->aio_resfd = _ffaio_fctx.kev.fd;
 
 	cb->aio_fildes = ft->kev.fd;
-	cb->aio_buf = (uint64)data;
+	cb->aio_buf = (uint64)(size_t)data;
 	cb->aio_nbytes = len;
 	cb->aio_offset = off;
 
