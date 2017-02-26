@@ -14,6 +14,7 @@ FF_EXTN int test_thd();
 FF_EXTN int test_skt();
 FF_EXTN int test_timer();
 FF_EXTN int test_kqu();
+FF_EXTN int test_cpu();
 
 #ifdef FF_UNIX
 #define TMP_PATH "/tmp"
