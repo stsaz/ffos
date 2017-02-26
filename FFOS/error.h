@@ -72,12 +72,14 @@ FF_EXTN const char * fferr_opstr(enum FFERR e);
 #define fffile_close_S  "file close"
 #define fffile_rename_S  "file rename"
 #define fffile_info_S  "get file info"
+#define fffile_settime_S  "set file time"
 #define fffile_read_S  "read"
 #define fffile_write_S  "write"
 #define fffile_nblock_S  "set non-blocking mode"
 
 #define ffdir_open_S  "directory open"
 #define ffdir_make_S  "directory make"
+#define ffdir_rm_S  "directory remove"
 
 #define ffpipe_create_S  "pipe create"
 #define ffpipe_open_S  "pipe open"

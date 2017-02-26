@@ -16,12 +16,15 @@ Copyright (c) 2013 Simon Zolin
 
 /** Allocate N objects of type T. */
 #define ffmem_talloc(T, N)  ((T*)ffmem_alloc((N) * sizeof(T)))
+#define ffmem_allocT(N, T)  ((T*)ffmem_alloc((N) * sizeof(T)))
 
 /** Allocate N objects of type T.  Zero the buffer. */
 #define ffmem_tcalloc(T, N)  ((T*)ffmem_calloc(N, sizeof(T)))
+#define ffmem_callocT(N, T)  ((T*)ffmem_calloc(N, sizeof(T)))
 
 /** Allocate an object of type T. */
 #define ffmem_tcalloc1(T)  ((T*)ffmem_calloc(1, sizeof(T)))
+#define ffmem_new(T)  ((T*)ffmem_calloc(1, sizeof(T)))
 
 /** Zero the buffer. */
 #define ffmem_zero(p, len)  memset(p, 0, len)

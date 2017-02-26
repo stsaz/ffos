@@ -47,14 +47,10 @@ static void serv_recv(void *udata)
 	char buf[64 * 1024];
 
 	for (;;) {
-		r = ffaio_result(&c->task);
-		if (r == 0)
-			r = ffskt_recv(c->sk, buf, sizeof(buf), 0);
-
-		if (r == -1 && fferr_again(fferr_last())) {
+		r = ffaio_recv(&c->task, &serv_recv, buf, sizeof(buf));
+		if (r == FFAIO_ASYNC) {
 			printf("server: receiving data..." FF_NEWLN);
-			if (FFAIO_ASYNC == ffaio_recv(&c->task, &serv_recv, NULL, 0))
-				return;
+			return;
 		}
 
 		if (r == 0)
@@ -152,15 +148,11 @@ static void client_send(void *udata)
 	char buf[64 * 1024];
 
 	while (conn->nsent != NDATA) {
-		r = ffaio_result(&conn->task);
-		if (r == 0)
-			r = ffskt_send(conn->csk, buf, ffmin(NDATA - conn->nsent, sizeof(buf)), 0);
-
-		if (r == -1 && fferr_again(fferr_last())) {
+		r = ffaio_send(&conn->task, &client_send, buf, ffmin(NDATA - conn->nsent, sizeof(buf)));
+		if (r == FFAIO_ASYNC) {
 			printf("client: sending..." FF_NEWLN);
 			conn->ch = buf[0];
-			if (FFAIO_ASYNC == ffaio_send(&conn->task, &client_send, &conn->ch, 1))
-				return;
+			return;
 		}
 
 		x(r > 0);
@@ -176,7 +168,7 @@ static void client_send(void *udata)
 static void connect_onsig(void *udata)
 {
 	conn_t *conn = udata;
-	x(0 == ffaio_result(&conn->task));
+	x(0 == ffaio_connect(&conn->task, NULL, NULL, 0));
 	printf("client: connected" FF_NEWLN);
 	client_sendfile(conn);
 	client_send(conn);
@@ -185,7 +177,7 @@ static void connect_onsig(void *udata)
 static void connect_oncancel(void *udata)
 {
 	conn_t *conn = udata;
-	x(0 != ffaio_result(&conn->task));
+	x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
 
 #ifndef FF_BSD
 	x(fferr_last() == ECANCELED);
@@ -201,7 +193,7 @@ static void connect_oncancel(void *udata)
 static void connect_onerr(void *udata)
 {
 	conn_t *conn = udata;
-	x(0 != ffaio_result(&conn->task));
+	x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
 	x(fferr_last() != 0);
 	printf("client: connect error" FF_NEWLN);
 	quit |= 8;
