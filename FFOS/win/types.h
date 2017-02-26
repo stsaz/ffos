@@ -6,7 +6,7 @@ Copyright (c) 2013 Simon Zolin
 	#define FF_MSVC
 #endif
 
-#if defined __MINGW64__
+#if defined __MINGW32__ || defined __MINGW64__
 	#define FF_MINGW
 #endif
 

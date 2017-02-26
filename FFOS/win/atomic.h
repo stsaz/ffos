@@ -40,7 +40,7 @@ static FFINL int ffatom_cmpxchg(ffatomic *a, ssize_t old, ssize_t newval) {
 #define ffcpu_pause  YieldProcessor
 #else
 static FFINL void ffcpu_pause() {
-	YieldProcessor;
+	YieldProcessor();
 }
 #endif
 

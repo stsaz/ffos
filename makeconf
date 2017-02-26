@@ -2,6 +2,7 @@
 # Simon Zolin, 2016
 
 # set initial values for:
+# . CPU: IA-32/AMD64
 # . OS: linux/bsd/windows
 # . compiler: gcc/clang
 # . packaging: tar.xz/zip
@@ -64,7 +65,6 @@ endif #OPT
 
 # set OS-specific values
 ifeq ($(OS),win)
-ARCH := x64
 LD_LWS2_32 := -lws2_32
 SO := dll
 CP := cp -u -v -p
@@ -74,7 +74,6 @@ WINDRES := $(CPREFIX)windres
 
 else #OS
 
-ARCH := amd64
 CFLAGS += -fpic -fvisibility=hidden
 LDFLAGS += -fpic
 LD_LPTHREAD := -pthread
@@ -102,22 +101,35 @@ override C += -c
 override CXX += -c
 
 
+# Set target architecture
+ARCH := amd64
+ARCH_OS := $(ARCH)
 CPU := $(ARCH)
-# x64 is an alias for amd64
-ifeq ($(ARCH),x64)
-CPU := amd64
-endif
+
+# Windows: architecture name is "x86" or "x64"
+ifeq ($(OS),win)
+ARCH_OS := x64
+ifeq ($(ARCH),i686)
+ARCH_OS := x86
+endif #ARCH
+endif #OS
 
 
 # CPU-specific options
 ifeq ($(CPU),amd64)
-CFLAGS += -m64
-LDFLAGS += -m64
+CFLAGS += -m64 -march=x86-64
+LDFLAGS += -m64 -march=x86-64
 
 else ifeq ($(CPU),i686)
 CFLAGS += -m32 -march=i686
 LDFLAGS += -m32 -march=i686
+
+ifeq ($(OS),win)
+# Remove dependency on libgcc_s_sjlj-1.dll
+LDFLAGS += -static-libgcc
 endif
+
+endif #CPU
 
 
 # rule for separate .debug files

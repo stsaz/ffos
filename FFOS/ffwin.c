@@ -763,7 +763,7 @@ fffd ffdl_open(const char *filename, int flags)
 
 
 #if FF_WIN < 0x0600
-typedef BOOL (*GetQueuedCompletionStatusEx_t)(HANDLE, void*, long, void*, long, long);
+typedef BOOL __stdcall (*GetQueuedCompletionStatusEx_t)(HANDLE, void*, long, void*, long, long);
 static GetQueuedCompletionStatusEx_t _ffGetQueuedCompletionStatusEx;
 
 void ffkqu_init(void)
