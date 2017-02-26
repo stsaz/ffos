@@ -152,8 +152,8 @@ static ffkevent *_ffev;
 
 static void _ffev_handler(void *udata)
 {
-	void *p;
-	if (sizeof(void*) != fffile_read(_ffev->fd, &p, sizeof(void*))) {
+	uint64 val;
+	if (sizeof(uint64) != fffile_read(_ffev->fd, &val, sizeof(uint64))) {
 		FFDBG_PRINT(0, "%s(): fffile_read() error.  evfd: %d\n", FF_FUNC, _ffev->fd);
 		return;
 	}
@@ -189,7 +189,8 @@ fail:
 
 int ffkqu_post(fffd kq, void *data, void *unused)
 {
-	if (sizeof(void*) != fffile_write(_ffev->fd, data, sizeof(void*)))
+	uint64 val = 1;
+	if (sizeof(uint64) != fffile_write(_ffev->fd, &val, sizeof(uint64)))
 		return -1;
 	return 0;
 }
