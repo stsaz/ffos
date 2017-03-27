@@ -38,7 +38,7 @@ typedef struct ffcpuid {
 #define _ffcpuid(level, eax, ebx, ecx, edx) \
 do { \
 	int info[4]; \
-	__cpuid(info, 0); \
+	__cpuid(info, level); \
 	eax = info[0]; \
 	ebx = info[1]; \
 	ecx = info[2]; \
