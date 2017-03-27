@@ -13,6 +13,9 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 
+#define FFDIR_USER_CONFIG  "$HOME/.config"
+
+
 enum {
 	ENOMOREFILES = 0
 	, FFPATH_ICASE = 0

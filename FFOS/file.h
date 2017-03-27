@@ -6,6 +6,7 @@ Copyright (c) 2013 Simon Zolin
 #pragma once
 
 #include <FFOS/types.h>
+#include <FFOS/error.h>
 
 #ifdef FF_WIN
 #include <FFOS/win/file.h>
@@ -18,6 +19,12 @@ Copyright (c) 2013 Simon Zolin
 /** Write constant string to a file. */
 #define fffile_writecz(fd, csz)  fffile_write(fd, csz, sizeof(csz)-1)
 
+static FFINL ffbool fffile_exists(const char *fn)
+{
+	fffileinfo fi;
+	return (0 == fffile_infofn(fn, &fi)
+		|| !fferr_nofile(fferr_last()));
+}
 
 enum FFKEY {
 	FFKEY_VIRT = 1 << 31,

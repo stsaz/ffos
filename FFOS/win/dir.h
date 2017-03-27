@@ -4,6 +4,10 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/string.h>
 
+
+#define FFDIR_USER_CONFIG  "%APPDATA%"
+
+
 enum {
 	ENOMOREFILES = ERROR_NO_MORE_FILES
 	/** Case-insensitive file system. */
