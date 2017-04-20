@@ -26,6 +26,24 @@ static FFINL ffbool fffile_exists(const char *fn)
 		|| !fferr_nofile(fferr_last()));
 }
 
+
+enum FFWIN_FILEATTR {
+	FFWIN_FILE_READONLY = 1,
+	FFWIN_FILE_HIDDEN = 2,
+	FFWIN_FILE_SYSTEM = 4,
+	FFWIN_FILE_DIR = 0x10,
+	FFWIN_FILE_ARCHIVE = 0x20,
+};
+
+// TTTT SSS RWXRWXRWX
+enum FFUNIX_FILEATTR {
+	FFUNIX_FILE_TYPEMASK = 0170000,
+	FFUNIX_FILE_DIR = 0040000,
+	FFUNIX_FILE_REG = 0100000,
+	FFUNIX_FILE_LINK = 0120000,
+};
+
+
 enum FFKEY {
 	FFKEY_VIRT = 1 << 31,
 	FFKEY_UP,

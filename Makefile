@@ -31,7 +31,22 @@ include $(FFOS)/makerules
 
 # test
 FFOS_TEST_HDR := $(wildcard $(FFOS)/test/*.h)
-FFOS_TEST_SRC := $(wildcard $(FFOS)/test/*.c)
+FFOS_TEST_SRC := \
+	$(FFOS)/test/cpu.c \
+	$(FFOS)/test/dir.c \
+	$(FFOS)/test/file.c \
+	$(FFOS)/test/kqu.c \
+	$(FFOS)/test/mem.c \
+	$(FFOS)/test/socket.c \
+	$(FFOS)/test/test.c \
+	$(FFOS)/test/time.c \
+	$(FFOS)/test/timer.c \
+	$(FFOS)/test/types.c
+
+ifeq ($(OS),win)
+FFOS_TEST_SRC += $(FFOS)/test/reg.c
+endif
+
 FFOS_TEST_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_TEST_SRC)))))
 
 $(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR)
