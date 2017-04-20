@@ -22,6 +22,16 @@ int test_time()
 	t.mcs -= t.mcs % 1000;
 	x(!fftime_cmp(&t, &t1));
 
+#if 0
+	ffdtm dtmloc;
+	fftime tloc;
+	fftime_split(&dtmloc, &t, FFTIME_TZLOCAL);
+	fftime_join(&tloc, &dtmloc, FFTIME_TZUTC);
+	x(t.s + 3*60*60 == tloc.s);
+	fftime_join(&tloc, &dtmloc, FFTIME_TZLOCAL);
+	x(t.s == tloc.s);
+#endif
+
 	fftime_addms(&t1, 1);
 	x(fftime_cmp(&t, &t1) < 0);
 

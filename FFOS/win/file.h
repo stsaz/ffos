@@ -109,10 +109,7 @@ static FFINL int fffile_info(fffd fd, fffileinfo *fi) {
 Note: fffile_infoid() won't work. */
 FF_EXTN int fffile_infofn(const char *fn, fffileinfo *fi);
 
-FF_EXTN fftime _ff_ftToTime(const FILETIME *ft);
-FF_EXTN FILETIME _ff_timeToFt(const fftime *time_value);
-
-#define fffile_infomtime(fi)  _ff_ftToTime(&(fi)->ftLastWriteTime)
+#define fffile_infomtime(fi)  fftime_from_winftime((void*)&(fi)->ftLastWriteTime)
 
 #define fffile_infosize(fi)  (((uint64)(fi)->nFileSizeHigh << 32) | (fi)->nFileSizeLow)
 
@@ -124,7 +121,8 @@ typedef uint64 fffileid;
 
 static FFINL int fffile_settime(fffd fd, const fftime *last_write)
 {
-	FILETIME ft = _ff_timeToFt(last_write);
+	FILETIME ft;
+	fftime_to_winftime(last_write, (void*)&ft);
 	return 0 == SetFileTime(fd, NULL, NULL, &ft);
 }
 

@@ -25,6 +25,7 @@ typedef struct ffdtm {
 		, month //1..12
 		, weekday //0..6
 		, day //1..31
+		, yday //1..366
 
 		, hour //0..23
 		, min  //0..59
@@ -117,3 +118,27 @@ FF_EXTN ffbool fftime_chk(const ffdtm *dt, uint flags);
 
 /** Normalize values that exceed limits. */
 FF_EXTN void fftime_norm(ffdtm *dt);
+
+
+/** Convert between Windows FILETIME structure & fftime. */
+typedef struct fftime_winftime {
+	uint lo, hi;
+} fftime_winftime;
+
+enum { FFTIME_100NS = 116444736000000000ULL };
+
+static FFINL fftime fftime_from_winftime(const fftime_winftime *ft)
+{
+	fftime t = { 0, 0 };
+	uint64 i = ((uint64)ft->hi << 32) | ft->lo;
+	if (i > FFTIME_100NS)
+		fftime_setmcs(&t, (i - FFTIME_100NS) / 10);
+	return t;
+}
+
+static FFINL void fftime_to_winftime(const fftime *t, fftime_winftime *ft)
+{
+	uint64 d = fftime_mcs(t) * 10 + FFTIME_100NS;
+	ft->lo = (uint)d;
+	ft->hi = (uint)(d >> 32);
+}

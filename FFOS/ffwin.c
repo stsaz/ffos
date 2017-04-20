@@ -483,108 +483,11 @@ const char* fferr_strp(int code)
 }
 
 
-static const uint64 _ff100nsNum = 116444736000000000ULL;
-
-/// Convert Windows FILETIME structure to time value
-fftime _ff_ftToTime(const FILETIME *ft)
-{
-	fftime t = { 0, 0 };
-	uint64 i = ((uint64)ft->dwHighDateTime << 32) | ft->dwLowDateTime;
-	if (i > _ff100nsNum)
-		fftime_setmcs(&t, (i - _ff100nsNum) / 10);
-	return t;
-}
-
-/// Convert time value to Windows FILETIME structure
-FILETIME _ff_timeToFt(const fftime *time_value)
-{
-	uint64 d = fftime_mcs(time_value) * 10 + _ff100nsNum;
-	FILETIME f;
-	f.dwLowDateTime = (uint)d;
-	f.dwHighDateTime = (uint)(d >> 32);
-	return f;
-}
-
 void fftime_now(fftime *t)
 {
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
-	*t = _ff_ftToTime(&ft);
-}
-
-void fftime_split(ffdtm *dt, const fftime *t, enum FF_TIMEZONE tz)
-{
-	SYSTEMTIME st = { 0 };
-
-	if (tz == FFTIME_TZLOCAL) {
-		struct tm Tm;
-		time_t tt = t->s;
-#if defined FF_MSVC || defined FF_MINGW
-		localtime_s(&Tm, &tt);
-#else
-		localtime_r(&tt, &Tm);
-#endif
-		fftime_fromtm(dt, &Tm);
-		dt->msec = t->mcs / 1000;
-		return ;
-	}
-
-	if (t->s || t->mcs) {
-		FILETIME filet = _ff_timeToFt(t);
-		FileTimeToSystemTime(&filet, &st);
-	}
-	else {
-		st.wYear = 1970;
-		st.wMonth = 1;
-		st.wDay = 1;
-	}
-	dt->year = st.wYear;
-	dt->month = st.wMonth;
-	dt->weekday = st.wDayOfWeek;
-	dt->day = st.wDay;
-	dt->hour = st.wHour;
-	dt->min = st.wMinute;
-	dt->sec = st.wSecond;
-	dt->msec = st.wMilliseconds;
-}
-
-fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
-{
-	SYSTEMTIME st = {
-		dt->year
-		, dt->month
-		, 0
-		, dt->day
-		, dt->hour
-		, dt->min
-		, dt->sec
-		, dt->msec
-	};
-
-	if (tz == FFTIME_TZNODATE) {
-		t->s = dt->hour * 60*60 + dt->min * 60 + dt->sec;
-		t->mcs = dt->msec * 1000;
-		return t;
-	}
-
-	if (dt->year < 1970) {
-		t->s = t->mcs = 0;
-		return t;
-	}
-
-	if (tz == FFTIME_TZLOCAL) {
-		struct tm Tm;
-		time_t tt;
-		fftime_totm(&Tm, dt);
-		tt = mktime(&Tm);
-		t->s = (uint)tt;
-		t->mcs = dt->msec * 1000;
-		return t;
-	}
-
-	SystemTimeToFileTime(&st, (FILETIME *)t);
-	*t = _ff_ftToTime((FILETIME *)t);
-	return t;
+	*t = fftime_from_winftime((void*)&ft);
 }
 
 

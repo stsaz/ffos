@@ -179,38 +179,6 @@ void fftime_now(fftime *t)
 	fftime_fromtimespec(t, &ts);
 }
 
-void fftime_split(ffdtm *dt, const fftime *_t, enum FF_TIMEZONE tz)
-{
-	const time_t t = _t->s;
-	struct tm tt;
-	if (tz == FFTIME_TZUTC)
-		gmtime_r(&t, &tt);
-	else
-		localtime_r(&t, &tt);
-	fftime_fromtm(dt, &tt);
-	dt->msec = _t->mcs / 1000;
-}
-
-fftime * fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
-{
-	struct tm tt;
-
-	if (tz == FFTIME_TZNODATE) {
-		t->s = dt->hour * 60*60 + dt->min * 60 + dt->sec;
-		t->mcs = dt->msec * 1000;
-		return t;
-	}
-
-	FF_ASSERT(dt->year >= 1970);
-	fftime_totm(&tt, dt);
-	if (tz == FFTIME_TZUTC)
-		t->s = timegm(&tt);
-	else
-		t->s = mktime(&tt);
-	t->mcs = dt->msec * 1000;
-	return t;
-}
-
 
 #if !defined FF_NOTHR
 ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size)
