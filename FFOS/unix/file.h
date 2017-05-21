@@ -206,6 +206,8 @@ typedef struct ffstd_ev {
 Return 1 on success;  0 if queue is empty;  -1 on error. */
 FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
+#define ffterm_detach()
+
 
 // UNNAMED/NAMED PIPES
 

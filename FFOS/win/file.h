@@ -177,6 +177,8 @@ typedef struct ffstd_ev {
 
 FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
+#define ffterm_detach()  FreeConsole()
+
 
 // UNNAMED/NAMED PIPES
 
