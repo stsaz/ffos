@@ -302,6 +302,27 @@ int ffps_wait(fffd h, uint timeout, int *exit_code)
 	return 0;
 }
 
+fffd ffps_createself_bg(const char *arg)
+{
+	fffd ps = ffps_fork();
+	if (ps == 0) {
+		setsid();
+		umask(0);
+
+		fffd f;
+		if (FF_BADFD == (f = fffile_open("/dev/null", O_RDWR))) {
+			FFDBG_PRINTLN(1, "error: %s: %s", fffile_open_S, "/dev/null");
+			return FF_BADFD;
+		}
+		dup2(f, ffstdin);
+		dup2(f, ffstdout);
+		dup2(f, ffstderr);
+		if (f > ffstderr)
+			fffile_close(f);
+	}
+	return ps;
+}
+
 
 int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 {

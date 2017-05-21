@@ -649,6 +649,42 @@ fffd ffps_exec(const char *filename, const char **argv, const char **env)
 	return info.hProcess;
 }
 
+/* Create a copy of the current process with @arg appended to process' command line. */
+fffd ffps_createself_bg(const char *arg)
+{
+	fffd ps = FF_BADFD;
+	BOOL b;
+	size_t cap, arg_len = strlen(arg), psargs_len;
+	ffsyschar *args, *p, *ps_args, fn[FF_MAXPATH];
+	PROCESS_INFORMATION info;
+	STARTUPINFO si = {0};
+
+	if (0 == GetModuleFileName(NULL, fn, FFCNT(fn)))
+		return FF_BADFD;
+
+	ps_args = GetCommandLine();
+	psargs_len = ffq_len(ps_args);
+	cap = psargs_len + FFSLEN(" ") + arg_len + 1;
+	if (NULL == (args = ffq_alloc(cap)))
+		return FF_BADFD;
+	p = args;
+	memcpy(p, ps_args, psargs_len * sizeof(ffsyschar));
+	p += psargs_len;
+	*p++ = ' ';
+	p += ff_utow(p, args + cap - p, arg, arg_len, 0);
+	*p++ = '\0';
+
+	b = CreateProcess(fn, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
+		, NULL /*startup dir*/, &si, &info);
+	if (b) {
+		CloseHandle(info.hThread);
+		ps = info.hProcess;
+	}
+
+	ffmem_free(args);
+	return ps;
+}
+
 
 fffd ffdl_open(const char *filename, int flags)
 {
