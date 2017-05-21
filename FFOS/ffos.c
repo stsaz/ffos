@@ -226,9 +226,9 @@ fftime* fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
 {
 	uint year, mon, days;
 
-	if (dt->year < 1970) {
-		t->s = t->mcs = 0;
-		return t;
+	if (tz == FFTIME_TZNODATE) {
+		days = 0;
+		goto set;
 	}
 
 #ifndef FF_LINUX
@@ -243,9 +243,9 @@ fftime* fftime_join(fftime *t, const ffdtm *dt, enum FF_TIMEZONE tz)
 	}
 #endif
 
-	if (tz == FFTIME_TZNODATE) {
-		days = 0;
-		goto set;
+	if (dt->year < 1970) {
+		t->s = t->mcs = 0;
+		return t;
 	}
 
 	year = dt->year;
