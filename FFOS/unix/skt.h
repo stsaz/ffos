@@ -29,12 +29,22 @@ static FFINL int ffskt_init(int flags) {
 	return 0;
 }
 
+/** Create an endpoint for communication.
+@type: SOCK_*
+Return FF_BADSKT on error.
+Example:
+ffskt sk = ffskt_create(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); */
+#define ffskt_create(domain, type, protocol) \
+	socket(domain, type, protocol)
+
 #ifndef FF_OLDLIBC
 /** Accept a connection on a socket.
 flags: SOCK_NONBLOCK. */
 static FFINL ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags) {
 	return accept4(listenSk, a, addrlen, flags);
 }
+#else
+FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
 #endif
 
 /** Receive data from a socket.

@@ -14,8 +14,10 @@ enum {
 	FF_MAXIP4 = INET_ADDRSTRLEN
 	, FF_MAXIP6 = INET6_ADDRSTRLEN
 
-	, SOCK_NONBLOCK = 1
+	, SOCK_NONBLOCK = 0x100
 };
+
+FF_EXTN ffskt ffskt_create(uint domain, uint type, uint protocol);
 
 FF_EXTN LPFN_ACCEPTEX _ffwsaAcceptEx;
 FF_EXTN LPFN_CONNECTEX _ffwsaConnectEx;
@@ -34,7 +36,6 @@ static FFINL int ffskt_init(int flags) {
 	return 0;
 }
 
-/** Does not inherit non-blocking mode. */
 FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags);
 
 #define ffskt_deferaccept(sk, enable)  (-1)
