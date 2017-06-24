@@ -361,14 +361,38 @@ static void _ffaio_run1(ffkqu_entry *e)
 	if ((udata & 1) != t->instance)
 		return; //cached event has signaled
 
+#ifdef FF_LINUX
+/* In epoll both R & W flags may be signalled together.
+Don't call whandler() here in case it's initially NULL, but then is set inside rhandler().
+Otherwise EPOLLERR flag may be reported incorrectly. */
+
+	ffaio_handler wfunc = t->whandler;
+
 	if (r && t->rhandler != NULL) {
 		func = t->rhandler;
 		t->rhandler = NULL;
 		t->ev = e;
 		func(t->udata);
+		// 'whandler' may be modified
 	}
 
-	if (w && t->whandler != NULL) {
+	if (w && wfunc != NULL && wfunc == t->whandler) {
+		func = t->whandler;
+		t->whandler = NULL;
+		t->ev = e;
+		func(t->udata);
+	}
+
+	return;
+#endif
+
+	if (r && t->rhandler != NULL) {
+		func = t->rhandler;
+		t->rhandler = NULL;
+		t->ev = e;
+		func(t->udata);
+
+	} else if (w && t->whandler != NULL) {
 		func = t->whandler;
 		t->whandler = NULL;
 		t->ev = e;
