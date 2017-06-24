@@ -428,19 +428,23 @@ enum { FFLK_SPIN = 2048 };
 
 void fflk_lock(fflock *lk)
 {
+	if (_ffsc_ncpu == 1) {
+		for (;;) {
+			if (fflk_trylock(lk))
+				return;
+
+			ffcpu_yield();
+		}
+	}
+
 	for (;;) {
 		if (fflk_trylock(lk))
 			return;
-
-		if (_ffsc_ncpu > 1) {
-			uint n;
-			for (n = 0;  n < FFLK_SPIN;  n++) {
-				ffcpu_pause();
-				if (fflk_trylock(lk))
-					return;
-			}
+		for (uint n = 0;  n != FFLK_SPIN;  n++) {
+			ffcpu_pause();
+			if (fflk_trylock(lk))
+				return;
 		}
-
 		ffcpu_yield();
 	}
 }

@@ -3,6 +3,9 @@ Copyright (c) 2013 Simon Zolin
 */
 
 
+#define ffatom_set(a, val)  *(a) = (val)
+#define ffatom_get(a)  (*(a))
+
 #ifdef FF_64
 typedef volatile LONGLONG ffatomic;
 

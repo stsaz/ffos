@@ -7,11 +7,8 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/types.h>
 
 
-/** Set new value. */
-#define ffatom_set(a, val)  *(a) = (val)
-
-/** Get value. */
-#define ffatom_get(a)  (*(a))
+#define ffatom_getT(a, T)  (*(volatile T*)(a))
+#define ffatom_setT(a, set, T)  (*(volatile T*)(a) = (set))
 
 
 #ifdef FF_UNIX
@@ -32,7 +29,7 @@ FF_EXTN void fflk_setup(void);
 
 /** Initialize fflock object. */
 #define fflk_init(lk) \
-	(lk)->lock = 0
+	ffatom_set(&(lk)->lock, 0)
 
 /** Acquire spinlock. */
 FF_EXTN void fflk_lock(fflock *lk);

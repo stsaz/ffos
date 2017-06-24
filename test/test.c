@@ -148,6 +148,12 @@ static int test_atomic()
 	x(0xffabcdee == ffatom_decret(&a));
 	x(0xffabcdef == ffatom_incret(&a));
 
+	ffatom_set(&a, 0);
+	ffatom_or(&a, 0x1000);
+	x(ffatom_get(&a) == 0x1000);
+	ffatom_and(&a, ~0x1000);
+	x(ffatom_get(&a) == 0);
+
 #ifdef FF_64
 	ffatom_set(&a, 0x12345678);
 	x(0xffffffff12345678ULL == ffatom_addret(&a, 0xffffffff00000000ULL));
