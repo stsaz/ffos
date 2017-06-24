@@ -17,10 +17,6 @@ Copyright (c) 2013 Simon Zolin
 
 #elif defined __linux__
 	#define FF_LINUX
-	#ifndef __cplusplus
-		#define _GNU_SOURCE
-	#endif
-	#define _LARGEFILE64_SOURCE
 	#include <FFOS/unix/types.h>
 
 #elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__

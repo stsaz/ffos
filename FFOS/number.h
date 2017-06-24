@@ -9,6 +9,8 @@ Copyright (c) 2016 Simon Zolin
 #define FFOFF(struct_T, member) \
 	(((size_t)&((struct_T *)0)->member))
 
+#define FF_PTR(p, off)  ((char*)(p) + (off))
+
 /** Get structure object by its member. */
 #define FF_GETPTR(struct_T, member_name, member_ptr) \
 	((struct_T*)((char*)member_ptr - FFOFF(struct_T, member_name)))
@@ -43,6 +45,12 @@ static FFINL size_t ffmin(size_t a, size_t b)
 
 #define ffmax(i0, i1) \
 	(((i0) < (i1)) ? (i1) : (i0))
+
+#define ffint_setmax(dst, src) \
+do { \
+	if ((dst) < (src)) \
+		(dst) = (src); \
+} while (0)
 
 
 /** Swap bytes in integer number.

@@ -6,6 +6,9 @@ override FFOS_CFLAGS += \
 	-Werror -Wall -Wextra -Wno-unused-parameter \
 	-I$(FFOS)
 
+ifeq ($(OS),bsd)
+override FFOS_CFLAGS += -Wno-missing-field-initializers
+endif
 
 FFOS_SRC := $(FFOS)/FFOS/ffos.c \
 	$(FFOS)/FFOS/ff$(OS).c

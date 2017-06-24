@@ -128,6 +128,14 @@ static FFINL void ffip6_set(ffaddr *adr, const struct in6_addr *net_addr) {
 	adr->len = sizeof(struct sockaddr_in6);
 }
 
+static FFINL void ffaddr_setip(ffaddr *a, uint family, const void *ip)
+{
+	if (family == AF_INET)
+		ffip4_set(a, ip);
+	else
+		ffip6_set(a, ip);
+}
+
 /** Set "any" address. */
 static FFINL void ffaddr_setany(ffaddr *adr, int family) {
 	if (family == AF_INET)

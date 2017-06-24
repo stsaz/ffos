@@ -93,6 +93,7 @@ Example:
 static FFINL int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 {
 	ffaddrinfo hints = { 0 };
+	hints.ai_socktype = SOCK_DGRAM; //filter out results with the same IP but different ai_socktype
 	hints.ai_flags = flags;
 	return getaddrinfo(host, svc, &hints, a);
 }

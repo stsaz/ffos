@@ -13,6 +13,16 @@ Copyright (c) 2013 Simon Zolin
 #include <errno.h>
 
 
+/** File information. */
+typedef struct stat fffileinfo;
+
+#ifdef FF_LINUX
+#include <FFOS/linux/file.h>
+#else
+#include <FFOS/bsd/file.h>
+#endif
+
+
 enum {
 	FF_MAXPATH = 4096
 	, FF_MAXFN = 256
@@ -23,23 +33,8 @@ enum FFFILE_OPEN {
 	, FFO_APPEND = O_APPEND | O_CREAT
 
 	, FFO_NODOSNAME = 0
-
-#ifdef FF_BSD
-	, O_NOATIME = 0
-#endif
 };
 
-/** Open or create a file.
-flags: O_*.
-Linux: may fail with EPERM when O_NOATIME is used.
-Linux: may fail with EINVAL when O_DIRECT is used.
-Return FF_BADFD on error. */
-static FFINL fffd fffile_open(const char *filename, int flags) {
-#ifdef FF_LINUX
-	flags |= O_LARGEFILE;
-#endif
-	return open(filename, flags, 0666);
-}
 
 static FFINL fffd fffile_createtemp(const char *filename, int flags) {
 	fffd fd = fffile_open(filename, FFO_CREATENEW | flags);
@@ -66,16 +61,6 @@ static FFINL ssize_t fffile_write(fffd fd, const void *in, size_t size) {
 #define fffile_pwrite(fd, buf, size, off)  pwrite(fd, buf, size, off)
 #define fffile_pread(fd, buf, size, off)  pread(fd, buf, size, off)
 
-#ifdef FF_BSD
-#define fffile_seek  lseek
-#else
-/** Reposition file offset.
-Use SEEK_*
-Return -1 on error. */
-#define fffile_seek  lseek64
-
-#endif
-
 /** Truncate a file to a specified length.
 Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PARAMETER
  due to un-aligned seeking request. */
@@ -85,20 +70,6 @@ Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PA
 static FFINL int fffile_nblock(fffd fd, int nblock) {
 	return ioctl(fd, FIONBIO, &nblock);
 }
-
-#ifdef FF_BSD
-#define fffile_readahead(fd, size)  fcntl(fd, F_READAHEAD, size)
-
-#else
-static FFINL int fffile_readahead(fffd fd, size_t size) {
-	int er = posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (er != 0) {
-		errno = er;
-		return 1;
-	}
-	return 0;
-}
-#endif
 
 /** Duplicate a file descriptor.
 Return FF_BADFD on error. */
@@ -129,26 +100,11 @@ static FFINL int64 fffile_size(fffd fd) {
 #define fffile_chown(fd, uid, gid)  fchown(fd, uid, gid)
 
 
-/** File information. */
-typedef struct stat fffileinfo;
-
 /** Get file status by file descriptor. */
 #define fffile_info  fstat
 
 /** Get file status by name. */
 #define fffile_infofn  stat
-
-/** Return last-write time from fileinfo. */
-static FFINL fftime fffile_infomtime(const fffileinfo *fi) {
-	fftime t;
-#ifdef FF_BSD
-	fftime_fromtimespec(&t, &fi->st_mtim);
-#else
-	t.s = fi->st_mtime;
-	t.mcs = 0;
-#endif
-	return t;
-}
 
 /** Return file size from fileinfo. */
 #define fffile_infosize(fi)  (fi)->st_size

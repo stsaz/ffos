@@ -221,6 +221,14 @@ int main(int argc, const char **argv)
 	fftestobj.flags |= FFTEST_FATALERR;
 
 	if (argc == 1) {
+		printf("Supported tests: all ");
+		for (i = 0;  i != FFCNT(_ffostests);  i++) {
+			printf("%s ", _ffostests[i].nm);
+		}
+		printf("\n");
+		return 0;
+
+	} else if (!strcmp(argv[1], "all")) {
 		//run all tests
 		for (i = 0;  i < FFCNT(_ffostests);  i++) {
 			FFTEST_TIMECALL(_ffostests[i].func());
