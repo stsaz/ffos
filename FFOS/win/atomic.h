@@ -1,4 +1,5 @@
-/**
+/** This file is no longer used:
+mingw's using FFOS/atomic.h and MSVC isn't supported.
 Copyright (c) 2013 Simon Zolin
 */
 
@@ -12,7 +13,7 @@ typedef volatile LONGLONG ffatomic;
 static FFINL int ffatom_cmpxchg(ffatomic *a, ssize_t old, ssize_t newval) {
 	return old == InterlockedCompareExchange64(a, newval, old);
 }
-#define ffatom_xchg  InterlockedExchange64
+#define ffatom_swap  InterlockedExchange64
 
 #define ffatom_add  InterlockedExchangeAdd64
 #define ffatom_inc  InterlockedIncrement64
@@ -27,7 +28,7 @@ typedef volatile LONG ffatomic;
 static FFINL int ffatom_cmpxchg(ffatomic *a, ssize_t old, ssize_t newval) {
 	return old == InterlockedCompareExchange(a, newval, old);
 }
-#define ffatom_xchg  InterlockedExchange
+#define ffatom_swap  InterlockedExchange
 
 #define ffatom_add  InterlockedExchangeAdd
 #define ffatom_inc  InterlockedIncrement

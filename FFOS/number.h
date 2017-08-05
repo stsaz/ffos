@@ -16,12 +16,16 @@ Copyright (c) 2016 Simon Zolin
 	((struct_T*)((char*)member_ptr - FFOFF(struct_T, member_name)))
 
 /** Set new value and return old value. */
-#define FF_SET(obj, newval) \
+#define FF_SWAP(obj, newval) \
 ({ \
 	__typeof__(*(obj)) _old = *(obj); \
 	*(obj) = newval; \
 	_old; \
 })
+
+#define FF_WRITEONCE(a, val)  (*(volatile __typeof__(a))(a) = (val))
+
+#define FF_READONCE(a)  (*(volatile __typeof__(a))(a))
 
 /** Get the number of elements in array. */
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))

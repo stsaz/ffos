@@ -140,13 +140,17 @@ static int test_atomic()
 	FFTEST_FUNC;
 
 	ffatom_set(&a, 0x12345678);
-	x(0x12345678 == ffatom_xchg(&a, 0x87654321));
-	x(!ffatom_cmpxchg(&a, 0x11223344, 0xabcdef));
-	x(ffatom_cmpxchg(&a, 0x87654321, 0xabcdef));
+	x(0x12345678 == ffatom_swap(&a, 0x87654321));
+	x(!ffatom_cmpset(&a, 0x11223344, 0xabcdef));
+	x(ffatom_cmpset(&a, 0x87654321, 0xabcdef));
 	x(0xabcdef == ffatom_get(&a));
 	x(0xffabcdef == ffatom_addret(&a, 0xff000000));
 	x(0xffabcdee == ffatom_decret(&a));
 	x(0xffabcdef == ffatom_incret(&a));
+
+	ffatom_set(&a, 0xabcdef);
+	x(0xabcdef == ffatom_fetchadd(&a, 0xff000000));
+	x(0xffabcdef == ffatom_get(&a));
 
 	ffatom_set(&a, 0);
 	ffatom_or(&a, 0x1000);
@@ -156,10 +160,7 @@ static int test_atomic()
 
 #ifdef FF_64
 	ffatom_set(&a, 0x12345678);
-	x(0xffffffff12345678ULL == ffatom_addret(&a, 0xffffffff00000000ULL));
-
-	ffatom_set(&a, 0x12345678);
-	ffatom_add(&a, 0xffffffff00000000ULL);
+	x(0x12345678 == ffatom_fetchadd(&a, 0xffffffff00000000ULL));
 	x(0xffffffff12345678ULL == ffatom_get(&a));
 
 	ffatom_set(&a, 0xffffffffffffffffULL);

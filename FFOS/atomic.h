@@ -7,14 +7,42 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/types.h>
 
 
-#define ffatom_getT(a, T)  (*(volatile T*)(a))
-#define ffatom_setT(a, set, T)  (*(volatile T*)(a) = (set))
+/** Prevent compiler from reordering operations. */
+#define ff_compiler_fence()  __asm__ volatile ("" : : : "memory")
 
 
-#ifdef FF_UNIX
-#include <FFOS/unix/atomic.h>
+typedef struct { size_t val; } ffatomic;
+
+/** Set new value. */
+#define ffatom_set(a, set)  FF_WRITEONCE(&(a)->val, set)
+
+/** Get value. */
+#define ffatom_get(a)  FF_READONCE(&(a)->val)
+
+#ifdef FF_64
+#include <FFOS/cpu-amd64.h>
 #else
-#include <FFOS/win/atomic.h>
+#include <FFOS/cpu-i386.h>
+#endif
+
+/** Add integer and return new value. */
+static FFINL size_t ffatom_addret(ffatomic *a, size_t add)
+{
+	return ffatom_fetchadd(a, add) + add;
+}
+
+/** Increment and return new value. */
+#define ffatom_incret(a)  ffatom_addret(a, 1)
+
+/** Decrement and return new value. */
+#define ffatom_decret(a)  ffatom_addret(a, -1)
+
+/** Switch CPU to another task. */
+#ifdef FF_WIN
+#define ffcpu_yield  SwitchToThread
+#else
+#include <sched.h>
+#define ffcpu_yield  sched_yield
 #endif
 
 
@@ -35,9 +63,14 @@ FF_EXTN void fflk_setup(void);
 FF_EXTN void fflk_lock(fflock *lk);
 
 /** Return FALSE if lock couldn't be acquired. */
-#define fflk_trylock(lk) \
-	(0 == ffatom_get(&(lk)->lock) && ffatom_cmpxchg(&(lk)->lock, 0, 1))
+static FFINL int fflk_trylock(fflock *lk)
+{
+	return ffatom_cmpset(&lk->lock, 0, 1);
+}
 
 /** Release lock. */
-#define fflk_unlock(lk) \
-	ffatom_set(&(lk)->lock, 0)
+static FFINL void fflk_unlock(fflock *lk)
+{
+	ffatom_fence_rel();
+	ffatom_set(&lk->lock, 0);
+}
