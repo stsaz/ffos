@@ -69,3 +69,28 @@ static FFINL void* ffkev_ptr(ffkevent *kev)
 
 /** Call an event handler. */
 FF_EXTN void ffkev_call(ffkqu_entry *e);
+
+
+typedef ffkevent ffkevpost;
+
+#ifdef FF_UNIX
+FF_EXTN int ffkqu_post_attach(ffkevpost *p, fffd kq);
+FF_EXTN void ffkqu_post_detach(ffkevpost *p, fffd kq);
+
+FF_EXTN int ffkqu_post(ffkevpost *p, void *data);
+
+#else
+
+static FFINL int ffkqu_post_attach(ffkevpost *p, fffd kq)
+{
+	p->fd = kq;
+	return 0;
+}
+
+#define ffkqu_post_detach(p, kq)  ((p)->fd = FF_BADFD)
+
+static FFINL int ffkqu_post(ffkevpost *p, void *data) {
+	return (0 == PostQueuedCompletionStatus(p->fd, 0 /*bytes transferred*/, (ULONG_PTR)data, NULL));
+}
+
+#endif

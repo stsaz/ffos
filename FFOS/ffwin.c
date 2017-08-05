@@ -856,7 +856,9 @@ fftmr fftmr_create(int flags)
 void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 {
 	fftmr t = arg;
-	ffkqu_post(t->kq, t->data, NULL);
+	ffkevpost p;
+	p.fd = t->kq;
+	ffkqu_post(&p, t->data);
 }
 
 static int __stdcall _fftmr_thd(void *param)

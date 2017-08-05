@@ -52,12 +52,6 @@ FF_EXTN void ffkqu_init(void);
 FF_EXTN int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs);
 #endif
 
-#define ffkqu_post_attach(kq)
-
-static FFINL int ffkqu_post(fffd ioq, void* data, OVERLAPPED *ovl) {
-	return (0 == PostQueuedCompletionStatus(ioq, 0 /*bytes transferred*/, (ULONG_PTR)data, ovl));
-}
-
 static FFINL int ffkqu_close(fffd qu) {
 	return 0 == CloseHandle(qu);
 }

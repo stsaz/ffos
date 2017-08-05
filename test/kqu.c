@@ -232,6 +232,73 @@ static void start_conn(conn_t *conn, ffaddr *a, int port, ffaio_handler func)
 	func(conn);
 }
 
+
+static void on_post(void *udata)
+{
+	ffkevent *ev = udata;
+	ev->udata = (void*)-1;
+}
+
+static void test_kqu_post(void)
+{
+	fffd kq;
+	ffkevpost post;
+	uint n, i;
+	ffkqu_entry ents[2];
+	ffkqu_time t;
+	ffkevent kev1, kev2;
+
+	FFTEST_FUNC;
+
+	kq = ffkqu_create();
+	ffkqu_settm(&t, 0);
+
+	x(0 == ffkqu_post_attach(&post, kq));
+
+	x(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+
+	ffkev_init(&kev1);
+	ffkev_init(&kev2);
+	kev1.handler = kev2.handler = &on_post;
+	kev1.udata = &kev1;
+	kev2.udata = &kev2;
+	x(0 == ffkqu_post(&post, ffkev_ptr(&kev1)));
+	x(0 == ffkqu_post(&post, ffkev_ptr(&kev2)));
+
+	for (;;) {
+		n = ffkqu_wait(kq, ents, FFCNT(ents), &t);
+
+		if ((int)n < 0) {
+			if (fferr_last() != EINTR) {
+				x(0);
+				break;
+			}
+			continue;
+		}
+
+		for (i = 0;  i != n;  i++) {
+			ffkev_call(&ents[i]);
+		}
+
+#ifdef FF_WIN
+		x(kev1.udata == (void*)-1);
+		x(kev2.udata == (void*)-1);
+#elif defined FF_BSD
+		x(kev1.udata == &kev1);
+		x(kev2.udata == (void*)-1);
+#else
+		x(kev1.udata == &kev1);
+		x(kev2.udata == &kev2);
+#endif
+
+		x(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+		break;
+	}
+
+	ffkqu_post_detach(&post, kq);
+	ffkqu_close(kq);
+}
+
 int test_kqu()
 {
 	ffkqu_time tt;
@@ -243,6 +310,8 @@ int test_kqu()
 	conn_t conn;
 
 	FFTEST_FUNC;
+
+	test_kqu_post();
 
 	kq = ffkqu_create();
 	x(kq != FF_BADFD);

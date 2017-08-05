@@ -148,49 +148,47 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 }
 
 
-static ffkevent *_ffev;
-
 static void _ffev_handler(void *udata)
 {
+	ffkevpost *p = udata;
 	uint64 val;
-	if (sizeof(uint64) != fffile_read(_ffev->fd, &val, sizeof(uint64))) {
-		FFDBG_PRINT(0, "%s(): fffile_read() error.  evfd: %d\n", FF_FUNC, _ffev->fd);
+	if (sizeof(uint64) != fffile_read(p->fd, &val, sizeof(uint64))) {
+		FFDBG_PRINTLN(0, "fffile_read() error.  evfd: %d", p->fd);
 		return;
 	}
 }
 
-int ffkqu_post_attach(fffd kq)
+int ffkqu_post_attach(ffkevpost *p, fffd kq)
 {
-	if (kq == FF_BADFD) {
-		fffile_close(_ffev->fd);
-		ffmem_free(_ffev);
-		_ffev = NULL;
-		return 0;
-	}
-
-	if (NULL == (_ffev = ffmem_tcalloc1(ffkevent)))
-		return -1;
-	if (FF_BADFD == (_ffev->fd = eventfd(0, EFD_NONBLOCK)))
+	ffkev_init(p);
+	if (FF_BADFD == (p->fd = eventfd(0, EFD_NONBLOCK)))
 		goto fail;
 
-	_ffev->handler = &_ffev_handler;
+	p->handler = &_ffev_handler;
+	p->udata = p;
 
-	if (0 != ffkev_attach(_ffev, kq, FFKQU_READ)) {
-		fffile_close(_ffev->fd);
+	if (0 != ffkev_attach(p, kq, FFKQU_READ)) {
+		fffile_close(p->fd);
+		p->fd = FF_BADFD;
 		goto fail;
 	}
 
 	return 0;
 
 fail:
-	ffmem_free(_ffev);
 	return -1;
 }
 
-int ffkqu_post(fffd kq, void *data, void *unused)
+void ffkqu_post_detach(ffkevpost *p, fffd kq)
+{
+	fffile_close(p->fd);
+	ffkev_fin(p);
+}
+
+int ffkqu_post(ffkevpost *p, void *data)
 {
 	uint64 val = 1;
-	if (sizeof(uint64) != fffile_write(_ffev->fd, &val, sizeof(uint64)))
+	if (sizeof(uint64) != fffile_write(p->fd, &val, sizeof(uint64)))
 		return -1;
 	return 0;
 }
