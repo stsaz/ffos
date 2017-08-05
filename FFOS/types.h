@@ -98,15 +98,19 @@ extern int ffdbg_print(int t, const char *fmt, ...);
 
 #ifdef _DEBUG
 extern int ffdbg_mask; //~(enum FFDBG_T) + level
+
+#define FFDBG_CHKLEV(t) \
+	((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f))
+
 #define FFDBG_PRINT(t, ...) \
 do { \
-	if ((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f)) \
+	if (FFDBG_CHKLEV(t)) \
 		ffdbg_print(t, __VA_ARGS__); \
 } while (0)
 
 #define FFDBG_PRINTLN(t, fmt, ...) \
 do { \
-	if ((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f)) \
+	if (FFDBG_CHKLEV(t)) \
 		ffdbg_print(t, "%s(): " fmt "\n", FF_FUNC, __VA_ARGS__); \
 } while (0)
 

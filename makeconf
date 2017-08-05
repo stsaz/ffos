@@ -24,7 +24,7 @@ C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS := -pipe -std=c99
+CFLAGS := -pipe -std=c99 -fno-strict-aliasing
 LDFLAGS := -pipe
 AR := $(CPREFIX)ar
 OBJCOPY := $(CPREFIX)objcopy
@@ -47,6 +47,13 @@ CFLAGS += -D_DEBUG
 else ifeq ($(OPT),SECTIONS)
 
 CFLAGS += -O2
+ifneq ($(OS),win)
+CFLAGS += -ffunction-sections -fdata-sections
+LDFLAGS += -Wl,-gc-sections
+endif
+
+else ifeq ($(OPT),3)
+CFLAGS += -O3
 ifneq ($(OS),win)
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,-gc-sections
@@ -75,8 +82,9 @@ WINDRES := $(CPREFIX)windres
 else #OS
 
 CFLAGS += -fpic -fvisibility=hidden
-LDFLAGS += -fpic
+LDFLAGS += -fpic -Wl,-no-undefined
 LD_LPTHREAD := -pthread
+LD_LMATH := -lm
 SO := so
 PACK_EXT := tar.xz
 
@@ -86,7 +94,7 @@ CP := cp -u -v -p
 PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
 
 else ifeq ($(OS),bsd)
-C := cc
+C := clang
 LD := $(C)
 CXX := c++
 LDXX := $(CXX)

@@ -27,7 +27,5 @@ typedef char ffsyschar;
 typedef int fffd;
 
 typedef unsigned char byte;
-typedef int64_t int64;
-typedef uint64_t uint64;
-typedef ssize_t ssize_t;
-typedef size_t size_t;
+typedef unsigned long long uint64;
+typedef long long int64;

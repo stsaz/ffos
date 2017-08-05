@@ -2,6 +2,8 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+/**
+Return the number of bytes transferred;  -1 on error. */
 static FFINL int ffio_result(OVERLAPPED *ol) {
 	DWORD t;
 	BOOL b = GetOverlappedResult(NULL, ol, &t, 0);

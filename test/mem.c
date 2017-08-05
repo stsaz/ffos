@@ -73,9 +73,11 @@ int test_mem()
 	x(d != NULL);
 	ffmem_free(d);
 
+#ifndef FF_BSD
 	x(NULL == ffmem_alloc((size_t)-1));
 	x(NULL == ffmem_calloc((size_t)-1, 1));
 	x(NULL == ffmem_realloc(NULL, (size_t)-1));
+#endif
 
 //align
 	x(NULL != (d = ffmem_align(4, 16)));

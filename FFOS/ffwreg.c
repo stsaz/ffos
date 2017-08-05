@@ -53,7 +53,7 @@ ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 */
 int ffwreg_read(ffwreg k, const char *name, ffwreg_val *val)
 {
-	int r;
+	int r = -1;
 	size_t n;
 	DWORD type, type2, size;
 	ffsyschar wname_s[256], *wname = NULL;
@@ -253,7 +253,7 @@ end:
 
 int ffwreg_del(ffwreg k, const char *subkey, const char *name)
 {
-	int r;
+	int r = -1;
 	size_t n;
 	ffsyschar wname_s[256], *wname = NULL;
 	ffsyschar wsubkey_s[256], *wsubkey = NULL;

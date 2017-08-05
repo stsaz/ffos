@@ -69,7 +69,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 		f = EV_DELETE;
 	}
 
-	evs = ffmem_talloc(struct kevent, nsigs);
+	evs = ffmem_allocT(nsigs, struct kevent);
 	if (evs == NULL)
 		return -1;
 

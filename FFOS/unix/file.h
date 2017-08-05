@@ -179,8 +179,9 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 
 /** Create named pipe.
 @name: UNIX: file name to be used for UNIX socket.
-@name: Windows: \\.\pipe\NAME. */
-FF_EXTN fffd ffpipe_create_named(const char *name);
+@name: Windows: \\.\pipe\NAME.
+@flags: SOCK_NONBLOCK */
+FF_EXTN fffd ffpipe_create_named(const char *name, uint flags);
 
 /** Close a pipe. */
 #define ffpipe_close  close

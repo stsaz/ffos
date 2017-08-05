@@ -317,7 +317,8 @@ int ffstd_event(fffd fd, ffstd_ev *ev)
 }
 
 
-fffd ffpipe_create_named(const char *name)
+fffd ffpipe_create_named(const char *name, uint flags)
+
 {
 	fffd f;
 	ffsyschar *w, ws[FF_MAXFN];
@@ -325,7 +326,7 @@ fffd ffpipe_create_named(const char *name)
 	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return FF_BADFD;
 
-	f = ffpipe_create_namedq(ws);
+	f = ffpipe_create_namedq(ws, flags);
 	if (w != ws)
 		ffmem_free(w);
 	return f;
@@ -511,7 +512,7 @@ WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 
 	//not enough space in the provided buffer.  Allocate a new one.
 	wlen = (len == (size_t)-1) ? strlen(s) + 1 : len + 1;
-	dst = ffmem_talloc(WCHAR, wlen);
+	dst = ffmem_allocT(wlen, WCHAR);
 	if (dst == NULL)
 		return NULL;
 
@@ -967,7 +968,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	}
 
 	pipename(name, FFCNT(name), ffps_curid());
-	t->fd = ffpipe_create_namedq(name);
+	t->fd = ffpipe_create_namedq(name, 0);
 	if (t->fd == FF_BADFD)
 		return 1;
 

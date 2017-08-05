@@ -95,11 +95,14 @@ FF_EXTN const char * fferr_opstr(enum FFERR e);
 #define ffskt_shut_S  "socket shutdown"
 #define ffskt_connect_S  "socket connect"
 #define ffskt_listen_S  "socket listen"
+#define ffskt_send_S  "socket send"
+#define ffskt_recv_S  "socket recv"
 
 #define ffdl_open_S  "library open"
 #define ffdl_addr_S  "get library symbol"
 
 #define fftmr_create_S  "timer create"
+#define fftmr_start_S  "timer start"
 #define ffthd_create_S  "thread create"
 #define ffps_fork_S  "process fork"
 #define ffaddr_info_S  "address resolve"

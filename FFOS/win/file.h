@@ -192,7 +192,7 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 }
 
 /// return FF_BADFD on error
-static FFINL fffd ffpipe_create_namedq(const ffsyschar *name)
+static FFINL fffd ffpipe_create_namedq(const ffsyschar *name, uint flags)
 {
 	return CreateNamedPipe(name
 		, PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED
@@ -200,7 +200,8 @@ static FFINL fffd ffpipe_create_namedq(const ffsyschar *name)
 		, PIPE_UNLIMITED_INSTANCES, 512, 512, 0, NULL);
 }
 
-FF_EXTN fffd ffpipe_create_named(const char *name);
+FF_EXTN fffd ffpipe_create_named(const char *name, uint flags)
+;
 
 #define ffpipe_peer_close(fd)  DisconnectNamedPipe(fd)
 

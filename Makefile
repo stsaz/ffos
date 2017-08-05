@@ -14,10 +14,9 @@ else
 TEST_BIN := ffostest
 endif
 
-FFOS_CFLAGS := $(CFLAGS) -pthread -DFF_FFOS_ONLY
+FFOS_CFLAGS := $(CFLAGS) -DFF_FFOS_ONLY
 CFLAGS += -Werror -Wall \
 	-I$(FFOS)
-override LDFLAGS += -pthread
 
 
 all: $(TEST_BIN)
@@ -53,7 +52,7 @@ $(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR)
 	$(C) $(CFLAGS)  $< -o$@
 
 TEST_O := $(FFOS_TEST_OBJ) $(FFOS_WREG) \
-	$(FFOS_OBJ) $(FFOS_OBJ_DIR)/fftest.o
+	$(FFOS_OBJ) $(FFOS_THD) $(FFOS_OBJ_DIR)/fftest.o
 
 $(TEST_BIN): $(FFOS_HDR) $(FFOS_TEST_HDR) $(TEST_O)
-	$(LD) $(TEST_O) $(LDFLAGS) $(LD_LDL) $(LD_LWS2_32) -o$@
+	$(LD) $(TEST_O) $(LDFLAGS) $(LD_LDL) $(LD_LWS2_32) $(LD_LPTHREAD) -o$@

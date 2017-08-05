@@ -3,6 +3,7 @@ Copyright (c) 2017 Simon Zolin
 */
 
 #include <FFOS/cpu.h>
+#include <FFOS/atomic.h>
 #include <FFOS/test.h>
 
 
@@ -21,5 +22,13 @@ int test_cpu(void)
 		, ff_cpuid_feat(&c, FFCPUID_SSSE3)
 		, ff_cpuid_feat(&c, FFCPUID_SSE41)
 		, ff_cpuid_feat(&c, FFCPUID_SSE42));
+
+#ifdef FF_WIN
+	x(0 != ffcpu_rdtsc());
+#else
+	printf("TSC:%llx\n"
+		, ffcpu_rdtsc());
+#endif
+
 	return 0;
 }
