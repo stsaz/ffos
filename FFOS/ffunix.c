@@ -451,6 +451,10 @@ int _ffaio_result(ffaio_task *t)
 		fferr_set(t->ev->data);
 		goto done;
 	}
+	if ((t->ev->filter == EVFILT_WRITE) && (t->ev->flags & EV_EOF)) {
+		fferr_set(t->ev->fflags);
+		goto done;
+	}
 
 #elif defined FF_LINUX
 	if (t->ev->events & EPOLLERR) {

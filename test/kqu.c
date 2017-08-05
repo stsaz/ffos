@@ -168,7 +168,8 @@ static void client_send(void *udata)
 static void connect_onsig(void *udata)
 {
 	conn_t *conn = udata;
-	x(0 == ffaio_connect(&conn->task, NULL, NULL, 0));
+	if (conn->task.wpending)
+		x(0 == ffaio_connect(&conn->task, NULL, NULL, 0));
 	printf("client: connected" FF_NEWLN);
 	client_sendfile(conn);
 	client_send(conn);
@@ -177,7 +178,8 @@ static void connect_onsig(void *udata)
 static void connect_oncancel(void *udata)
 {
 	conn_t *conn = udata;
-	x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
+	if (conn->task.wpending)
+		x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
 
 #ifndef FF_BSD
 	x(fferr_last() == ECANCELED);
@@ -193,7 +195,8 @@ static void connect_oncancel(void *udata)
 static void connect_onerr(void *udata)
 {
 	conn_t *conn = udata;
-	x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
+	if (conn->task.wpending)
+		x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
 	x(fferr_last() != 0);
 	printf("client: connect error" FF_NEWLN);
 	quit |= 8;
@@ -302,7 +305,6 @@ static void test_kqu_post(void)
 int test_kqu()
 {
 	ffkqu_time tt;
-	const ffkqu_time *kqtm;
 	ffkqu_entry ents[4];
 	int nevents;
 	int n;
@@ -315,7 +317,7 @@ int test_kqu()
 
 	kq = ffkqu_create();
 	x(kq != FF_BADFD);
-	kqtm = ffkqu_settm(&tt, -1);
+	ffkqu_settm(&tt, -1);
 
 	x(0 == ffskt_init(FFSKT_WSA | FFSKT_WSAFUNCS));
 
@@ -339,7 +341,7 @@ int test_kqu()
 		ffaio_cancelasync(&conn.task, FFAIO_CONNECT, &connect_oncancel);
 
 	for (;;) {
-		nevents = ffkqu_wait(kq, ents, FFCNT(ents), kqtm);
+		nevents = ffkqu_wait(kq, ents, FFCNT(ents), &tt);
 
 		for (n = 0;  n < nevents;  n++) {
 			ffkev_call(&ents[n]);

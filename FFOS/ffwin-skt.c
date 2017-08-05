@@ -227,8 +227,11 @@ int ffaio_send(ffaio_task *t, ffaio_handler handler, const void *d, size_t len)
 
 	if (t->wpending) {
 		t->wpending = 0;
-		if (0 != _ffaio_result(t))
+		r = _ffaio_result(t);
+		if (r < 0)
 			return FFAIO_ERROR;
+		else if (r > 0)
+			return r;
 	}
 
 	r = ffskt_send(t->sk, d, len, 0);
@@ -258,8 +261,11 @@ int ffaio_sendv(ffaio_task *t, ffaio_handler handler, ffiovec *iovs, size_t iovc
 
 	if (t->wpending) {
 		t->wpending = 0;
-		if (0 != _ffaio_result(t))
+		r = _ffaio_result(t);
+		if (r < 0)
 			return FFAIO_ERROR;
+		else if (r > 0)
+			return r;
 	}
 
 	r = ffskt_sendv(t->sk, iovs, iovcnt);

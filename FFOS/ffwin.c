@@ -724,13 +724,18 @@ int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time
 	if (_ffGetQueuedCompletionStatusEx != NULL) {
 		ULONG num = 0;
 		BOOL b = _ffGetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);
-		return b ? (int)num : -1;
+		if (!b)
+			return (fferr_last() == WAIT_TIMEOUT) ? 0 : -1;
+		return (int)num;
 	}
 
 	BOOL b = GetQueuedCompletionStatus(kq, &events->dwNumberOfBytesTransferred
 		, &events->lpCompletionKey, &events->lpOverlapped, *tmoutMs);
-	if (!b)
+	if (!b) {
+		if (fferr_last() == WAIT_TIMEOUT)
+			return 0;
 		return (events->lpOverlapped == NULL) ? -1 : 1;
+	}
 	return 1;
 }
 #endif

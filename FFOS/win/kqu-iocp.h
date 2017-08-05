@@ -34,9 +34,9 @@ static FFINL fffd ffkqu_create() {
 
 typedef uint ffkqu_time;
 
-static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
+static FFINL void ffkqu_settm(ffkqu_time *t, uint ms)
+{
 	*t = ms;
-	return t;
 }
 
 #if FF_WIN >= 0x0600
@@ -44,7 +44,9 @@ static FFINL const ffkqu_time* ffkqu_settm(ffkqu_time *t, uint ms) {
 static FFINL int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs) {
 	ULONG num = 0;
 	BOOL b = GetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);
-	return b ? (int)num : -1;
+	if (!b)
+		return (fferr_last() == WAIT_TIMEOUT) ? 0 : -1;
+	return (int)num;
 }
 
 #else

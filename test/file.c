@@ -226,7 +226,6 @@ struct aio_test {
 	uint ok;
 	fffd kq;
 	ffkqu_time kqtm;
-	const ffkqu_time *pkqtm;
 };
 
 static struct aio_test faio;
@@ -241,7 +240,7 @@ static void test_onwrite(void *udata)
 	if (r == -1 && fferr_again(fferr_last())) {
 		ffkqu_entry ent;
 		fffile_writecz(ffstdout, "ffkqu_wait...");
-		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, faio.pkqtm)));
+		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, &faio.kqtm)));
 		ffkev_call(&ent);
 		return;
 	}
@@ -265,7 +264,7 @@ static void test_onread(void *udata)
 	if (r == -1 && fferr_again(fferr_last())) {
 		ffkqu_entry ent;
 		fffile_writecz(ffstdout, "ffkqu_wait...");
-		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, faio.pkqtm)));
+		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, &faio.kqtm)));
 		ffkev_call(&ent);
 		return;
 	}
@@ -297,7 +296,7 @@ int test_fileaio(void)
 	flags |= O_DIRECT;
 	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_RDWR | flags)));
 	x(FF_BADFD != (faio.kq = ffkqu_create()));
-	faio.pkqtm = ffkqu_settm(&faio.kqtm, -1);
+	ffkqu_settm(&faio.kqtm, -1);
 
 	x(0 == ffaio_fctxinit());
 

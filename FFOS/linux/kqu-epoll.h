@@ -44,9 +44,9 @@ static FFINL int ffkqu_attach(fffd kq, fffd fd, void *udata, int flags) {
 typedef uint ffkqu_time;
 
 /** Set timeout value which should be passed into ffkqu_wait(). */
-static FFINL const ffkqu_time * ffkqu_settm(ffkqu_time *t, uint ms) {
+static FFINL void ffkqu_settm(ffkqu_time *t, uint ms)
+{
 	*t = ms;
-	return t;
 }
 
 /** Wait for an event from kernel.

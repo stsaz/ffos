@@ -48,12 +48,10 @@ static FFINL int ffkqu_attach(fffd kq, fffd fd, void *udata, int flags) {
 
 typedef struct timespec ffkqu_time;
 
-static FFINL const ffkqu_time * ffkqu_settm(ffkqu_time *t, uint ms) {
-	if (ms == (uint)-1)
-		return NULL;
+static FFINL void ffkqu_settm(ffkqu_time *t, uint ms)
+{
 	t->tv_sec = ms / 1000;
 	t->tv_nsec = (ms % 1000) * 1000000;
-	return t;
 }
 
 #define ffkqu_wait(kq, events, eventsSize, tmout)\

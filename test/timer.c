@@ -44,7 +44,6 @@ int test_timer()
 {
 	fffd kq;
 	ffkqu_time tt;
-	const ffkqu_time *kqtm;
 	ffkqu_entry ent;
 	int nevents;
 	void (*func_ptr)();
@@ -56,11 +55,7 @@ int test_timer()
 
 	kq = ffkqu_create();
 	x(kq != FF_BADFD);
-	kqtm = ffkqu_settm(&tt, -1);
-
-#ifdef FF_WIN
-	kqtm = ffkqu_settm(&tt, tmrResol / 2);
-#endif
+	ffkqu_settm(&tt, -1);
 
 	tmr1 = fftmr_create(0);
 	x(tmr1 != FF_BADTMR);
@@ -71,7 +66,7 @@ int test_timer()
 	x(0 == fftmr_start(tmr2, kq, &tmr_func2, 100));
 
 	for (;;) {
-		nevents = ffkqu_wait(kq, &ent, 1, kqtm);
+		nevents = ffkqu_wait(kq, &ent, 1, &tt);
 
 		if (nevents > 0) {
 			x(nevents == 1);
