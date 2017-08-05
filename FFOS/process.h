@@ -6,6 +6,24 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/types.h>
 
+
+typedef struct ffenv {
+	size_t n;
+	char **ptr;
+} ffenv;
+
+FF_EXTN int ffenv_init(ffenv *env, char **envptr);
+
+FF_EXTN void ffenv_destroy(ffenv *env);
+
+/** Expand environment variables in a string.
+UNIX: "text $VAR text"
+Windows: "text %VAR% text"
+@dst: expanded string
+Return 'dst' or a new allocated buffer (if dst == NULL). */
+FF_EXTN char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src);
+
+
 #ifdef FF_UNIX
 #include <FFOS/unix/ps.h>
 

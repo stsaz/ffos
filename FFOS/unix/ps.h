@@ -6,12 +6,6 @@ Copyright (c) 2013 Simon Zolin
 #include <dlfcn.h>
 
 
-/** Expand environment variables in a string.
-@dst: expanded string
-Return 'dst' or a new allocated buffer (if dst == NULL). */
-FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
-
-
 typedef int ffps;
 enum { FFPS_INV = -1 };
 

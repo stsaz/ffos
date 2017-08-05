@@ -38,7 +38,7 @@ void* _ffmem_align(size_t size, size_t align)
 }
 
 
-char* ffenv_expand(char *dst, size_t cap, const char *src)
+char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src)
 {
 	ffsyschar *wsrc, *wdst = NULL;
 	size_t wlen;
