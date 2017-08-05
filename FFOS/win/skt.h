@@ -95,8 +95,10 @@ FF_EXTN int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int f
 
 #define ffaddr_free  FreeAddrInfo
 
-#define ffaddr_name(a, addrlen, host, hostcap, svc, svccap, flags)\
-	GetNameInfoA(a, addrlen, host, FF_TOINT(hostcap), svc, FF_TOINT(svccap), flags)
+#define ffaddr_nameq(a, addrlen, host, hostcap, svc, svccap, flags) \
+	GetNameInfoW(a, addrlen, host, FF_TOINT(hostcap), svc, FF_TOINT(svccap), flags)
+
+FF_EXTN int ffaddr_name(struct sockaddr *a, size_t addrlen, char *host, size_t hostcap, char *svc, size_t svccap, uint flags);
 
 static FFINL const char * ffaddr_errstr(int code, char *buf, size_t bufcap) {
 	fferr_str(code, buf, bufcap);

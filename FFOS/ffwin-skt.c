@@ -74,6 +74,17 @@ int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 	return ffaddr_infoq(a, phost, psvc, flags);
 }
 
+int ffaddr_name(struct sockaddr *a, size_t addrlen, char *host, size_t hostcap, char *svc, size_t svccap, uint flags)
+{
+	int r;
+	ffsyschar whost[NI_MAXHOST], wsvc[NI_MAXSERV];
+	if (0 != (r = ffaddr_nameq(a, addrlen, whost, FF_TOINT(hostcap), wsvc, FF_TOINT(svccap), flags)))
+		return r;
+	ff_wtou(host, hostcap, whost, (size_t)-1, 0);
+	ff_wtou(svc, svccap, wsvc, (size_t)-1, 0);
+	return 0;
+}
+
 
 static int _ffaio_acceptbegin(ffaio_acceptor *acc)
 {
