@@ -10,10 +10,13 @@ FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
 FF_EXTN int ffenv_update(void);
 
 
+typedef HANDLE ffps;
+#define FFPS_INV  INVALID_HANDLE_VALUE
+
 /**
 argv: quotes in arguments are not escaped.
 env: not implemented. */
-FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env);
+FF_EXTN ffps ffps_exec(const char *filename, const char **argv, const char **env);
 
 #define ffps_id  GetProcessId
 
@@ -22,11 +25,11 @@ FF_EXTN int ffps_sig(int pid, int sig);
 
 #define ffps_kill(h)  (0 == TerminateProcess(h, -9 /*-SIGKILL*/))
 
-static FFINL int ffps_close(fffd h) {
+static FFINL int ffps_close(ffps h) {
 	return 0 == CloseHandle(h);
 }
 
-FF_EXTN int ffps_wait(fffd h, uint timeout_ms, int *exit_code);
+FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
 
 #define ffps_curhdl  GetCurrentProcess
 

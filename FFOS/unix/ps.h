@@ -12,14 +12,17 @@ Return 'dst' or a new allocated buffer (if dst == NULL). */
 FF_EXTN char* ffenv_expand(char *dst, size_t cap, const char *src);
 
 
+typedef int ffps;
+enum { FFPS_INV = -1 };
+
 /** Process fork.
 Return child PID.  Return 0 in the child process.
 Return -1 on error. */
 #define ffps_fork  fork
 
 /** Create a new process.
-Return FF_BADFD on error. */
-FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env);
+Return FFPS_INV on error. */
+FF_EXTN ffps ffps_exec(const char *filename, const char **argv, const char **env);
 
 /** Get process ID by process handle. */
 #define ffps_id(h)  ((uint)(h))
@@ -34,7 +37,7 @@ FF_EXTN fffd ffps_exec(const char *filename, const char **argv, const char **env
 #define ffps_close(h)  (0)
 
 /** Wait for the process. */
-FF_EXTN int ffps_wait(fffd h, uint, int *exit_code);
+FF_EXTN int ffps_wait(ffps h, uint, int *exit_code);
 
 /** Get the current process handle. */
 #define ffps_curhdl  getpid

@@ -567,7 +567,7 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	return ret;
 }
 
-int ffps_wait(fffd h, uint timeout_ms, int *exit_code)
+int ffps_wait(ffps h, uint timeout_ms, int *exit_code)
 {
 	int r = WaitForSingleObject(h, timeout_ms);
 	if (r == WAIT_OBJECT_0) {
@@ -587,7 +587,7 @@ static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
 	return dst;
 }
 
-fffd ffps_exec(const char *filename, const char **argv, const char **env)
+ffps ffps_exec(const char *filename, const char **argv, const char **env)
 {
 	BOOL b;
 	PROCESS_INFORMATION info;
@@ -650,7 +650,7 @@ fffd ffps_exec(const char *filename, const char **argv, const char **env)
 }
 
 /* Create a copy of the current process with @arg appended to process' command line. */
-fffd ffps_createself_bg(const char *arg)
+ffps ffps_createself_bg(const char *arg)
 {
 	fffd ps = FF_BADFD;
 	BOOL b;

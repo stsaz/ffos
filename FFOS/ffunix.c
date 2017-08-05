@@ -263,7 +263,7 @@ void ffthd_sleep(uint ms)
 	}
 }
 
-fffd ffps_exec(const char *filename, const char **argv, const char **env)
+ffps ffps_exec(const char *filename, const char **argv, const char **env)
 {
 	pid_t p = vfork();
 	if (p == 0) {
@@ -274,7 +274,7 @@ fffd ffps_exec(const char *filename, const char **argv, const char **env)
 	return p;
 }
 
-int ffps_wait(fffd h, uint timeout, int *exit_code)
+int ffps_wait(ffps h, uint timeout, int *exit_code)
 {
 	siginfo_t s;
 	int r, f = 0;
@@ -302,9 +302,9 @@ int ffps_wait(fffd h, uint timeout, int *exit_code)
 	return 0;
 }
 
-fffd ffps_createself_bg(const char *arg)
+ffps ffps_createself_bg(const char *arg)
 {
-	fffd ps = ffps_fork();
+	ffps ps = ffps_fork();
 	if (ps == 0) {
 		setsid();
 		umask(0);

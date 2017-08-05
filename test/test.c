@@ -34,7 +34,7 @@ int test_thd()
 
 static int test_ps(void)
 {
-	fffd h;
+	ffps h;
 	int cod;
 	const char *args[6];
 	const char *env[4];
@@ -66,7 +66,7 @@ static int test_ps(void)
 #endif
 
 	h = ffps_exec(args[0], args, env);
-	x(h != FF_BADFD);
+	x(h != FFPS_INV);
 	printf("\ncreated process: %d\n", (int)ffps_id(h));
 	x(0 == ffps_wait(h, -1, &cod));
 	printf("process exited with code %d\n", (int)cod);
@@ -80,7 +80,7 @@ static int test_ps(void)
 	args[1] = NULL;
 #endif
 
-	x(FF_BADFD != (h = ffps_exec(args[0], args, env)));
+	x(FFPS_INV != (h = ffps_exec(args[0], args, env)));
 	x(0 != ffps_wait(h, 0, &cod) && fferr_last() == ETIMEDOUT);
 	(void)ffps_kill(h);
 	x(0 == ffps_wait(h, -1, &cod));
