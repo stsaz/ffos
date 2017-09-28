@@ -94,9 +94,12 @@ static FFINL int fffile_attrset(fffd fd, uint new_attr) {
 }
 #endif
 
-#define fffile_attrsetfn(fn, attr)  (0 == SetFileAttributes(fn, attr))
+#define fffile_attrsetfnq(fn, attr)  (0 == SetFileAttributes(fn, attr))
 
-#define fffile_chown(fd, uid, gid)
+FF_EXTN int fffile_attrsetfn(const char *fn, uint attr);
+
+
+#define fffile_chown(fd, uid, gid)  (-1)
 
 
 typedef BY_HANDLE_FILE_INFORMATION fffileinfo;
@@ -124,6 +127,16 @@ static FFINL int fffile_settime(fffd fd, const fftime *last_write)
 	FILETIME ft;
 	fftime_to_winftime(last_write, (void*)&ft);
 	return 0 == SetFileTime(fd, NULL, NULL, &ft);
+}
+
+static FFINL int fffile_settimefn(const char *fn, const fftime *last_write)
+{
+	fffd f;
+	if (FF_BADFD == (f = fffile_open(fn, O_WRONLY)))
+		return -1;
+	int r = fffile_settime(f, last_write);
+	fffile_close(f);
+	return r;
 }
 
 
@@ -200,8 +213,7 @@ static FFINL fffd ffpipe_create_namedq(const ffsyschar *name, uint flags)
 		, PIPE_UNLIMITED_INSTANCES, 512, 512, 0, NULL);
 }
 
-FF_EXTN fffd ffpipe_create_named(const char *name, uint flags)
-;
+FF_EXTN fffd ffpipe_create_named(const char *name, uint flags);
 
 #define ffpipe_peer_close(fd)  DisconnectNamedPipe(fd)
 

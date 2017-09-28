@@ -163,6 +163,10 @@ static int test_atomic()
 	x(0x12345678 == ffatom_fetchadd(&a, 0xffffffff00000000ULL));
 	x(0xffffffff12345678ULL == ffatom_get(&a));
 
+	ffatom_set(&a, 0x12345678);
+	ffatom_add(&a, 0xffffffff00000000ULL);
+	x(0xffffffff12345678ULL == ffatom_get(&a));
+
 	ffatom_set(&a, 0xffffffffffffffffULL);
 	ffatom_inc(&a);
 	x(0 == ffatom_get(&a));

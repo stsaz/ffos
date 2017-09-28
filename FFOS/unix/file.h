@@ -64,7 +64,7 @@ static FFINL ssize_t fffile_write(fffd fd, const void *in, size_t size) {
 /** Truncate a file to a specified length.
 Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PARAMETER
  due to un-aligned seeking request. */
-#define fffile_trunc  ftruncate
+#define fffile_trunc(fd, len)  ftruncate(fd, len)
 
 /** Set file non-blocking mode. */
 static FFINL int fffile_nblock(fffd fd, int nblock) {
@@ -73,10 +73,10 @@ static FFINL int fffile_nblock(fffd fd, int nblock) {
 
 /** Duplicate a file descriptor.
 Return FF_BADFD on error. */
-#define fffile_dup  dup
+#define fffile_dup(fd)  dup(fd)
 
 /** Close a file descriptor. */
-#define fffile_close  close
+#define fffile_close(fd)  close(fd)
 
 /** Get file size.
 Return -1 on error. */
@@ -91,20 +91,20 @@ static FFINL int64 fffile_size(fffd fd) {
 #define fffile_isdir(file_attr)  (((file_attr) & S_IFMT) == S_IFDIR)
 
 /** Set file attributes. */
-#define fffile_attrset  fchmod
+#define fffile_attrset(fd, mode)  fchmod(fd, mode)
 
 /** Set file attributes by file name. */
-#define fffile_attrsetfn  chmod
+#define fffile_attrsetfn(fn, mode)  chmod(fn, mode)
 
 /** Change ownership of a file. */
 #define fffile_chown(fd, uid, gid)  fchown(fd, uid, gid)
 
 
 /** Get file status by file descriptor. */
-#define fffile_info  fstat
+#define fffile_info(fd, fi)  fstat(fd, fi)
 
 /** Get file status by name. */
-#define fffile_infofn  stat
+#define fffile_infofn(fn, fi)  stat(fn, fi)
 
 /** Return file size from fileinfo. */
 #define fffile_infosize(fi)  (fi)->st_size
@@ -127,15 +127,28 @@ static FFINL int fffile_settime(fffd fd, const fftime *last_write)
 	return futimes(fd, tv);
 }
 
+static FFINL int fffile_settimefn(const char *fn, const fftime *last_write)
+{
+	struct timeval tv[2];
+	tv[0].tv_sec = last_write->s;
+	tv[0].tv_usec = last_write->mcs;
+	tv[1].tv_sec = last_write->s;
+	tv[1].tv_usec = last_write->mcs;
+	return utimes(fn, tv);
+}
+
 
 /** Change the name or location of a file. */
-#define fffile_rename  rename
+#define fffile_rename(oldpath, newpath)  rename(oldpath, newpath)
 
 /** Create a hard link to the file. */
-#define fffile_hardlink  link
+#define fffile_hardlink(oldpath, newpath)  link(oldpath, newpath)
+
+/** Create a symbolic link to the file. */
+#define fffile_symlink(target, linkpath)  symlink(target, linkpath)
 
 /** Delete a name and possibly the file it refers to. */
-#define fffile_rm  unlink
+#define fffile_rm(fn)  unlink(fn)
 
 
 enum FFSTD {
@@ -184,7 +197,7 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 FF_EXTN fffd ffpipe_create_named(const char *name, uint flags);
 
 /** Close a pipe. */
-#define ffpipe_close  close
+#define ffpipe_close(fd)  close(fd)
 
 /** Close a peer pipe fd returned by ffaio_pipe_accept(). */
 #define ffpipe_peer_close(fd)  close(fd)

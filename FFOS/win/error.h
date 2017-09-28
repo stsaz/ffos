@@ -24,7 +24,7 @@ FF_EXTN const char* fferr_strp(int code);
 
 #define fferr_again(code)  (code == WSAEWOULDBLOCK)
 
-#define fferr_exist(code)  ((code) == ERROR_FILE_EXISTS)
+#define fferr_exist(code)  ((code) == ERROR_FILE_EXISTS || (code) == ERROR_ALREADY_EXISTS)
 
 #define fferr_fdlim(code)  (0)
 

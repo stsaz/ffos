@@ -24,7 +24,7 @@ C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS := -pipe -std=c99 -fno-strict-aliasing
+CFLAGS := -pipe -std=c99 -fno-strict-aliasing -Wno-deprecated-declarations
 LDFLAGS := -pipe
 AR := $(CPREFIX)ar
 OBJCOPY := $(CPREFIX)objcopy

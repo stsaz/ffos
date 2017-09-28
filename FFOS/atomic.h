@@ -4,26 +4,14 @@ Copyright (c) 2013 Simon Zolin
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/cpu.h>
 
-
-/** Prevent compiler from reordering operations. */
-#define ff_compiler_fence()  __asm__ volatile ("" : : : "memory")
-
-
-typedef struct { size_t val; } ffatomic;
 
 /** Set new value. */
 #define ffatom_set(a, set)  FF_WRITEONCE(&(a)->val, set)
 
 /** Get value. */
 #define ffatom_get(a)  FF_READONCE(&(a)->val)
-
-#ifdef FF_64
-#include <FFOS/cpu-amd64.h>
-#else
-#include <FFOS/cpu-i386.h>
-#endif
 
 /** Add integer and return new value. */
 static FFINL size_t ffatom_addret(ffatomic *a, size_t add)

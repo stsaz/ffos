@@ -38,10 +38,18 @@ enum FFWIN_FILEATTR {
 // TTTT SSS RWXRWXRWX
 enum FFUNIX_FILEATTR {
 	FFUNIX_FILE_TYPEMASK = 0170000,
+	FFUNIX_FILE_FIFO = 0010000,
+	FFUNIX_FILE_CHAR = 0020000,
 	FFUNIX_FILE_DIR = 0040000,
+	FFUNIX_FILE_BLOCK = 0060000,
 	FFUNIX_FILE_REG = 0100000,
 	FFUNIX_FILE_LINK = 0120000,
+	FFUNIX_FILE_SOCKET = 0140000,
 };
+
+/** Convert UNIX file mode to string: "Trwxrwxrwx"
+Return number of bytes written. */
+FF_EXTN uint fffile_unixattr_tostr(char *dst, size_t cap, uint mode);
 
 
 enum FFKEY {

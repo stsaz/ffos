@@ -57,6 +57,7 @@ do { \
 } while (0)
 
 
+#define FF_BIT32(bit)  (1U << (bit))
 #define FF_BIT64(bit)  (1ULL << (bit))
 
 #define FF_LO32(i64)  ((int)((i64) & 0xffffffff))

@@ -2,6 +2,7 @@
 Copyright (c) 2017 Simon Zolin
 */
 
+
 #define LOCK  "lock; "
 
 /** Set new value and return old value. */

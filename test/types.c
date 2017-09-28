@@ -37,5 +37,9 @@ int test_types() {
 	x(ffint_bswap32(0x12345678) == 0x78563412);
 	x(ffint_bswap64(0x12345678abcdef12) == 0x12efcdab78563412);
 
+	int v = 1;
+	x(FF_CMPSET(&v, 1, 2) && v == 2);
+	x(!FF_CMPSET(&v, 1, 0) && v == 2);
+
 	return 0;
 }

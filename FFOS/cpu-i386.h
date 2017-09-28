@@ -2,6 +2,21 @@
 Copyright (c) 2017 Simon Zolin
 */
 
+
+/** Add two numbers with Carry flag: (a + b) + CF. */
+static FFINL uint ffint_addcarry32(uint a, uint b)
+{
+	__asm volatile(
+		"addl %2,%0;\n\t"
+		"adcl $0,%0;"
+		: "=r" (a)
+		: "0" (a), "rm" (b));
+	return a;
+}
+
+
+#ifndef FF_64
+
 #define LOCK  "lock; "
 
 static FFINL size_t ffatom_swap(ffatomic *a, size_t val)
@@ -108,3 +123,5 @@ static FFINL uint64 ffcpu_rdtsc(void)
 #define ffcpu_pause()  __asm volatile("pause")
 
 #undef LOCK
+
+#endif //FF_64

@@ -2,6 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include <FFOS/cpu.h>
 #include <FFOS/mem.h>
 #include <FFOS/string.h>
 #include <FFOS/error.h>
@@ -73,11 +74,9 @@ int test_mem()
 	x(d != NULL);
 	ffmem_free(d);
 
-#ifndef FF_BSD
-	x(NULL == ffmem_alloc((size_t)-1));
-	x(NULL == ffmem_calloc((size_t)-1, 1));
-	x(NULL == ffmem_realloc(NULL, (size_t)-1));
-#endif
+	x(NULL == ffmem_alloc(FFINT_SMAX));
+	x(NULL == ffmem_calloc(FFINT_SMAX, 1));
+	x(NULL == ffmem_realloc(NULL, FFINT_SMAX));
 
 //align
 	x(NULL != (d = ffmem_align(4, 16)));

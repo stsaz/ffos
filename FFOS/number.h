@@ -23,6 +23,9 @@ Copyright (c) 2016 Simon Zolin
 	_old; \
 })
 
+#define FF_CMPSET(obj, old, newval) \
+	((*(obj) == (old)) ? *(obj) = (newval), 1 : 0)
+
 #define FF_WRITEONCE(a, val)  (*(volatile __typeof__(a))(a) = (val))
 
 #define FF_READONCE(a)  (*(volatile __typeof__(a))(a))

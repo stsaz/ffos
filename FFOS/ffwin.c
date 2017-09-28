@@ -151,6 +151,20 @@ int fffile_infofn(const char *fn, fffileinfo *fi)
 	return 0;
 }
 
+int fffile_attrsetfn(const char *fn, uint attr)
+{
+	int r;
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, fn, -1)))
+		return -1;
+
+	r = fffile_attrsetfnq(ws, attr);
+	if (w != ws)
+		ffmem_free(w);
+	return r;
+}
+
 int fffile_rename(const char *src, const char *dst)
 {
 	ffsyschar wsrc[FF_MAXFN], wdst[FF_MAXFN], *ws = wsrc, *wd = wdst;
@@ -297,7 +311,7 @@ int ffstd_event(fffd fd, ffstd_ev *ev)
 		ev->nrec = n;
 		ev->irec = 0;
 		ev->state = I_NEXT;
-		// break
+		// fall through
 
 	case I_NEXT:
 		if (ev->irec == ev->nrec) {
