@@ -29,6 +29,10 @@ Copyright (c) 2013 Simon Zolin
 	#error This kernel is not supported.
 #endif
 
+#ifndef FF_MSVC
+#include <FFOS/compiler-gcc.h>
+#endif
+
 typedef int ffbool;
 
 #ifdef __cplusplus
@@ -41,12 +45,6 @@ typedef int ffbool;
 	#define FF_ASSERT(expr)  assert(expr)
 #else
 	#define FF_ASSERT(expr)
-#endif
-
-#ifndef FF_MSVC
-	#define FF_FUNC __func__
-#else
-	#define FF_FUNC __FUNCTION__
 #endif
 
 

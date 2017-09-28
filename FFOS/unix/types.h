@@ -16,7 +16,6 @@ Copyright (c) 2013 Simon Zolin
 
 #define FFINL  inline
 
-#define FF_EXP  __attribute__((visibility("default")))
 #define FF_IMP
 
 enum {
@@ -27,5 +26,3 @@ typedef char ffsyschar;
 typedef int fffd;
 
 typedef unsigned char byte;
-typedef unsigned long long uint64;
-typedef long long int64;

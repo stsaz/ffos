@@ -33,5 +33,9 @@ int test_types() {
 
 	x(ffhton32(0x12345678) == 0x78563412);
 
+	x(ffint_bswap16(0x1234) == 0x3412);
+	x(ffint_bswap32(0x12345678) == 0x78563412);
+	x(ffint_bswap64(0x12345678abcdef12) == 0x12efcdab78563412);
+
 	return 0;
 }

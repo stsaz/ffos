@@ -37,9 +37,6 @@ Copyright (c) 2013 Simon Zolin
 	#define FFINL  inline
 #endif
 
-#define FF_EXP  __declspec(dllexport)
-#define FF_IMP  __declspec(dllimport)
-
 #define FF_BADFD  INVALID_HANDLE_VALUE
 
 typedef WCHAR ffsyschar;
@@ -51,21 +48,20 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 
 #ifdef FF_MSVC
-	typedef __int64 int64;
-	typedef unsigned __int64 uint64;
-#else
-	typedef long long int64;
-	typedef unsigned long long uint64;
-#endif
+	#define FF_EXP  __declspec(dllexport)
+	#define FF_IMP  __declspec(dllimport)
 
-#ifdef FF_MSVC
 	#ifndef _SIZE_T_DEFINED
 		typedef SIZE_T size_t;
 		#define _SIZE_T_DEFINED
 	#endif
 	typedef SSIZE_T ssize_t;
-#endif
 
-#ifdef FF_MSVC
+	#define FF_FUNC __FUNCTION__
+
 	#define va_copy(vadst, vasrc)  vadst = vasrc
+
+	#define ffint_bswap16  _byteswap_ushort
+	#define ffint_bswap32  _byteswap_ulong
+	#define ffint_bswap64  _byteswap_uint64
 #endif

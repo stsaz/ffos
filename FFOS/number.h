@@ -63,26 +63,6 @@ do { \
 } while (0)
 
 
-/** Swap bytes in integer number.
-e.g. "ABCD" <-> "DCBA" */
-
-#ifdef FF_BSD
-	#define ffint_bswap64  bswap64
-	#define ffint_bswap32  bswap32
-	#define ffint_bswap16  bswap16
-
-#elif defined FF_LINUX || defined __CYGWIN__
-	#define ffint_bswap64  bswap_64
-	#define ffint_bswap32  bswap_32
-	#define ffint_bswap16  bswap_16
-
-#elif defined FF_MSVC || defined FF_MINGW
-	#define ffint_bswap64  _byteswap_uint64
-	#define ffint_bswap32  _byteswap_ulong
-	#define ffint_bswap16  _byteswap_ushort
-#endif
-
-
 /** Convert host integer <-> little/big endian. */
 
 #if defined FF_BIG_ENDIAN

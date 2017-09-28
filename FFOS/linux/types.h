@@ -9,7 +9,6 @@ Copyright (c) 2017 Simon Zolin
 #endif
 #define _LARGEFILE64_SOURCE
 
-#include <byteswap.h>
 #include <asm/byteorder.h>
 
 
