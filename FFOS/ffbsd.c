@@ -176,11 +176,18 @@ ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 of
 	if (ft->kev.pending)
 		return _ffaio_fresult(ft);
 
+	if (ft->acb.aio_sigevent.sigev_notify_kqueue == FF_BADFD)
+		goto wr;
+
 	_ffaio_fprepare(ft, (void*)data, len, off);
 	ft->acb.aio_lio_opcode = LIO_WRITE;
 	if (0 != aio_write(&ft->acb)) {
-		if (errno == ENOSYS || errno == EAGAIN) //no resources for this I/O operation or AIO isn't supported
-			return fffile_pwrite(ft->kev.fd, data, len, off);
+		if (errno == EAGAIN) //no resources for this I/O operation
+			goto wr;
+		else if (errno == ENOSYS || errno == EOPNOTSUPP) {
+			ft->acb.aio_sigevent.sigev_notify_kqueue = FF_BADFD;
+			goto wr;
+		}
 		return -1;
 	}
 
@@ -189,8 +196,12 @@ ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 of
 	if (ft->kev.pending)
 		ft->kev.handler = handler;
 	return r;
+
+wr:
+	return fffile_pwrite(ft->kev.fd, data, len, off);
 }
 
+/* If aio_read() doesn't work, use pread(). */
 ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler)
 {
 	ssize_t r;
@@ -198,11 +209,18 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 	if (ft->kev.pending)
 		return _ffaio_fresult(ft);
 
+	if (ft->acb.aio_sigevent.sigev_notify_kqueue == FF_BADFD)
+		goto rd;
+
 	_ffaio_fprepare(ft, data, len, off);
 	ft->acb.aio_lio_opcode = LIO_READ;
 	if (0 != aio_read(&ft->acb)) {
-		if (errno == ENOSYS || errno == EAGAIN)
-			return fffile_pread(ft->kev.fd, data, len, off);
+		if (errno == EAGAIN) //no resources for this I/O operation
+			goto rd;
+		else if (errno == ENOSYS || errno == EOPNOTSUPP) {
+			ft->acb.aio_sigevent.sigev_notify_kqueue = FF_BADFD;
+			goto rd;
+		}
 		return -1;
 	}
 
@@ -211,4 +229,7 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 	if (ft->kev.pending)
 		ft->kev.handler = handler;
 	return r;
+
+rd:
+	return fffile_pread(ft->kev.fd, data, len, off);
 }
