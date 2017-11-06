@@ -142,6 +142,18 @@ void fftime_add(fftime *t, const fftime *t2)
 	}
 }
 
+#ifdef FF_UNIX
+void fftimespec_addms(struct timespec *ts, uint64 ms)
+{
+	ts->tv_sec += ms / 1000;
+	ts->tv_nsec += (ms % 1000) * 1000 * 1000;
+	if (ts->tv_nsec >= 1000 * 1000 * 1000) {
+		ts->tv_sec++;
+		ts->tv_nsec -= 1000 * 1000 * 1000;
+	}
+}
+#endif
+
 void fftime_diff(const fftime *start, fftime *stop)
 {
 	if (stop->mcs >= start->mcs) {

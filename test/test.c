@@ -89,18 +89,31 @@ static int test_ps(void)
 	return 0;
 }
 
-int test_dl(const char *fn, const char *func)
+static int _test_dl(const char *fn, const char *func)
 {
 	ffdl h;
 	ffdl_proc p;
-
-	FFTEST_FUNC;
 
 	h = ffdl_open(fn, 0);
 	x(h != NULL);
 	p = ffdl_addr(h, func);
 	x(p != NULL);
 	x(0 == ffdl_close(h));
+	return 0;
+}
+
+static int test_dl(void)
+{
+	FFTEST_FUNC;
+#ifdef FF_LINUX
+	_test_dl("/lib64/libc.so.6", "open");
+
+#elif defined FF_BSD
+	_test_dl("/lib/libc.so.7", "open");
+
+#else
+	_test_dl("kernel32.dll", "CreateFileW");
+#endif
 	return 0;
 }
 
@@ -211,7 +224,7 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(fileaio), F(ps), F(cpu),
+	, F(skt), F(timer), F(kqu), F(fileaio), F(ps), F(dl), F(cpu),
 #ifdef FF_WIN
 	F(wreg),
 #endif
@@ -241,16 +254,6 @@ int main(int argc, const char **argv)
 
 	CALL(test_file(TMP_PATH));
 	CALL(test_dir(TMP_PATH));
-
-#ifdef FF_LINUX
-	CALL(test_dl("/lib64/libc.so.6", "open"));
-
-#elif defined FF_BSD
-	CALL(test_dl("/lib/libc.so.7", "open"));
-
-#else
-	CALL(test_dl("kernel32.dll", "CreateFileW"));
-#endif
 
 	} else {
 		//run the specified tests only

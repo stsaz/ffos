@@ -34,6 +34,13 @@ Copyright (c) 2016 Simon Zolin
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
 
 
+#define FF_BIT32(bit)  (1U << (bit))
+#define FF_BIT64(bit)  (1ULL << (bit))
+
+#define FF_LO32(i64)  ((uint)((i64) & 0xffffffff))
+#define FF_HI32(i64)  ((uint)(((i64) >> 32) & 0xffffffff))
+
+
 #define ffabs(n) \
 ({ \
 	__typeof__(n) _n = (n); \
@@ -88,14 +95,16 @@ do { \
 #endif
 
 
+#define ff_ispow2(n)  ((((n) - 1) & (n)) == 0)
+
 /** Align number to lower/upper boundary. */
 
 /** @align: must be a power of 2. */
 #define ff_align_floor2(n, align)  ((n) & ~((align) - 1))
-#define ff_align_ceil2(n, align)  (((n) & ((align) - 1)) ? ff_align_floor2(n, align) + (align) : (n))
+#define ff_align_ceil2(n, align)  ff_align_floor2((n) + (align) - 1, align)
 
-#define ff_align_floor(n, align)  ((n) - ((n) % (align)))
-#define ff_align_ceil(n, align)  ((((n) % (align)) != 0) ? ff_align_floor(n, align) + (align) : (n))
+#define ff_align_floor(n, align)  ((n) / (align) * (align))
+#define ff_align_ceil(n, align)  ff_align_floor((n) + (align) - 1, align)
 
 
 #ifndef FF_64

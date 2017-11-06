@@ -11,12 +11,20 @@ Copyright (c) 2013 Simon Zolin
 	#define FF_64
 #endif
 
-#if defined __FreeBSD__
-	#define FF_BSD
+
+#if defined __linux__
+	#define FF_UNIX
+	#define FF_LINUX
+	#include <FFOS/linux/types.h>
 	#include <FFOS/unix/types.h>
 
-#elif defined __linux__
-	#define FF_LINUX
+#elif defined __unix__
+	#define FF_UNIX
+	#include <sys/param.h>
+	#if defined BSD
+		#define FF_BSD
+		#include <FFOS/bsd/types.h>
+	#endif
 	#include <FFOS/unix/types.h>
 
 #elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__
@@ -29,9 +37,26 @@ Copyright (c) 2013 Simon Zolin
 	#error This kernel is not supported.
 #endif
 
-#ifndef FF_MSVC
-#include <FFOS/compiler-gcc.h>
+
+#if defined __clang__
+	#define FF_CLANG
+	#include <FFOS/compiler-gcc.h>
+
+// #elif defined _MSC_VER
+// 	#define FF_MSVC
+
+#elif defined __MINGW32__ || defined __MINGW64__
+	#define FF_MINGW
+	#include <FFOS/compiler-gcc.h>
+
+#elif defined __GNUC__
+	#define FF_GCC
+	#include <FFOS/compiler-gcc.h>
+
+#else
+	#error "This compiler is not supported"
 #endif
+
 
 typedef int ffbool;
 
@@ -42,6 +67,7 @@ typedef int ffbool;
 #endif
 
 #ifdef _DEBUG
+	#include <assert.h>
 	#define FF_ASSERT(expr)  assert(expr)
 #else
 	#define FF_ASSERT(expr)
@@ -55,34 +81,6 @@ do { \
 		obj = def; \
 	} \
 } while (0)
-
-
-#define FF_BIT32(bit)  (1U << (bit))
-#define FF_BIT64(bit)  (1ULL << (bit))
-
-#define FF_LO32(i64)  ((int)((i64) & 0xffffffff))
-
-#define FF_HI32(i64)  ((int)(((i64) >> 32) & 0xffffffff))
-
-
-#if defined FF_MSVC
-#define FFDL_ONINIT(init, fin) \
-BOOL DllMain(HMODULE p1, DWORD reason, void *p3) \
-{ \
-	if (reason == DLL_PROCESS_ATTACH) \
-		init(); \
-	return 1; \
-}
-
-#else
-/** Set module constructor function. */
-#define FFDL_ONINIT(init, fin) \
-void _ffdl_oninit(void)__attribute__((constructor)); \
-void _ffdl_oninit(void) \
-{ \
-	init(); \
-}
-#endif
 
 
 enum FFDBG_T {

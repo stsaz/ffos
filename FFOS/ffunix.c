@@ -377,6 +377,8 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 	return 0;
 }
 
+#if defined FF_LINUX
+
 int _ffaio_result(ffaio_task *t)
 {
 	int r = -1;
@@ -387,7 +389,32 @@ int _ffaio_result(ffaio_task *t)
 		goto done;
 	}
 
-#if defined FF_BSD
+	if (t->ev->events & EPOLLERR) {
+		int er = 0;
+		(void)ffskt_getopt(t->sk, SOL_SOCKET, SO_ERROR, &er);
+		fferr_set(er);
+		goto done;
+	}
+
+	r = 0;
+
+done:
+	t->ev = NULL;
+	return r;
+}
+
+#else
+
+int _ffaio_result(ffaio_task *t)
+{
+	int r = -1;
+
+	if (t->canceled) {
+		t->canceled = 0;
+		fferr_set(ECANCELED);
+		goto done;
+	}
+
 	if (t->ev->flags & EV_ERROR) {
 		fferr_set(t->ev->data);
 		goto done;
@@ -397,21 +424,14 @@ int _ffaio_result(ffaio_task *t)
 		goto done;
 	}
 
-#elif defined FF_LINUX
-	if (t->ev->events & EPOLLERR) {
-		int er = 0;
-		(void)ffskt_getopt(t->sk, SOL_SOCKET, SO_ERROR, &er);
-		fferr_set(er);
-		goto done;
-	}
-#endif
-
 	r = 0;
 
 done:
 	t->ev = NULL;
 	return r;
 }
+
+#endif
 
 ffskt ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler)
 {

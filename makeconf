@@ -15,8 +15,39 @@ ifeq ($(uname),Linux)
 OS := linux
 else ifeq ($(uname),FreeBSD)
 OS := bsd
+else ifeq ($(uname),Darwin)
+OS := apple
 endif
 endif
+
+
+# set OS-specific values
+ifeq ($(OS),win)
+SO := dll
+CP := cp -u -v -p
+PACK := zip -9 -r -v
+PACK_EXT := zip
+
+else #OS
+
+SO := so
+PACK_EXT := tar.xz
+
+ifeq ($(OS),linux)
+CP := cp -u -v -p
+PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
+
+else ifeq ($(OS),bsd)
+CP := cp -v
+PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+
+else ifeq ($(OS),apple)
+CP := cp -v
+PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+
+endif
+
+endif #OS
 
 
 # CPREFIX := x86_64-w64-mingw32-
@@ -45,7 +76,6 @@ ifeq ($(OPT),0)
 CFLAGS += -D_DEBUG
 
 else ifeq ($(OPT),SECTIONS)
-
 CFLAGS += -O2
 ifneq ($(OS),win)
 CFLAGS += -ffunction-sections -fdata-sections
@@ -73,33 +103,32 @@ endif #OPT
 # set OS-specific values
 ifeq ($(OS),win)
 LD_LWS2_32 := -lws2_32
-SO := dll
-CP := cp -u -v -p
-PACK := zip -9 -r -v
-PACK_EXT := zip
 WINDRES := $(CPREFIX)windres
 
 else #OS
 
 CFLAGS += -fpic -fvisibility=hidden
-LDFLAGS += -fpic -Wl,-no-undefined
+LDFLAGS += -fpic
 LD_LPTHREAD := -pthread
 LD_LMATH := -lm
-SO := so
-PACK_EXT := tar.xz
+LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN'
 
 ifeq ($(OS),linux)
 LD_LDL := -ldl
-CP := cp -u -v -p
-PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
+LDFLAGS += -Wl,-no-undefined
 
 else ifeq ($(OS),bsd)
 C := clang
 LD := $(C)
-CXX := c++
+CXX := clang++
 LDXX := $(CXX)
-CP := cp -v
-PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+LDFLAGS += -Wl,-no-undefined
+
+else ifeq ($(OS),apple)
+C := clang
+LD := $(C)
+CXX := clang++
+LDXX := $(CXX)
 
 endif
 

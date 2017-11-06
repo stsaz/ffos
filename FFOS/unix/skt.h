@@ -92,7 +92,8 @@ Example:
 	ffaddr_info(&addrs, "localhost", "80", AI_PASSIVE); */
 static FFINL int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 {
-	ffaddrinfo hints = { 0 };
+	ffaddrinfo hints;
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_DGRAM; //filter out results with the same IP but different ai_socktype
 	hints.ai_flags = flags;
 	return getaddrinfo(host, svc, &hints, a);

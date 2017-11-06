@@ -66,7 +66,7 @@ static int test_mapwr(const char *fn)
 	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
 	x(mapd != NULL);
 	x(!memcmp(mapd, FFSTR(HELLO)));
-	memcpy((char*)mapd + 64*1024, FFSTR(FOOBAR));
+	memcpy((char*)mapd + 64*1024, FOOBAR, FFSLEN(FOOBAR));
 	x(0 == ffmap_unmap(mapd, mapsz));
 
 	mapsz = FFSLEN(FOOBAR);
@@ -93,7 +93,7 @@ static int test_mapanon()
 	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS);
 	x(mapd != NULL);
 
-	memcpy(mapd, FFSTR(HELLO));
+	memcpy(mapd, HELLO, FFSLEN(HELLO));
 	x(!memcmp(mapd, FFSTR(HELLO)));
 
 	x(0 == ffmap_unmap(mapd, mapsz));

@@ -36,6 +36,8 @@ end:
 	return th;
 }
 
+extern void fftimespec_addms(struct timespec *t, uint64 ms);
+
 int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 {
 	void *result;
@@ -55,15 +57,8 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 
 	else {
 		struct timespec ts;
-
 		(void)clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec += timeout_ms / 1000;
-		ts.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
-		if (ts.tv_nsec >= 1000 * 1000 * 1000) {
-			ts.tv_sec += 1;
-			ts.tv_nsec -= 1000 * 1000 * 1000;
-		}
-
+		fftimespec_addms(&ts, timeout_ms);
 		r = pthread_timedjoin_np(th, &result, &ts);
 	}
 

@@ -6,10 +6,6 @@ Copyright (c) 2013 Simon Zolin
 	#define FF_MSVC
 #endif
 
-#if defined __MINGW32__ || defined __MINGW64__
-	#define FF_MINGW
-#endif
-
 #ifndef UNICODE
 	#define UNICODE
 #endif
@@ -23,19 +19,12 @@ Copyright (c) 2013 Simon Zolin
 #define _CRT_SECURE_NO_WARNINGS
 #define OEMRESOURCE //gui
 #include <winsock2.h>
-#include <assert.h>
 
 #ifdef __CYGWIN__
 	#include <sys/types.h>
 #endif
 
 #define FF_LITTLE_ENDIAN
-
-#ifdef FF_MSVC
-	#define FFINL //msvc9 doesn't like "static inline func()"
-#else
-	#define FFINL  inline
-#endif
 
 #define FF_BADFD  INVALID_HANDLE_VALUE
 
@@ -64,4 +53,13 @@ typedef unsigned int uint;
 	#define ffint_bswap16  _byteswap_ushort
 	#define ffint_bswap32  _byteswap_ulong
 	#define ffint_bswap64  _byteswap_uint64
+
+#define FFDL_ONINIT(init, fin) \
+BOOL DllMain(HMODULE p1, DWORD reason, void *p3) \
+{ \
+	if (reason == DLL_PROCESS_ATTACH) \
+		init(); \
+	return 1; \
+}
+
 #endif

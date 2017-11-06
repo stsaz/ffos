@@ -2,17 +2,16 @@
 Copyright (c) 2017 Simon Zolin
 */
 
-#pragma once
-
-#include <FFOS/types.h>
-
 
 typedef long long int64;
 typedef unsigned long long uint64;
 
 #define FF_FUNC __func__
 
+#define FFINL  inline
+
 #define FF_EXP  __attribute__((visibility("default")))
+#define FF_IMP
 
 
 /** Swap bytes in integer number.
@@ -43,3 +42,12 @@ static FFINL uint ffbit_find64(uint64 n)
 
 /** Prevent compiler from reordering operations. */
 #define ff_compiler_fence()  __asm volatile("" : : : "memory")
+
+
+/** Set module constructor function. */
+#define FFDL_ONINIT(init, fin) \
+void _ffdl_oninit(void)__attribute__((constructor)); \
+void _ffdl_oninit(void) \
+{ \
+	init(); \
+}

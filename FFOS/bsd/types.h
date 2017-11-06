@@ -2,11 +2,7 @@
 Copyright (c) 2017 Simon Zolin
 */
 
-#pragma once
-
-#include <sys/endian.h>
-
-
+#include <machine/endian.h>
 #if _BYTE_ORDER == _LITTLE_ENDIAN
 	#define FF_LITTLE_ENDIAN
 #elif _BYTE_ORDER == _BIG_ENDIAN
@@ -14,3 +10,7 @@ Copyright (c) 2017 Simon Zolin
 #else
 	#error Undefined endian
 #endif
+
+
+typedef unsigned short ushort;
+typedef unsigned int uint;
