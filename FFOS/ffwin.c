@@ -9,6 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/sig.h>
+#include <FFOS/atomic.h>
 
 #include <time.h>
 #ifndef FF_MSVC
@@ -855,22 +856,32 @@ void ffclk_diff(const fftime *start, fftime *diff)
 }
 
 
+static int __stdcall _fftmr_thd(void *param);
+
 fftmr fftmr_create(int flags)
 {
 	fftmr tmr = ffmem_tcalloc1(fftmr_s);
 	if (tmr == NULL)
 		return FF_BADTMR;
 
+	if (NULL == (tmr->evt = CreateEvent(NULL, /*bManualReset*/ 0, /*bInitialState*/ 0, NULL)))
+		goto err;
+
 #if FF_WIN >= 0x0600
 	tmr->htmr = CreateWaitableTimerEx(NULL, NULL, flags /*CREATE_WAITABLE_TIMER_MANUAL_RESET*/, TIMER_ALL_ACCESS);
 #else
 	tmr->htmr = CreateWaitableTimer(NULL, 0, NULL);
 #endif
-	if (tmr->htmr == NULL) {
-		ffmem_free(tmr);
-		return FF_BADTMR;
-	}
+	if (tmr->htmr == NULL)
+		goto err;
+
+	if (FFTHD_INV == (tmr->thd = ffthd_create(&_fftmr_thd, tmr, 64 * 1024)))
+		goto err;
 	return tmr;
+
+err:
+	fftmr_close(tmr, FF_BADFD);
+	return FF_BADTMR;
 }
 
 void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
@@ -881,21 +892,81 @@ void __stdcall _fftmr_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHig
 	ffkqu_post(&p, t->data);
 }
 
+enum TMR_CMD {
+	TMR_EXIT = 0x80000001U,
+	TMR_START,
+	TMR_STOP,
+};
+
+/** Arm the timer and sleep in an alertable state to execute timer callback function. */
 static int __stdcall _fftmr_thd(void *param)
 {
+	int r;
 	fftmr_s *tmr = param;
-	uint period = tmr->period;
-	int64 due_ns100 = (int64)tmr->period * 1000 * -10;
-	if (tmr->period < 0) {
-		period = 0;
-		due_ns100 = -due_ns100;
-	}
-	SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, 1);
 
 	for (;;) {
-		SleepEx(INFINITE, 1 /*alertable*/);
+		r = WaitForSingleObjectEx(tmr->evt, INFINITE, /*alertable*/ 1);
+		if (r == WAIT_IO_COMPLETION) {
+
+		} else if (r == WAIT_OBJECT_0) {
+
+			// execute the command and set the result
+			ffatom_fence_acq();
+			uint cmd = FF_READONCE(&tmr->ctl);
+			FFDBG_PRINTLN(10, "cmd: %xu", cmd);
+
+			switch (cmd) {
+
+			case TMR_EXIT:
+				r = 0;
+				break;
+
+			case TMR_START: {
+				uint period = tmr->period;
+				int64 due_ns100 = (int64)tmr->period * 1000 * -10;
+				if (tmr->period < 0)
+					period = 0;
+				r = SetWaitableTimer(tmr->htmr, (LARGE_INTEGER*)&due_ns100, period, &_fftmr_onfire, tmr, /*fResume*/ 1);
+				r = (r) ? 0 : (fferr_last() & ~0x80000000);
+				break;
+			}
+
+			case TMR_STOP:
+				r = CancelWaitableTimer(tmr->htmr);
+				r = (r) ? 0 : (fferr_last() & ~0x80000000);
+				break;
+
+			default:
+				r = 0;
+			}
+
+			FF_WRITEONCE(&tmr->ctl, r);
+
+			if (cmd == TMR_EXIT)
+				break;
+		} else {
+			//Note: deadlock in _fftmr_cmd() can occur
+			break;
+		}
 	}
+	FFDBG_PRINTLN(5, "exit", 0);
 	return 0;
+}
+
+/** Send command to a timer thread and get the result. */
+static int _fftmr_cmd(fftmr tmr, uint cmd)
+{
+	FFDBG_PRINTLN(5, "cmd: %xu", cmd);
+	FF_WRITEONCE(&tmr->ctl, cmd);
+	ffatom_fence_rel();
+	if (!SetEvent(tmr->evt)) //wake up timer thread
+		return -1;
+
+	int r;
+	if (0 != (r = ffatom_waitchange(&tmr->ctl, cmd)))
+		fferr_set(r);
+	FFDBG_PRINTLN(5, "cmd result: %xu", r);
+	return r;
 }
 
 int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
@@ -903,33 +974,26 @@ int fftmr_start(fftmr tmr, fffd qu, void *data, int periodMs)
 	tmr->kq = qu;
 	tmr->data = data;
 	tmr->period = periodMs;
-
-	FF_ASSERT(tmr->thd == NULL);
-	if (NULL == (tmr->thd = ffthd_create(&_fftmr_thd, tmr, 0)))
-		return -1;
-	return 0;
+	return _fftmr_cmd(tmr, TMR_START);
 }
 
 int fftmr_stop(fftmr tmr, fffd kq)
 {
-	TerminateThread(tmr->thd, -1);
-	ffthd_detach(tmr->thd);
-	tmr->thd = NULL;
-
-	return 0 == CancelWaitableTimer(tmr->htmr);
+	return _fftmr_cmd(tmr, TMR_STOP);
 }
 
 int fftmr_close(fftmr tmr, fffd kq)
 {
-	int r = (0 == CloseHandle(tmr->htmr));
+	FF_SAFECLOSE(tmr->htmr, NULL, CloseHandle);
 
-	if (tmr->thd != NULL) {
-		TerminateThread(tmr->thd, -1);
-		ffthd_detach(tmr->thd);
+	if (tmr->thd != FFTHD_INV) {
+		_fftmr_cmd(tmr, TMR_EXIT);
+		ffthd_join(tmr->thd, -1, NULL);
 	}
 
+	FF_SAFECLOSE(tmr->evt, NULL, CloseHandle);
 	ffmem_free(tmr);
-	return r;
+	return 0;
 }
 
 

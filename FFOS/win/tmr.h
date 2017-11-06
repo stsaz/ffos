@@ -20,13 +20,27 @@ static FFINL int ffclk_get(fftime *result) {
 FF_EXTN void ffclk_diff(const fftime *start, fftime *diff);
 
 
+/**
+A timer must be started within a separate thread, which sleeps in an alertable state to process timer events.
+From this thread a message to kernel queue is sent.
+Note that GetQueuedCompletionStatusEx(alertable=1) can't be used for a reliable timer,
+ because it doesn't enter an alertable state if there's a finished I/O completion task.
+
+timer thread:  SleepEx(alertable=1) etc. -> timer proc -> ffkqu_post()
+main thread:   ffkqu_wait() -> timer handler
+*/
+
 typedef struct {
 	fffd htmr;
 	fffd kq;
 	void *data;
 	int period;
+	uint ctl;
 	ffthd thd;
-} fftmr_s, * fftmr;
+	HANDLE evt;
+} fftmr_s;
+
+typedef fftmr_s* fftmr;
 
 #define FF_BADTMR  NULL
 
