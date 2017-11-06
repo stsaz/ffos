@@ -16,9 +16,9 @@ ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 {
 	int r;
 	ffsyschar ws[255], *w;
-	ffwreg k = FFWREG_BADKEY;
+	ffwreg k = FFWREG_BADKEY, kk;
 	size_t n = FFCNT(ws);
-	uint opts;
+	uint opts, mode = (flags & 0x0000000f);
 
 	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
 		return FFWREG_BADKEY;
@@ -30,15 +30,44 @@ ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 	else
 		opts = KEY_READ;
 
-	if (0 != (r = RegCreateKeyExW(hk, w, 0, NULL, 0, opts, NULL, &k, NULL))) {
-		fferr_set(r);
-		k = FFWREG_BADKEY;
+	if (mode == O_CREAT || mode == FFO_CREATENEW) {
+		DWORD res;
+		if (0 != (r = RegCreateKeyExW(hk, w, 0, NULL, 0, opts, NULL, &kk, &res))) {
+			fferr_set(r);
+			goto end;
+		}
+		if (mode == FFO_CREATENEW && res != REG_CREATED_NEW_KEY) {
+			fferr_set(ERROR_ALREADY_EXISTS);
+			goto end;
+		}
+	} else {
+		if (0 != (r = RegOpenKeyEx(hk, w, 0, opts, &kk))) {
+			fferr_set(r);
+			goto end;
+		}
 	}
 
+	k = kk;
+
+end:
 	if (w != ws)
 		ffmem_free(w);
 	return k;
 }
+
+int ffwreg_info(ffwreg k, struct ffwreg_info *nf)
+{
+	int r;
+	if (0 != (r = RegQueryInfoKey(k, NULL, NULL, NULL
+		, &nf->subkeys, &nf->max_subkey_len , /*lpcMaxClassLen*/ NULL
+		, &nf->values, &nf->max_valname_len, &nf->max_val_len
+		, /*lpcbSecurityDescriptor*/ NULL, &nf->mtime))) {
+		fferr_set(r);
+		return -1;
+	}
+	return 0;
+}
+
 
 /* Read value from Registry:
 . Get value type, data size, data itself (if small enough, into stack buffer) from Registry

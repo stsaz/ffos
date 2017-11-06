@@ -10,11 +10,22 @@ typedef HKEY ffwreg;
 
 /** Open or create registry key.
 @hk: HKEY_*
-@flags: O_RDONLY | O_WRONLY | O_RDWR
+@flags: (O_CREAT | FFO_CREATENEW) + (O_RDONLY | O_WRONLY | O_RDWR)
 */
 FF_EXTN ffwreg ffwreg_open(HKEY hk, const char *path, uint flags);
 
 #define ffwreg_close(k)  RegCloseKey(k)
+
+struct ffwreg_info {
+	DWORD subkeys;
+	DWORD values;
+	DWORD max_subkey_len;
+	DWORD max_valname_len;
+	DWORD max_val_len;
+	FILETIME mtime;
+};
+
+FF_EXTN int ffwreg_info(ffwreg k, struct ffwreg_info *info);
 
 static FFINL int ffwreg_isstr(int type)
 {
