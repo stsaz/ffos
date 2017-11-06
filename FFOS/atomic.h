@@ -33,6 +33,9 @@ static FFINL size_t ffatom_addret(ffatomic *a, size_t add)
 #define ffcpu_yield  sched_yield
 #endif
 
+/** Block execution until the variable is modified by another thread. */
+FF_EXTN uint ffatom_waitchange(uint *p, uint curval);
+
 
 typedef struct fflock {
 	ffatomic lock;
