@@ -40,7 +40,8 @@ int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 
 	e.events = EPOLLIN | EPOLLET;
 	e.data.ptr = udata;
-	if (0 != epoll_ctl(kq, EPOLL_CTL_ADD, tmr, &e))
+	if (0 != epoll_ctl(kq, EPOLL_CTL_ADD, tmr, &e)
+		&& errno != EEXIST)
 		return -1;
 
 	if (period_ms < 0) {

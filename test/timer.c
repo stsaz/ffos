@@ -84,6 +84,7 @@ int test_timer()
 
 	(void)fftmr_stop(tmr1, kq);
 	x(0 == fftmr_stop(tmr2, kq));
+	x(0 == fftmr_start(tmr2, kq, &tmr_func2, 100));
 	x(0 == fftmr_close(tmr1, kq));
 	x(0 == fftmr_close(tmr2, kq));
 
