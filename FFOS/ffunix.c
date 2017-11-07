@@ -264,6 +264,18 @@ ffps ffps_createself_bg(const char *arg)
 	return ps;
 }
 
+const char* ffps_filename(char *name, size_t cap, const char *argv0)
+{
+	char real[PATH_MAX];
+	if (NULL == realpath(argv0, real))
+		return NULL;
+	uint n = strlen(real) + 1;
+	if (n > cap)
+		return NULL;
+	memcpy(name, real, n);
+	return name;
+}
+
 
 int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 {
