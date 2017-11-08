@@ -31,6 +31,9 @@ FF_EXTN char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src);
 #include <FFOS/win/ps.h>
 #endif
 
+/** Get filename of the current process. */
+FF_EXTN const char* ffps_filename(char *name, size_t cap, const char *argv0);
+
 /** Create a copy of the current process in background.
 Return child process descriptor (parent);  0 (child);  -1 on error. */
 FF_EXTN ffps ffps_createself_bg(const char *arg);

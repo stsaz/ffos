@@ -33,8 +33,6 @@ FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
 
 #define ffps_curid  GetCurrentProcessId
 
-FF_EXTN const char* ffps_filename(char *name, size_t cap, const char *argv0);
-
 #define ffps_exit  ExitProcess
 
 

@@ -41,6 +41,9 @@ static int test_ps(void)
 
 	FFTEST_FUNC;
 
+	char fn[FF_MAXPATH];
+	printf("ffps_filename(): %s\n", ffps_filename(fn, sizeof(fn), "/path/argv0"));
+
 	x(ffps_curid() == ffps_id(ffps_curhdl()));
 	if (0) {
 		ffps_exit(1);

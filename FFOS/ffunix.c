@@ -264,7 +264,8 @@ ffps ffps_createself_bg(const char *arg)
 	return ps;
 }
 
-const char* ffps_filename(char *name, size_t cap, const char *argv0)
+/* Note: $PATH should be used to find a file in case argv0 is without path, e.g. "binary". */
+const char* _ffpath_real(char *name, size_t cap, const char *argv0)
 {
 	char real[PATH_MAX];
 	if (NULL == realpath(argv0, real))
