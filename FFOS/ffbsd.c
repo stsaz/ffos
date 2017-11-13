@@ -126,6 +126,8 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 
 	if (sz != 0) {
 		r = sendfile(fd, sk, /*(off_t)*/offs, FF_TOSIZE(sz), hdtr, &sent, flags);
+		if (r != 0 && !fferr_again(fferr_last()))
+			return -1;
 		goto done;
 	}
 

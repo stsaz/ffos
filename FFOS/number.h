@@ -9,6 +9,8 @@ Copyright (c) 2016 Simon Zolin
 #define FFOFF(struct_T, member) \
 	(((size_t)&((struct_T *)0)->member))
 
+#define FF_SIZEOF(struct_name, member)  sizeof(((struct_name*)0)->member)
+
 #define FF_PTR(p, off)  ((char*)(p) + (off))
 
 /** Get structure object by its member. */
