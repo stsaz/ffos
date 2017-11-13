@@ -28,7 +28,7 @@ struct ffaio_filetask {
 Linux: not thread-safe; only 1 kernel queue is supported for ALL AIO operations. */
 FF_EXTN int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct);
 
-#else //bsd:
+#elif defined FF_BSD
 
 #define ffaio_fctxinit()  (0)
 #define ffaio_fctxclose()
@@ -41,6 +41,21 @@ struct ffaio_filetask {
 static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
 	ft->acb.aio_sigevent.sigev_notify_kqueue = kq;
+	return 0;
+}
+
+#elif defined FF_APPLE
+
+#define ffaio_fctxinit()  (0)
+#define ffaio_fctxclose()
+
+struct ffaio_filetask {
+	ffkevent kev;
+	struct aiocb acb;
+};
+
+static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
+{
 	return 0;
 }
 

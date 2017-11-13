@@ -286,7 +286,7 @@ static void test_kqu_post(void)
 #ifdef FF_WIN
 		x(kev1.udata == (void*)-1);
 		x(kev2.udata == (void*)-1);
-#elif defined FF_BSD
+#elif defined FF_BSD || defined FF_APPLE
 		x(kev1.udata == &kev1);
 		x(kev2.udata == (void*)-1);
 #else

@@ -36,6 +36,26 @@ end:
 	return th;
 }
 
+#if defined FF_APPLE
+int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
+{
+	int r;
+	void *result;
+
+	if (timeout_ms == (uint)-1) {
+		r = pthread_join(th, &result);
+		if (r != 0)
+			return r;
+	} else {
+		return ETIMEDOUT;
+	}
+
+	if (exit_code != NULL)
+		*exit_code = (int)(size_t)result;
+	return 0;
+}
+
+#else
 extern void fftimespec_addms(struct timespec *t, uint64 ms);
 
 int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
@@ -69,4 +89,5 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 		*exit_code = (int)(size_t)result;
 	return 0;
 }
-#endif
+#endif //OS
+#endif //FF_NOTHR

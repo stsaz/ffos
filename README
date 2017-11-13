@@ -1,10 +1,11 @@
 FAST-FORWARD (FF) LIBRARY
 Unified Operating System interface.
 
-FFOS library allows to write cross-platform code for 3 OS:
+FFOS library allows to write cross-platform code for these OS:
 	. FreeBSD
 	. Linux
 	. Windows
+	. macOS
 
 The supported languages are C and C++.
 The supported compilers: gcc (+MinGW), clang.

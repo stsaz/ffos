@@ -7,7 +7,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/asyncio.h>
 #if defined FF_LINUX
 	#include <FFOS/linux/sig.h>
-#elif defined FF_BSD
+#elif defined FF_BSD || defined FF_APPLE
 	#include <FFOS/bsd/sig.h>
 #endif
 #if defined FF_UNIX

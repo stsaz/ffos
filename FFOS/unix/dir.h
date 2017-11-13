@@ -6,7 +6,7 @@ Copyright (c) 2013 Simon Zolin
 #include <errno.h>
 #include <dirent.h>
 
-#ifdef FF_BSD
+#if defined FF_BSD || defined FF_APPLE
 #include <sys/mount.h>
 #else
 #include <sys/vfs.h>

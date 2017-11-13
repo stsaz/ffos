@@ -34,6 +34,9 @@ enum FFSKT_INIT {
 #include <FFOS/unix/skt.h>
 #include <FFOS/bsd/skt.h>
 
+#elif defined FF_APPLE
+#include <FFOS/unix/skt.h>
+
 #elif defined FF_WIN
 #include <FFOS/win/skt.h>
 #endif

@@ -18,6 +18,12 @@ Copyright (c) 2013 Simon Zolin
 	#include <FFOS/linux/types.h>
 	#include <FFOS/unix/types.h>
 
+#elif defined __APPLE__ && defined __MACH__
+	#define FF_UNIX
+	#define FF_APPLE
+	#include <FFOS/bsd/types.h>
+	#include <FFOS/unix/types.h>
+
 #elif defined __unix__
 	#define FF_UNIX
 	#include <sys/param.h>

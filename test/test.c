@@ -114,6 +114,9 @@ static int test_dl(void)
 #elif defined FF_BSD
 	_test_dl("/lib/libc.so.7", "open");
 
+#elif defined FF_APPLE
+	_test_dl("/usr/lib/libSystem.B.dylib", "open");
+
 #else
 	_test_dl("kernel32.dll", "CreateFileW");
 #endif

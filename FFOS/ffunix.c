@@ -106,7 +106,7 @@ fffd ffpipe_create_named(const char *name, uint flags)
 {
 	ffskt p;
 	struct sockaddr_un a = {0};
-#ifdef FF_BSD
+#if defined FF_BSD || defined FF_APPLE
 	a.sun_len = sizeof(struct sockaddr_un);
 #endif
 	a.sun_family = AF_UNIX;
@@ -135,7 +135,7 @@ fffd ffpipe_connect(const char *name)
 {
 	ffskt p;
 	struct sockaddr_un a = {0};
-#ifdef FF_BSD
+#if defined FF_BSD || defined FF_APPLE
 	a.sun_len = sizeof(struct sockaddr_un);
 #endif
 	a.sun_family = AF_UNIX;

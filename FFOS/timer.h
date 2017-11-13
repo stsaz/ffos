@@ -9,7 +9,7 @@ Copyright (c) 2013 Simon Zolin
 
 #if defined FF_LINUX
 	#include <FFOS/linux/tmr.h>
-#elif defined FF_BSD
+#elif defined FF_BSD || defined FF_APPLE
 	#include <FFOS/bsd/tmr.h>
 #endif
 

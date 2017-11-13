@@ -74,9 +74,11 @@ int test_mem()
 	x(d != NULL);
 	ffmem_free(d);
 
+#if defined FF_WIN
 	x(NULL == ffmem_alloc(FFINT_SMAX));
 	x(NULL == ffmem_calloc(FFINT_SMAX, 1));
 	x(NULL == ffmem_realloc(NULL, FFINT_SMAX));
+#endif
 
 //align
 	x(NULL != (d = ffmem_align(4, 16)));

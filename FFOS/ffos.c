@@ -301,7 +301,7 @@ ffskt ffskt_create(uint domain, uint type, uint protocol)
 }
 #endif
 
-#if defined FF_WIN || defined FF_OLDLIBC
+#if defined FF_WIN || defined FF_APPLE || defined FF_OLDLIBC
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
 {
 	ffskt sk = accept(listenSk, a, addrSize);
@@ -425,7 +425,7 @@ void ffkev_call(ffkqu_entry *e)
 	uint evflags;
 #if defined FF_LINUX
 	evflags = e->events;
-#elif defined FF_BSD
+#elif defined FF_BSD || defined FF_APPLE
 	evflags = e->flags;
 #else
 	evflags = 0;

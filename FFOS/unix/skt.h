@@ -10,7 +10,7 @@ Copyright (c) 2013 Simon Zolin
 #include <netinet/tcp.h>
 #include <netdb.h>
 
-#if defined FF_BSD
+#if defined FF_BSD || defined FF_APPLE
 #include <sys/uio.h>
 #endif
 
@@ -19,6 +19,10 @@ enum {
 	FF_BADSKT = -1
 	, FF_MAXIP4 = 22
 	, FF_MAXIP6 = 65 // "[addr]:port"
+	,
+#ifdef FF_APPLE
+	SOCK_NONBLOCK = 0x40000000,
+#endif
 };
 
 /** Prepare using sockets.
@@ -37,14 +41,14 @@ ffskt sk = ffskt_create(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); */
 #define ffskt_create(domain, type, protocol) \
 	socket(domain, type, protocol)
 
-#ifndef FF_OLDLIBC
+#if defined FF_APPLE || defined FF_OLDLIBC
+FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
+#else
 /** Accept a connection on a socket.
 flags: SOCK_NONBLOCK. */
 static FFINL ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags) {
 	return accept4(listenSk, a, addrlen, flags);
 }
-#else
-FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
 #endif
 
 /** Receive data from a socket.

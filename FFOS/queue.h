@@ -7,7 +7,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/socket.h>
 
-#if defined FF_BSD
+#if defined FF_BSD || defined FF_APPLE
 	#include <FFOS/bsd/kqu.h>
 #elif defined FF_LINUX
 	#include <FFOS/linux/kqu-epoll.h>
