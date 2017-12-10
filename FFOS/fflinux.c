@@ -44,6 +44,14 @@ const char* ffps_filename(char *name, size_t cap, const char *argv0)
 }
 
 
+void fftime_local(fftime_zone *tz)
+{
+	tzset();
+	tz->off = -timezone;
+	tz->have_dst = daylight;
+}
+
+
 int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 {
 	struct itimerspec its;

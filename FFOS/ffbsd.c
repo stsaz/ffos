@@ -69,6 +69,17 @@ int ffkqu_post(ffkevpost *p, void *data)
 }
 
 
+void fftime_local(fftime_zone *tz)
+{
+	tzset();
+	struct tm tm;
+	time_t t = time(NULL);
+	localtime_r(&t, &tm);
+	tz->off = tm.tm_gmtoff;
+	tz->have_dst = 0;
+}
+
+
 int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 {
 	struct kevent kev;

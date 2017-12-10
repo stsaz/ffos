@@ -506,6 +506,13 @@ void fftime_now(fftime *t)
 	*t = fftime_from_winftime((void*)&ft);
 }
 
+void fftime_local(fftime_zone *tz)
+{
+	tzset();
+	tz->off = -timezone;
+	tz->have_dst = daylight;
+}
+
 
 size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int flags)
 {

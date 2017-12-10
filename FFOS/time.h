@@ -21,6 +21,19 @@ static FFINL void fftime_null(fftime *t) {
 /** Get UTC time. */
 FF_EXTN void fftime_now(fftime *t);
 
+
+typedef struct fftime_zone {
+	int off; //UTC+X (in seconds)
+	uint have_dst; //may have daylight saving time rules
+} fftime_zone;
+
+/** Get local timezone. */
+FF_EXTN void fftime_local(fftime_zone *tz);
+
+/** Store local timezone for fast timestamp conversion using FFTIME_TZLOCAL. */
+FF_EXTN void fftime_storelocal(const fftime_zone *tz);
+
+
 /** Convert 'time_t' to 'fftime'. */
 static FFINL void fftime_fromtime_t(fftime *t, time_t ts) {
 	t->s = (int)ts;

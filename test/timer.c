@@ -31,6 +31,10 @@ int test_time(void)
 {
 	FFTEST_FUNC;
 
+	fftime_zone tz;
+	fftime_local(&tz);
+	printf("zone: %d, have_dst: %u\n", tz.off, tz.have_dst);
+
 	fftime t;
 	fftime_now(&t);
 	x(fftime_sec(&t) != 0);
