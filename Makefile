@@ -38,7 +38,6 @@ FFOS_TEST_SRC := \
 	$(FFOS)/test/mem.c \
 	$(FFOS)/test/socket.c \
 	$(FFOS)/test/test.c \
-	$(FFOS)/test/time.c \
 	$(FFOS)/test/timer.c \
 	$(FFOS)/test/types.c
 

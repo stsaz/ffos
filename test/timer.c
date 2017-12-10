@@ -27,6 +27,17 @@ int test_clock()
 	return 0;
 }
 
+int test_time(void)
+{
+	FFTEST_FUNC;
+
+	fftime t;
+	fftime_now(&t);
+	x(fftime_sec(&t) != 0);
+
+	return 0;
+}
+
 static int tval;
 static fftmr tmr1, tmr2;
 
