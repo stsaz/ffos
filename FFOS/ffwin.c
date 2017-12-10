@@ -289,17 +289,12 @@ int ffstd_key(const char *data, size_t *len)
 int ffstd_event(fffd fd, ffstd_ev *ev)
 {
 	DWORD n;
-	int r;
 	enum { I_READ, I_NEXT };
 
 	for (;;) {
 	switch (ev->state) {
 
 	case I_READ:
-		r = WaitForSingleObject(fd, INFINITE);
-		if (r != WAIT_OBJECT_0)
-			return -1;
-
 		if (!GetNumberOfConsoleInputEvents(fd, &n))
 			return -1;
 		if (n == 0)
