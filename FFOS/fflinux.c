@@ -214,6 +214,30 @@ int ffkqu_post(ffkevpost *p, void *data)
 	return 0;
 }
 
+int _ffaio_result(ffaio_task *t)
+{
+	int r = -1;
+
+	if (t->canceled) {
+		t->canceled = 0;
+		fferr_set(ECANCELED);
+		goto done;
+	}
+
+	if (t->ev->events & EPOLLERR) {
+		int er = 0;
+		(void)ffskt_getopt(t->sk, SOL_SOCKET, SO_ERROR, &er);
+		fferr_set(er);
+		goto done;
+	}
+
+	r = 0;
+
+done:
+	t->ev = NULL;
+	return r;
+}
+
 
 static FFINL int io_setup(unsigned nr_events, aio_context_t *ctx_idp)
 {
