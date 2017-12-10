@@ -45,7 +45,7 @@ static FFINL void ffatom_add(ffatomic *a, size_t add)
 	__asm volatile(
 		LOCK "addq %1, %0;"
 		: "+m" (a->val)
-		: "ir" (add));
+		: "er" (add));
 }
 
 /** Increment. */
@@ -70,7 +70,7 @@ static FFINL void ffatom_or(ffatomic *a, size_t v)
 	__asm volatile(
 		LOCK "orq %1, %0;"
 		: "+m" (a->val)
-		: "ir" (v)
+		: "er" (v)
 		: "memory");
 }
 
@@ -79,7 +79,7 @@ static FFINL void ffatom_xor(ffatomic *a, size_t v)
 	__asm volatile(
 		LOCK "xorq %1, %0;"
 		: "+m" (a->val)
-		: "ir" (v)
+		: "er" (v)
 		: "memory");
 }
 
@@ -88,7 +88,7 @@ static FFINL void ffatom_and(ffatomic *a, size_t v)
 	__asm volatile(
 		LOCK "andq %1, %0;"
 		: "+m" (a->val)
-		: "ir" (v)
+		: "er" (v)
 		: "memory");
 }
 
