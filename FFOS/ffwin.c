@@ -846,20 +846,16 @@ fffd ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler)
 
 void ffclk_diff(const fftime *start, fftime *diff)
 {
-	LARGE_INTEGER freq
-		, first
-		, second;
+	LARGE_INTEGER freq;
 
 	if (!QueryPerformanceFrequency(&freq)) {
-		diff->s = diff->mcs = 0;
+		fftime_null(diff);
 		return ;
 	}
 
-	first.LowPart = start->s;
-	first.HighPart = start->mcs;
-	second.LowPart = diff->s;
-	second.HighPart = diff->mcs;
-	fftime_setns(diff, ((second.QuadPart - first.QuadPart) * 1000000000) / freq.QuadPart);
+	uint64 ns = (diff->sec - start->sec) * 1000000000 / freq.QuadPart;
+	diff->sec = ns / 1000000000;
+	fftime_setnsec(diff, ns % 1000000000);
 }
 
 

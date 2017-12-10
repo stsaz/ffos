@@ -36,15 +36,15 @@ FF_EXTN fftest fftestobj;
 FF_EXTN int fftest_chk(int res, const char *file, uint line, const char *func, const char *sexp);
 
 static FFINL void fftest_tm(fftime *start) {
-	fftime stop;
+	fftime stop = {0};
 	ffclk_get(&stop);
 	ffclk_diff(start, &stop);
-	printf("  %u.%06us\n", stop.s, stop.mcs);
+	printf("  %u.%06us\n", (int)fftime_sec(&stop), (int)fftime_usec(&stop));
 }
 
 #define FFTEST_TIMECALL(func) \
 do { \
-	fftime start; \
+	fftime start = {0}; \
 	ffclk_get(&start); \
 	func; \
 	fftest_tm(&start); \

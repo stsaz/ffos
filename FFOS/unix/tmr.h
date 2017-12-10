@@ -15,4 +15,12 @@ static FFINL int ffclk_get(fftime *result) {
 }
 
 /** Get clock difference. */
-#define ffclk_diff  fftime_diff
+static FFINL void ffclk_diff(const fftime *start, fftime *stop)
+{
+	stop->sec -= start->sec;
+	stop->nsec -= start->nsec;
+	if ((int)stop->nsec < 0) {
+		stop->nsec += 1000000000;
+		stop->sec--;
+	}
+}

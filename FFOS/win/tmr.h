@@ -11,8 +11,7 @@ static FFINL int ffclk_get(fftime *result) {
 	LARGE_INTEGER val;
 	int r = QueryPerformanceCounter(&val);
 	if (r != 0) {
-		result->s = val.LowPart;
-		result->mcs = val.HighPart;
+		result->sec = val.QuadPart;
 	}
 	return r == 0;
 }

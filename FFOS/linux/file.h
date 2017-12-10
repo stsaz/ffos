@@ -40,7 +40,6 @@ static FFINL int fffile_readahead(fffd fd, size_t size)
 static FFINL fftime fffile_infomtime(const fffileinfo *fi)
 {
 	fftime t;
-	t.s = fi->st_mtime;
-	t.mcs = 0;
+	fftime_fromtimespec(&t, &fi->st_mtim);
 	return t;
 }

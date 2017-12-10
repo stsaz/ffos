@@ -119,22 +119,18 @@ typedef ino_t fffileid;
 
 static FFINL int fffile_settime(fffd fd, const fftime *last_write)
 {
-	struct timeval tv[2];
-	tv[0].tv_sec = last_write->s;
-	tv[0].tv_usec = last_write->mcs;
-	tv[1].tv_sec = last_write->s;
-	tv[1].tv_usec = last_write->mcs;
-	return futimes(fd, tv);
+	struct timespec ts[2];
+	fftime_to_timespec(last_write, &ts[0]);
+	fftime_to_timespec(last_write, &ts[1]);
+	return futimens(fd, ts);
 }
 
 static FFINL int fffile_settimefn(const char *fn, const fftime *last_write)
 {
-	struct timeval tv[2];
-	tv[0].tv_sec = last_write->s;
-	tv[0].tv_usec = last_write->mcs;
-	tv[1].tv_sec = last_write->s;
-	tv[1].tv_usec = last_write->mcs;
-	return utimes(fn, tv);
+	struct timespec ts[2];
+	fftime_to_timespec(last_write, &ts[0]);
+	fftime_to_timespec(last_write, &ts[1]);
+	return utimensat(AT_FDCWD, fn, ts, 0);
 }
 
 

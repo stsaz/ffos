@@ -22,7 +22,7 @@ int test_clock()
 	ffthd_sleep(150);
 	x(0 == ffclk_get(&stop));
 	ffclk_diff(&start, &stop);
-	x(stop.s == 0 && stop.mcs >= (150 - 25) * 1000);
+	x(fftime_sec(&stop) == 0 && fftime_usec(&stop) >= (150 - 25) * 1000);
 
 	return 0;
 }
