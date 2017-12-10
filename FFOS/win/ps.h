@@ -41,12 +41,20 @@ FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
 typedef HMODULE ffdl;
 typedef FARPROC ffdl_proc;
 
-#define ffdl_openq(filename, flags) \
-	LoadLibraryEx(filename, NULL, (flags) | LOAD_WITH_ALTERED_SEARCH_PATH)
+enum FFDL_OPEN {
+	FFDL_SELFDIR = LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32,
+};
+
+/** Prepare for using ffdl_open() with flags, because some Windows versions may not support this (EINVAL).
+Must be called once per module, but affects the whole process.
+@path: path where .dll dependencies will be searched;  use NULL to restore to defaults. */
+FF_EXTN int ffdl_init(const char *path);
+
+FF_EXTN ffdl ffdl_openq(const ffsyschar *filename, uint flags);
 
 FF_EXTN fffd ffdl_open(const char *filename, int flags);
 
-#define ffdl_addr  GetProcAddress
+#define ffdl_addr(dl, name)  GetProcAddress(dl, name)
 
 #define ffdl_errstr()  fferr_strp(fferr_last())
 

@@ -709,6 +709,41 @@ ffps ffps_createself_bg(const char *arg)
 }
 
 
+static byte _ffdl_noflags; //OS doesn't support flags to LoadLibraryEx()
+
+int ffdl_init(const char *path)
+{
+	int rc = 0;
+	ffsyschar *w = NULL, ws[FF_MAXFN];
+	ffdl dl;
+	if (NULL == (dl = ffdl_openq(L"kernel32.dll", 0)))
+		return -1;
+	if (NULL != ffdl_addr(dl, "AddDllDirectory"))
+		goto end;
+
+	rc = -1;
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
+		goto end;
+	if (!SetDllDirectory(w))
+		goto end;
+
+	_ffdl_noflags = 1;
+	rc = 0;
+
+end:
+	if (w != ws)
+		ffmem_free(w);
+	ffdl_close(dl);
+	return rc;
+}
+
+ffdl ffdl_openq(const ffsyschar *filename, uint flags)
+{
+	flags = (flags != 0 && !_ffdl_noflags) ? (flags) : LOAD_WITH_ALTERED_SEARCH_PATH;
+	return LoadLibraryEx(filename, NULL, flags);
+}
+
 fffd ffdl_open(const char *filename, int flags)
 {
 	fffd f;

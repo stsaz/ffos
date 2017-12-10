@@ -48,19 +48,26 @@ FF_EXTN int ffps_wait(ffps h, uint, int *exit_code);
 typedef void * ffdl;
 typedef void * ffdl_proc;
 
+enum FFDL_OPEN {
+	/** Windows: load dependencies from the library's directory first.
+	Filename parameter must be absolute and must not contain '/'. */
+	FFDL_SELFDIR = 0,
+};
+
 /** Open library.
+@flags: enum FFDL_OPEN
 Return NULL on error. */
 #define ffdl_open(filename, flags)  dlopen(filename, (flags) | RTLD_LAZY)
 
 /** Get the function address from the library.
 Return NULL on error. */
-#define ffdl_addr  dlsym
+#define ffdl_addr(dl, name)  dlsym(dl, name)
 
 /** Get last error message. */
-#define ffdl_errstr  dlerror
+#define ffdl_errstr()  dlerror()
 
 /** Close the library. */
-#define ffdl_close  dlclose
+#define ffdl_close(dl)  dlclose(dl)
 
 
 typedef void * ffsysconf;
