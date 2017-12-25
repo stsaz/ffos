@@ -102,7 +102,7 @@ do { \
 /** Align number to lower/upper boundary. */
 
 /** @align: must be a power of 2. */
-#define ff_align_floor2(n, align)  ((n) & ~((align) - 1))
+#define ff_align_floor2(n, align)  ((n) & ~(uint64)((align) - 1))
 #define ff_align_ceil2(n, align)  ff_align_floor2((n) + (align) - 1, align)
 
 #define ff_align_floor(n, align)  ((n) / (align) * (align))
