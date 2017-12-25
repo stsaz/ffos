@@ -6,6 +6,26 @@ Copyright (c) 2016 Simon Zolin
 #include <FFOS/socket.h>
 
 
+ffskt ffskt_create(uint domain, uint type, uint protocol)
+{
+	ffskt sk = socket(domain, type & ~SOCK_NONBLOCK, protocol);
+	if ((type & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
+		ffskt_close(sk);
+		sk = FF_BADSKT;
+	}
+	return sk;
+}
+
+ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
+{
+	ffskt sk = accept(listenSk, a, addrSize);
+	if ((flags & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
+		ffskt_close(sk);
+		return FF_BADSKT;
+	}
+	return sk;
+}
+
 LPFN_DISCONNECTEX _ffwsaDisconnectEx;
 LPFN_CONNECTEX _ffwsaConnectEx;
 LPFN_ACCEPTEX _ffwsaAcceptEx;
@@ -321,18 +341,6 @@ int ffaio_cancelasync(ffaio_task *t, int op, ffaio_handler oncancel)
 	return 0;
 }
 #endif
-
-int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
-{
-	int ev = 0;
-
-	if (e->lpOverlapped == &t->wovl)
-		ev |= FFKQU_WRITE;
-	else
-		ev |= FFKQU_READ;
-
-	return ev;
-}
 
 int _ffaio_result(ffaio_task *t)
 {

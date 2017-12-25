@@ -54,19 +54,7 @@ void fftimespec_addms(struct timespec *ts, uint64 ms)
 #endif
 
 
-#if defined FF_WIN
-ffskt ffskt_create(uint domain, uint type, uint protocol)
-{
-	ffskt sk = socket(domain, type & ~SOCK_NONBLOCK, protocol);
-	if ((type & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
-		ffskt_close(sk);
-		sk = FF_BADSKT;
-	}
-	return sk;
-}
-#endif
-
-#if defined FF_WIN || defined FF_APPLE || defined FF_OLDLIBC
+#if defined FF_APPLE || defined FF_OLDLIBC
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
 {
 	ffskt sk = accept(listenSk, a, addrSize);

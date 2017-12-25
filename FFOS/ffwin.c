@@ -815,6 +815,18 @@ int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time
 #endif
 
 
+int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
+{
+	int ev = 0;
+
+	if (e->lpOverlapped == &t->wovl)
+		ev |= FFKQU_WRITE;
+	else
+		ev |= FFKQU_READ;
+
+	return ev;
+}
+
 ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler)
 {
 	BOOL b;

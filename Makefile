@@ -51,6 +51,7 @@ $(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR)
 	$(C) $(CFLAGS)  $< -o$@
 
 TEST_O := $(FFOS_TEST_OBJ) $(FFOS_WREG) \
+	$(FFOS_SKT) \
 	$(FFOS_OBJ) $(FFOS_THD) $(FFOS_OBJ_DIR)/fftest.o
 
 $(TEST_BIN): $(FFOS_HDR) $(FFOS_TEST_HDR) $(TEST_O)
