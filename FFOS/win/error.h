@@ -52,6 +52,7 @@ static FFINL ffbool fferr_nofile(int e) {
 #undef ECANCELED
 #undef EINTR
 #undef ENOENT
+#undef ENOSYS
 #endif
 
 enum FF_ERRORS {
@@ -69,4 +70,5 @@ enum FF_ERRORS {
 	, EINTR = WAIT_TIMEOUT
 	,
 	ENOENT = ERROR_FILE_NOT_FOUND,
+	ENOSYS = ERROR_NOT_SUPPORTED,
 };

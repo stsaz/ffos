@@ -144,7 +144,15 @@ static FFINL int fffile_settimefn(const char *fn, const fftime *last_write)
 
 FF_EXTN int fffile_rename(const char *src, const char *dst);
 
-#define fffile_hardlink(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
+#define fffile_hardlinkq(target, linkname)  (0 == CreateHardLink(linkname, target, NULL))
+
+FF_EXTN int fffile_hardlink(const char *target, const char *linkname);
+
+static FFINL int fffile_symlink(const char *target, const char *linkname)
+{
+	fferr_set(ENOSYS);
+	return -1;
+}
 
 static FFINL int fffile_rmq(const ffsyschar *name) {
 	return 0 == DeleteFile(name);

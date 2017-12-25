@@ -230,7 +230,7 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(fileaio), F(ps), F(dl), F(cpu),
+	, F(skt), F(timer), F(kqu), F(file), F(fileaio), F(ps), F(dl), F(cpu),
 #ifdef FF_WIN
 	F(wreg),
 #endif
@@ -258,7 +258,6 @@ int main(int argc, const char **argv)
 			FFTEST_TIMECALL(_ffostests[i].func());
 		}
 
-	CALL(test_file(TMP_PATH));
 	CALL(test_dir(TMP_PATH));
 
 	} else {

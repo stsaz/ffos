@@ -2,6 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include "all.h"
 #include <FFOS/string.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
@@ -182,8 +183,28 @@ static int test_fileinfo(char *fn)
 	return 0;
 }
 
-int test_file(const char *tmpdir)
+static void file_link(void)
 {
+	const char *fn = "./ff-file", *slink = "./ff-slink", *hlink = "./ff-hlink";
+	fffd f;
+	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_WRONLY)));
+	fffile_close(f);
+
+#ifdef FF_UNIX
+	x(0 == fffile_symlink(fn, slink));
+	x(0 == fffile_hardlink(fn, hlink));
+#else
+	x(0 == fffile_hardlink(fn, hlink) || fferr_last() == 1);
+#endif
+
+	fffile_rm(fn);
+	fffile_rm(slink);
+	fffile_rm(hlink);
+}
+
+int test_file()
+{
+	const char *tmpdir = TMP_PATH;
 	fffd fd;
 	char fn[FF_MAXPATH];
 	char buf[4096];
@@ -214,6 +235,7 @@ int test_file(const char *tmpdir)
 	test_diropen(tmpdir);
 	test_std();
 	test_pipe();
+	file_link();
 
 	return 0;
 }

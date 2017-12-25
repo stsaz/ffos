@@ -186,6 +186,27 @@ fail:
 	return r;
 }
 
+int fffile_hardlink(const char *target, const char *linkname)
+{
+	ffsyschar wsrc_s[FF_MAXFN], *wsrc = wsrc_s;
+	ffsyschar wdst_s[FF_MAXFN], *wdst = wdst_s;
+	size_t ns = FFCNT(wsrc_s), nd = FFCNT(wdst_s);
+	int r = -1;
+
+	if (NULL == (wsrc = ffs_utow(wsrc_s, &ns, target, -1))
+		|| NULL == (wdst = ffs_utow(wdst_s, &nd, linkname, -1)))
+		goto fail;
+
+	r = fffile_hardlinkq(wsrc, wdst);
+
+fail:
+	if (wsrc != wsrc_s)
+		ffmem_free(wsrc);
+	if (wdst != wdst_s)
+		ffmem_free(wdst);
+	return r;
+}
+
 int fffile_rm(const char *name)
 {
 	ffsyschar ws[FF_MAXFN], *w;
