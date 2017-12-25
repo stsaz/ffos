@@ -10,8 +10,13 @@ typedef unsigned long long uint64;
 
 #define FFINL  inline
 
-#define FF_EXP  __attribute__((visibility("default")))
-#define FF_IMP
+#ifdef FF_MINGW
+	#define FF_EXP  __declspec(dllexport)
+	#define FF_IMP  __declspec(dllimport)
+#else
+	#define FF_EXP  __attribute__((visibility("default")))
+	#define FF_IMP
+#endif
 
 
 /** Swap bytes in integer number.
