@@ -26,12 +26,16 @@ const char* ffps_filename(char *name, size_t cap, const char *argv0)
 #endif
 
 	int n = readlink("/proc/curproc/file", name, cap);
-	if (n >= 0)
+	if (n >= 0) {
+		name[n] = '\0';
 		return name;
+	}
 
 	n = readlink("/proc/curproc/exe", name, cap);
-	if (n >= 0)
+	if (n >= 0) {
+		name[n] = '\0';
 		return name;
+	}
 
 	return _ffpath_real(name, cap, argv0);
 }

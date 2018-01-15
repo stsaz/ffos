@@ -38,8 +38,10 @@ extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {
 	int n = readlink("/proc/self/exe", name, cap);
-	if (n >= 0)
+	if (n >= 0) {
+		name[n] = '\0';
 		return name;
+	}
 
 	return _ffpath_real(name, cap, argv0);
 }
