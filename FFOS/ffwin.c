@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/sig.h>
 #include <FFOS/atomic.h>
 
+#include <psapi.h>
 #include <time.h>
 #ifndef FF_MSVC
 #include <stdio.h>
@@ -1181,6 +1182,110 @@ const char* ffps_filename(char *name, size_t cap, const char *argv0)
 		return NULL;
 	name[n] = '\0';
 	return name;
+}
+
+static uint64 ft_val(const FILETIME *ft)
+{
+	return ((uint64)ft->dwHighDateTime << 32) | ft->dwLowDateTime;
+}
+static void int_fftime(uint64 n, fftime *t)
+{
+	fftime_setsec(t, n / (1000000 * 10));
+	fftime_setnsec(t, (n % (1000000 * 10)) * 100);
+}
+
+/** Don't link to psapi.dll statically.
+Note: once loaded, it's never unloaded.
+Note: not thread safe. */
+static ffdl dl_psapi;
+typedef BOOL WINAPI (*GetProcessMemoryInfo_t)(HANDLE, PROCESS_MEMORY_COUNTERS*, DWORD);
+static GetProcessMemoryInfo_t _GetProcessMemoryInfo;
+
+static ffbool psapi_load(void)
+{
+	if (NULL == (dl_psapi = ffdl_openq(L"psapi.dll", 0)))
+		return 0;
+	if (NULL == (_GetProcessMemoryInfo = (void*)ffdl_addr(dl_psapi, "GetProcessMemoryInfo")))
+		return 0;
+	return 1;
+}
+
+int ffps_perf(struct ffps_perf *p, uint flags)
+{
+	int rc = 0, r;
+	HANDLE h = GetCurrentProcess();
+
+	if (flags & FFPS_PERF_REALTIME)
+		fftime_now(&p->realtime);
+
+	if (flags & (FFPS_PERF_SEPTIME | FFPS_PERF_CPUTIME)) {
+		FILETIME cre, ex, kern, usr;
+		if (0 != (r = GetProcessTimes(h, &cre, &ex, &kern, &usr))) {
+			uint64 nk, nu;
+			nk = ft_val(&kern);
+			nu = ft_val(&usr);
+			int_fftime(nk, &p->systime);
+			int_fftime(nu, &p->usertime);
+
+			if (flags & FFPS_PERF_CPUTIME)
+				int_fftime(nk + nu, &p->cputime);
+		}
+		rc |= !r;
+	}
+
+	if (flags & FFPS_PERF_RUSAGE) {
+		IO_COUNTERS io;
+		if (0 != (r = GetProcessIoCounters(h, &io))) {
+			p->inblock = io.ReadOperationCount;
+			p->outblock = io.WriteOperationCount;
+		}
+		rc |= !r;
+	}
+
+	if (flags & FFPS_PERF_RUSAGE) {
+		PROCESS_MEMORY_COUNTERS mc;
+		if (_GetProcessMemoryInfo == NULL)
+			r = psapi_load();
+		if (_GetProcessMemoryInfo != NULL
+			&& 0 != (r = _GetProcessMemoryInfo(h, &mc, sizeof(mc)))) {
+
+			p->pagefaults = mc.PageFaultCount;
+			p->maxrss = mc.PeakWorkingSetSize / 1024;
+		}
+		rc |= !r;
+	}
+
+	p->vctxsw = 0;
+	p->ivctxsw = 0;
+	return rc;
+}
+
+int ffthd_perf(struct ffps_perf *p, uint flags)
+{
+	int rc = 0, r;
+	HANDLE h = GetCurrentThread();
+
+	if (flags & (FFPS_PERF_SEPTIME | FFPS_PERF_CPUTIME)) {
+		FILETIME cre, ex, kern, usr;
+		if (0 != (r = GetThreadTimes(h, &cre, &ex, &kern, &usr))) {
+			uint64 nk, nu;
+			nk = ft_val(&kern);
+			nu = ft_val(&usr);
+			int_fftime(nk, &p->systime);
+			int_fftime(nu, &p->usertime);
+
+			if (flags & FFPS_PERF_CPUTIME)
+				int_fftime(nk + nu, &p->cputime);
+		}
+		rc |= !r;
+	}
+
+	p->maxrss = 0;
+	p->inblock = 0;
+	p->outblock = 0;
+	p->vctxsw = 0;
+	p->ivctxsw = 0;
+	return rc;
 }
 
 

@@ -53,6 +53,31 @@ void fftimespec_addms(struct timespec *ts, uint64 ms)
 }
 #endif
 
+static void _fftime_sub(fftime *t, const fftime *t2)
+{
+	t->sec -= t2->sec;
+	t->nsec -= t2->nsec;
+	if ((int)t->nsec < 0) {
+		t->nsec += 1000000000;
+		t->sec--;
+	}
+}
+
+
+void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop)
+{
+	_fftime_sub(&stop->realtime, &start->realtime);
+	_fftime_sub(&stop->cputime, &start->cputime);
+	_fftime_sub(&stop->usertime, &start->usertime);
+	_fftime_sub(&stop->systime, &start->systime);
+	stop->pagefaults -= start->pagefaults;
+	stop->maxrss -= start->maxrss;
+	stop->inblock -= start->inblock;
+	stop->outblock -= start->outblock;
+	stop->vctxsw -= start->vctxsw;
+	stop->ivctxsw -= start->ivctxsw;
+}
+
 
 #if defined FF_APPLE || defined FF_OLDLIBC
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
