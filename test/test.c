@@ -16,6 +16,7 @@ Copyright (c) 2013 Simon Zolin
 #define CALL FFTEST_TIMECALL
 
 static int FFTHDCALL thdfunc(void *param) {
+	printf("tid: %u\n", (int)ffthd_curid());
 	return 0;
 }
 
@@ -27,7 +28,7 @@ int test_thd()
 
 	th = ffthd_create(&thdfunc, NULL, 64 * 1024);
 	x(th != 0);
-	x(0 == ffthd_detach(th));
+	x(0 == ffthd_join(th, -1, NULL));
 
 	return 0;
 }

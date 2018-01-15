@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 typedef int (FFTHDCALL *ffthdproc)(void *);
 
 typedef pthread_t ffthd;
+typedef uint64 ffthd_id;
 
 #define FFTHD_INV 0
 
@@ -30,3 +31,6 @@ FF_EXTN int ffthd_join(ffthd th, uint timeout_ms, int *exit_code);
 #endif //FF_NOTHR
 
 FF_EXTN void ffthd_sleep(uint ms);
+
+/** Get ID of the current thread. */
+FF_EXTN ffthd_id ffthd_curid(void);

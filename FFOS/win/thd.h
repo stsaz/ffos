@@ -7,6 +7,7 @@ Copyright (c) 2013 Simon Zolin
 typedef int (FFTHDCALL *ffthdproc)(void *);
 
 typedef HANDLE ffthd;
+typedef uint ffthd_id;
 
 #define FFTHD_INV NULL
 
@@ -21,3 +22,5 @@ static FFINL int ffthd_detach(ffthd th) {
 }
 
 #define ffthd_sleep  Sleep
+
+#define ffthd_curid()  GetCurrentThreadId()

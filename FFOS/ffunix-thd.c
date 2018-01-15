@@ -90,4 +90,21 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	return 0;
 }
 #endif //OS
+
+#if defined FF_APPLE
+ffthd_id ffthd_curid(void)
+{
+	uint64_t tid;
+	if (0 != pthread_threadid_np(NULL, &tid))
+		return 0;
+	return tid;
+}
+
+#elif defined FF_BSD
+ffthd_id ffthd_curid(void)
+{
+	return pthread_getthreadid_np();
+}
+#endif //OS
+
 #endif //FF_NOTHR

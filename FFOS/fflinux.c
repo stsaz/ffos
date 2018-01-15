@@ -9,6 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/timer.h>
 #include <FFOS/socket.h>
 #include <FFOS/asyncio.h>
+#include <FFOS/thread.h>
 
 #include <time.h>
 #include <signal.h>
@@ -41,6 +42,11 @@ const char* ffps_filename(char *name, size_t cap, const char *argv0)
 		return name;
 
 	return _ffpath_real(name, cap, argv0);
+}
+
+ffthd_id ffthd_curid(void)
+{
+	return syscall(SYS_gettid);
 }
 
 
