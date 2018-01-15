@@ -177,7 +177,7 @@ static int test_fileinfo(char *fn)
 	x(0 != fffile_infosize(&fi));
 	x(0 != fffile_infoid(&fi));
 	lw = fffile_infomtime(&fi);
-	x(lw.s != 0);
+	x(fftime_sec(&lw) != 0);
 
 	x(0 == fffile_close(fd));
 	return 0;

@@ -337,8 +337,11 @@ int test_kqu()
 	do_accept(&srv);
 
 	start_conn(&conn, &adr, 8081, &connect_oncancel);
-	if (ffaio_active(&conn.task))
+	if (ffaio_active(&conn.task)) {
+#if !defined FF_WIN || FF_WIN >= 0x0600
 		ffaio_cancelasync(&conn.task, FFAIO_CONNECT, &connect_oncancel);
+#endif
+	}
 
 	for (;;) {
 		nevents = ffkqu_wait(kq, ents, FFCNT(ents), &tt);

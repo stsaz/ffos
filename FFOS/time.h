@@ -10,16 +10,12 @@ Copyright (c) 2013 Simon Zolin
 #include <time.h>
 
 typedef struct fftime {
-	union {
 	/**
 	2 possible applications for Gregorian calendar:
 	 . Absolute: seconds before or after Jan 1, 1 AD
 	 . UNIX-timestamp: seconds after Jan 1, 1970.
 	Functions fftime_now(), fffile_settime(), etc. use UNIX-timestamp format. */
 	int64 sec;
-
-	uint s; //obsolete
-	};
 	uint nsec;
 } fftime;
 

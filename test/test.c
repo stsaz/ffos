@@ -153,12 +153,12 @@ static int test_rnd()
 	FFTEST_FUNC;
 
 	fftime_now(&t);
-	ffrnd_seed(t.s);
+	ffrnd_seed(fftime_sec(&t));
 	n = ffrnd_get();
 	n2 = ffrnd_get();
 	x(n != n2);
 
-	ffrnd_seed(t.s);
+	ffrnd_seed(fftime_sec(&t));
 	n2 = ffrnd_get();
 	x(n == n2);
 
