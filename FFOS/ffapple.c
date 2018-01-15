@@ -10,6 +10,19 @@ Copyright (c) 2017 Simon Zolin
 #include <sys/wait.h>
 
 
+extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
+
+const char* ffps_filename(char *name, size_t cap, const char *argv0)
+{
+	char fn[PATH_MAX];
+	uint n = sizeof(fn);
+	if (0 == _NSGetExecutablePath(fn, &n))
+		return _path_real(name, cap, fn);
+
+	return _ffpath_real(name, cap, argv0);
+}
+
+
 enum {
 	KQ_EVUSER_ID = 1,
 };
