@@ -35,6 +35,9 @@ static FFINL void fftime_null(fftime *t) {
 	t->sec = 0,  t->nsec = 0;
 }
 
+/** Windows: prepare higher precision timer for fftime_now(). */
+FF_EXTN void fftime_init(void);
+
 /** Get UTC time. */
 FF_EXTN void fftime_now(fftime *t);
 

@@ -63,6 +63,11 @@ static void _fftime_sub(fftime *t, const fftime *t2)
 	}
 }
 
+#if !defined FF_WIN || FF_WIN >= 0x0600
+void fftime_init(void)
+{}
+#endif
+
 
 void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop)
 {

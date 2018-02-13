@@ -518,10 +518,26 @@ const char* fferr_strp(int code)
 }
 
 
+#if FF_WIN < 0x0600
+static VOID WINAPI (*_GetSystemTimePreciseAsFileTime)(LPFILETIME);
+void fftime_init(void)
+{
+	_GetSystemTimePreciseAsFileTime = (void*)ffdl_addr(GetModuleHandle(L"kernel32.dll"), "GetSystemTimePreciseAsFileTime");
+}
+#endif
+
+
 void fftime_now(fftime *t)
 {
 	FILETIME ft;
-	GetSystemTimeAsFileTime(&ft);
+#if FF_WIN >= 0x0600
+	GetSystemTimePreciseAsFileTime(&ft);
+#else
+	if (_GetSystemTimePreciseAsFileTime != NULL)
+		_GetSystemTimePreciseAsFileTime(&ft);
+	else
+		GetSystemTimeAsFileTime(&ft);
+#endif
 	*t = fftime_from_winftime((void*)&ft);
 }
 
