@@ -16,6 +16,8 @@ Copyright (c) 2013 Simon Zolin
 #ifndef FF_MSVC
 #include <stdio.h>
 #endif
+#include <winternl.h>
+#include <ntstatus.h>
 
 
 HANDLE _ffheap;
@@ -1201,6 +1203,10 @@ static ffdl dl_psapi;
 typedef BOOL WINAPI (*GetProcessMemoryInfo_t)(HANDLE, PROCESS_MEMORY_COUNTERS*, DWORD);
 static GetProcessMemoryInfo_t _GetProcessMemoryInfo;
 
+static ffdl dl_ntdll;
+typedef NTSTATUS (WINAPI *NtQuerySystemInformation_t)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG, PULONG);
+NtQuerySystemInformation_t _NtQuerySystemInformation;
+
 static ffbool psapi_load(void)
 {
 	if (NULL == (dl_psapi = ffdl_openq(L"psapi.dll", 0)))
@@ -1209,6 +1215,79 @@ static ffbool psapi_load(void)
 		return 0;
 	return 1;
 }
+
+static ffbool ntdll_load(void)
+{
+	if (NULL == (dl_ntdll = ffdl_openq(L"ntdll.dll", 0)))
+		return 0;
+	if (NULL == (_NtQuerySystemInformation = (void*)ffdl_addr(dl_ntdll, "NtQuerySystemInformation")))
+		return 0;
+	return 1;
+}
+
+typedef struct _SYSTEM_THREAD_INFORMATION {
+	LARGE_INTEGER Reserved1[3];
+	ULONG Reserved2;
+	PVOID StartAddress;
+	CLIENT_ID ClientId;
+	KPRIORITY Priority;
+	LONG BasePriority;
+	ULONG Reserved3; //ContextSwitchCount
+	ULONG ThreadState;
+	ULONG WaitReason;
+} SYSTEM_THREAD_INFORMATION;
+
+struct psinfo_s {
+	SYSTEM_PROCESS_INFORMATION psinfo;
+	SYSTEM_THREAD_INFORMATION threads[0];
+};
+
+/** Get information about all running processes and their threads. */
+static void* ps_info_get(void)
+{
+	void *data;
+	enum {
+		N_PROC = 50,
+		N_THD = 10,
+	};
+	uint cap = N_PROC * (sizeof(SYSTEM_PROCESS_INFORMATION) + N_THD * sizeof(SYSTEM_THREAD_INFORMATION));
+	int r;
+	ULONG n;
+
+	if (_NtQuerySystemInformation == NULL)
+		ntdll_load();
+	if (_NtQuerySystemInformation == NULL)
+		return NULL;
+
+	for (uint i = 0;  i != 2;  i++) {
+		if (NULL == (data = ffmem_alloc(cap))) {
+			r = -1;
+			break;
+		}
+		r = _NtQuerySystemInformation(SystemProcessInformation, data, cap, &n);
+		if (r != STATUS_INFO_LENGTH_MISMATCH)
+			break;
+
+		ffmem_free0(data);
+		cap = ff_align_ceil2(n, 4096);
+	}
+
+	if (r != 0 || n < sizeof(SYSTEM_PROCESS_INFORMATION)) {
+		ffmem_safefree(data);
+		return NULL;
+	}
+
+	return data;
+}
+
+/** Get the next psinfo_s object or return NULL if there's no more. */
+static struct psinfo_s* ps_info_next(struct psinfo_s *pi)
+{
+	if (pi->psinfo.NextEntryOffset == 0)
+		return NULL;
+	return (void*)((byte*)pi + pi->psinfo.NextEntryOffset);
+}
+
 
 int ffps_perf(struct ffps_perf *p, uint flags)
 {
@@ -1255,7 +1334,24 @@ int ffps_perf(struct ffps_perf *p, uint flags)
 		rc |= !r;
 	}
 
-	p->vctxsw = 0;
+	if (flags & FFPS_PERF_RUSAGE) {
+		void *data = ps_info_get();
+		if (data != NULL) {
+			uint cur_pid = GetCurrentProcessId();
+			struct psinfo_s *pi;
+			for (pi = data;  pi != NULL;  pi = ps_info_next(pi)) {
+				if ((size_t)pi->psinfo.UniqueProcessId == cur_pid) {
+					for (uint th = 0;  th != pi->psinfo.NumberOfThreads;  th++) {
+						const SYSTEM_THREAD_INFORMATION *ti = &pi->threads[th];
+						p->vctxsw += ti->Reserved3;
+					}
+					break;
+				}
+			}
+			ffmem_free(data);
+		}
+	}
+
 	p->ivctxsw = 0;
 	return rc;
 }
@@ -1280,10 +1376,31 @@ int ffthd_perf(struct ffps_perf *p, uint flags)
 		rc |= !r;
 	}
 
+	if (flags & FFPS_PERF_RUSAGE) {
+		void *data = ps_info_get();
+		if (data != NULL) {
+			uint cur_pid = GetCurrentProcessId();
+			uint cur_tid = GetCurrentThreadId();
+			struct psinfo_s *pi;
+			for (pi = data;  pi != NULL;  pi = ps_info_next(pi)) {
+				if ((size_t)pi->psinfo.UniqueProcessId == cur_pid) {
+					for (uint th = 0;  th != pi->psinfo.NumberOfThreads;  th++) {
+						const SYSTEM_THREAD_INFORMATION *ti = &pi->threads[th];
+						if ((size_t)ti->ClientId.UniqueThread == cur_tid) {
+							p->vctxsw += ti->Reserved3;
+							break;
+						}
+					}
+					break;
+				}
+			}
+			ffmem_free(data);
+		}
+	}
+
 	p->maxrss = 0;
 	p->inblock = 0;
 	p->outblock = 0;
-	p->vctxsw = 0;
 	p->ivctxsw = 0;
 	return rc;
 }

@@ -90,16 +90,19 @@ static int test_ps(void)
 	x(0 == ffps_wait(h, -1, &cod));
 	printf("process exited with code %d\n", (int)cod);
 
-	{
-	struct ffps_perf p = {};
-	x(0 == ffps_perf(&p, FFPS_PERF_CPUTIME | FFPS_PERF_RUSAGE));
-	printf("PID:%u  cputime:%u.%09u  usertime:%u.%09u  systime:%u.%09u"
-		"  maxrss:%u  inblock:%u  outblock:%u  vctxsw:%u  ivctxsw:%u\n"
-		, (int)ffps_curid()
-		, (int)fftime_sec(&p.cputime), (int)fftime_nsec(&p.cputime)
-		, (int)fftime_sec(&p.usertime), (int)fftime_nsec(&p.usertime)
-		, (int)fftime_sec(&p.systime), (int)fftime_nsec(&p.systime)
-		, p.maxrss, p.inblock, p.outblock, p.vctxsw, p.ivctxsw);
+	for (uint i = 0;  i != 2;  i++) {
+		struct ffps_perf p = {};
+		if (i == 0)
+			x(0 == ffps_perf(&p, FFPS_PERF_CPUTIME | FFPS_PERF_RUSAGE));
+		else
+			x(0 == ffthd_perf(&p, FFPS_PERF_CPUTIME | FFPS_PERF_RUSAGE));
+		printf("PID:%u TID:%u  cputime:%u.%09u  usertime:%u.%09u  systime:%u.%09u"
+			"  maxrss:%u  inblock:%u  outblock:%u  vctxsw:%u  ivctxsw:%u\n"
+			, (int)ffps_curid(), (int)ffthd_curid()
+			, (int)fftime_sec(&p.cputime), (int)fftime_nsec(&p.cputime)
+			, (int)fftime_sec(&p.usertime), (int)fftime_nsec(&p.usertime)
+			, (int)fftime_sec(&p.systime), (int)fftime_nsec(&p.systime)
+			, p.maxrss, p.inblock, p.outblock, p.vctxsw, p.ivctxsw);
 	}
 
 	return 0;
