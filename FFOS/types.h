@@ -92,6 +92,7 @@ do { \
 enum FFDBG_T {
 	FFDBG_MEM = 0x10,
 	FFDBG_KEV = 0x20,
+	FFDBG_TIMER = 0x40,
 	FFDBG_PARSE = 0x100,
 };
 
