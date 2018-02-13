@@ -20,6 +20,14 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/win/tmr.h>
 #endif
 
+
+#define ffclk_gettime(t) \
+do { \
+	ffclk_get(t); \
+	ffclk_totime(t); \
+} while(0)
+
+
 /** Start timer.
 @period_ms: if negative, timer will fire just once.
 */

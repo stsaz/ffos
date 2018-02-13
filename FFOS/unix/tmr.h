@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/time.h>
 
 
-/** Get clock value. */
+/** Get system-specific clock value (unrelated to UTC time). */
 static FFINL int ffclk_get(fftime *result) {
 	struct timespec ts;
 	int r = clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -14,7 +14,10 @@ static FFINL int ffclk_get(fftime *result) {
 	return r;
 }
 
-/** Get clock difference. */
+/** Convert the value returned by ffclk_get() to fftime. */
+#define ffclk_totime(t)
+
+/** Get clock difference and convert to fftime. */
 static FFINL void ffclk_diff(const fftime *start, fftime *stop)
 {
 	stop->sec -= start->sec;

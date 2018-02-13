@@ -9,14 +9,18 @@ Copyright (c) 2013 Simon Zolin
 
 static FFINL int ffclk_get(fftime *result) {
 	LARGE_INTEGER val;
-	int r = QueryPerformanceCounter(&val);
-	if (r != 0) {
-		result->sec = val.QuadPart;
-	}
-	return r == 0;
+	QueryPerformanceCounter(&val);
+	result->sec = val.QuadPart;
+	return 0;
 }
 
-FF_EXTN void ffclk_diff(const fftime *start, fftime *diff);
+FF_EXTN void ffclk_totime(fftime *t);
+
+static FFINL void ffclk_diff(const fftime *start, fftime *diff)
+{
+	diff->sec -= start->sec;
+	ffclk_totime(diff);
+}
 
 
 /**

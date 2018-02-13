@@ -910,18 +910,17 @@ fffd ffaio_pipe_accept(ffkevent *kev, ffkev_handler handler)
 }
 
 
-void ffclk_diff(const fftime *start, fftime *diff)
+static LARGE_INTEGER _ffclk_freq;
+
+void ffclk_totime(fftime *t)
 {
-	LARGE_INTEGER freq;
+	if (_ffclk_freq.QuadPart == 0)
+		QueryPerformanceFrequency(&_ffclk_freq); //no threads race because the result is always the same
 
-	if (!QueryPerformanceFrequency(&freq)) {
-		fftime_null(diff);
-		return ;
-	}
-
-	uint64 ns = (diff->sec - start->sec) * 1000000000 / freq.QuadPart;
-	diff->sec = ns / 1000000000;
-	fftime_setnsec(diff, ns % 1000000000);
+	uint64 clk = t->sec;
+	t->sec = clk / _ffclk_freq.QuadPart;
+	uint ns = (clk % _ffclk_freq.QuadPart) * 1000000000 / _ffclk_freq.QuadPart;
+	fftime_setnsec(t, ns);
 }
 
 
