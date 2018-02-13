@@ -125,7 +125,7 @@ typedef uint64 fffileid;
 static FFINL int fffile_settime(fffd fd, const fftime *last_write)
 {
 	FILETIME ft;
-	fftime_to_winftime(last_write, (void*)&ft);
+	fftime_to_winftime(last_write, (fftime_winftime*)&ft);
 	return 0 == SetFileTime(fd, NULL, NULL, &ft);
 }
 

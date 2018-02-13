@@ -52,13 +52,14 @@ FF_EXTN int ffdl_init(const char *path);
 
 FF_EXTN ffdl ffdl_openq(const ffsyschar *filename, uint flags);
 
-FF_EXTN fffd ffdl_open(const char *filename, int flags);
+FF_EXTN ffdl ffdl_open(const char *filename, int flags);
 
 #define ffdl_addr(dl, name)  GetProcAddress(dl, name)
 
 #define ffdl_errstr()  fferr_strp(fferr_last())
 
-static FFINL int ffdl_close(fffd h) {
+static FFINL int ffdl_close(ffdl h)
+{
 	return 0 == FreeLibrary(h);
 }
 

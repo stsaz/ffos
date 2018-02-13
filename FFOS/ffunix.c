@@ -157,6 +157,17 @@ fffd ffpipe_connect(const char *name)
 }
 
 
+int ffdir_read(ffdir dir, ffdirentry *ent)
+{
+	struct dirent *d;
+	errno = ENOMOREFILES;
+	if (0 == readdir_r(dir, &ent->de, &d) && d != NULL) {
+		ent->namelen = (int)strlen(ent->de.d_name);
+		return 0;
+	}
+	return -1;
+}
+
 static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
 	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {
 		errno = EOVERFLOW;

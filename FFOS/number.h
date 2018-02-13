@@ -11,7 +11,7 @@ Copyright (c) 2016 Simon Zolin
 
 #define FF_SIZEOF(struct_name, member)  sizeof(((struct_name*)0)->member)
 
-#define FF_PTR(p, off)  ((char*)(p) + (off))
+#define FF_PTR(p, off)  ((void*)((char*)(p) + (off)))
 
 /** Get structure object by its member. */
 #define FF_GETPTR(struct_T, member_name, member_ptr) \

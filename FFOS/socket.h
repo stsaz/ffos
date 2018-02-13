@@ -134,9 +134,9 @@ static FFINL void ffip6_set(ffaddr *adr, const struct in6_addr *net_addr) {
 static FFINL void ffaddr_setip(ffaddr *a, uint family, const void *ip)
 {
 	if (family == AF_INET)
-		ffip4_set(a, ip);
+		ffip4_set(a, (struct in_addr*)ip);
 	else
-		ffip6_set(a, ip);
+		ffip6_set(a, (struct in6_addr*)ip);
 }
 
 /** Set "any" address. */

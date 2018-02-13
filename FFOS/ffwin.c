@@ -761,7 +761,7 @@ ffdl ffdl_openq(const ffsyschar *filename, uint flags)
 	return LoadLibraryEx(filename, NULL, flags);
 }
 
-fffd ffdl_open(const char *filename, int flags)
+ffdl ffdl_open(const char *filename, int flags)
 {
 	fffd f;
 	ffsyschar *w, ws[FF_MAXFN];

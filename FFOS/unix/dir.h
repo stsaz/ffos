@@ -69,15 +69,7 @@ static FFINL ffdir ffdir_open(char *path, size_t pathcap, ffdirentry *ent) {
 /** Read directory.
 Return 0 on success.
 Fail with ENOMOREFILES if there are no more files. */
-static FFINL int ffdir_read(ffdir dir, ffdirentry *ent) {
-	struct dirent *d;
-	errno = ENOMOREFILES;
-	if (0 == readdir_r(dir, &ent->de, &d) && d != NULL) {
-		ent->namelen = (int)strlen(ent->de.d_name);
-		return 0;
-	}
-	return -1;
-}
+FF_EXTN int ffdir_read(ffdir dir, ffdirentry *ent);
 
 /** Get entry name. */
 #define ffdir_entryname(ent)  (ent)->de.d_name

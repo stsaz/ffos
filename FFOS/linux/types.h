@@ -5,7 +5,9 @@ Copyright (c) 2017 Simon Zolin
 #ifndef __cplusplus
 	#define _GNU_SOURCE
 #endif
-#define _LARGEFILE64_SOURCE
+#ifndef _LARGEFILE64_SOURCE
+	#define _LARGEFILE64_SOURCE 1
+#endif
 
 
 #if defined FF_OLDLIBC && defined FF_64
