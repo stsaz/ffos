@@ -456,7 +456,11 @@ ffdir ffdir_openq(ffsyschar *path, size_t cap, ffdirentry *ent)
 		*end++ = FFPATH_SLASH;
 	*end++ = '*';
 	*end = '\0';
+#if FF_WIN >= 0x0600
 	dir = FindFirstFileEx(path, FindExInfoBasic, &ent->info, 0, NULL, 0);
+#else
+	dir = FindFirstFile(path, &ent->info);
+#endif
 	path[len] = '\0';
 	if (dir == INVALID_HANDLE_VALUE)
 		return 0;
