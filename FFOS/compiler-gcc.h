@@ -28,21 +28,17 @@ e.g. "0x11223344" <-> "0x44332211" */
 
 #define ffbit_ffs32(i)  __builtin_ffs(i)
 
-#ifdef FF_64
 #define ffbit_ffs64(i)  __builtin_ffsll(i)
-#endif
 
 static FFINL uint ffbit_find32(uint n)
 {
 	return (n == 0) ? 0 : __builtin_clz(n) + 1;
 }
 
-#ifdef FF_64
 static FFINL uint ffbit_find64(uint64 n)
 {
 	return (n == 0) ? 0 : __builtin_clzll(n) + 1;
 }
-#endif
 
 
 /** Prevent compiler from reordering operations. */
