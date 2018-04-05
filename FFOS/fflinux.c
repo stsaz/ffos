@@ -18,6 +18,23 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/eventfd.h>
 
 
+int fffile_settime(fffd fd, const fftime *last_write)
+{
+	struct timespec ts[2];
+	fftime_to_timespec(last_write, &ts[0]);
+	fftime_to_timespec(last_write, &ts[1]);
+	return futimens(fd, ts);
+}
+
+int fffile_settimefn(const char *fn, const fftime *last_write)
+{
+	struct timespec ts[2];
+	fftime_to_timespec(last_write, &ts[0]);
+	fftime_to_timespec(last_write, &ts[1]);
+	return utimensat(AT_FDCWD, fn, ts, 0);
+}
+
+
 int fferr_str(int code, char *dst, size_t dst_cap) {
 	char *dst2;
 	if (0 == dst_cap)

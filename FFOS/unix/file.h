@@ -117,22 +117,8 @@ typedef ino_t fffileid;
 /** Get file ID. */
 #define fffile_infoid(fi)  (fi)->st_ino
 
-static FFINL int fffile_settime(fffd fd, const fftime *last_write)
-{
-	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
-	return futimens(fd, ts);
-}
-
-static FFINL int fffile_settimefn(const char *fn, const fftime *last_write)
-{
-	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
-	return utimensat(AT_FDCWD, fn, ts, 0);
-}
-
+FF_EXTN int fffile_settime(fffd fd, const fftime *last_write);
+FF_EXTN int fffile_settimefn(const char *fn, const fftime *last_write);
 
 /** Change the name or location of a file. */
 #define fffile_rename(oldpath, newpath)  rename(oldpath, newpath)

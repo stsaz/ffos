@@ -22,6 +22,25 @@ Copyright (c) 2013 Simon Zolin
 #include <string.h>
 
 
+#if !defined FF_LINUX
+int fffile_settime(fffd fd, const fftime *last_write)
+{
+	struct timeval tv[2];
+	fftime_to_timeval(last_write, &tv[0]);
+	fftime_to_timeval(last_write, &tv[1]);
+	return futimes(fd, tv);
+}
+
+int fffile_settimefn(const char *fn, const fftime *last_write)
+{
+	struct timeval tv[2];
+	fftime_to_timeval(last_write, &tv[0]);
+	fftime_to_timeval(last_write, &tv[1]);
+	return utimes(fn, tv);
+}
+#endif
+
+
 int ffstd_attr(fffd fd, uint attr, uint val)
 {
 	struct termios t;
