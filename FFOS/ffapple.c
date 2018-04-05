@@ -8,16 +8,17 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/timer.h>
 
 #include <sys/wait.h>
+#include <mach-o/dyld.h>
 
 
 extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
 
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {
-	char fn[PATH_MAX];
+	char fn[4096];
 	uint n = sizeof(fn);
 	if (0 == _NSGetExecutablePath(fn, &n))
-		return _path_real(name, cap, fn);
+		return _ffpath_real(name, cap, fn);
 
 	return _ffpath_real(name, cap, argv0);
 }
@@ -101,6 +102,17 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	if (handler == NULL)
 		ffaio_fin(t);
 	return r;
+}
+
+
+ffskt ffskt_create(uint domain, uint type, uint protocol)
+{
+	ffskt sk = socket(domain, type & ~SOCK_NONBLOCK, protocol);
+	if ((type & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
+		ffskt_close(sk);
+		sk = FF_BADSKT;
+	}
+	return sk;
 }
 
 /* sendfile() sends the whole file if 'file size' argument is 0.

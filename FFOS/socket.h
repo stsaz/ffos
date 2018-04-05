@@ -164,6 +164,13 @@ static FFINL void ffip_v4mapped_tov4(ffaddr *a) {
 }
 
 
+/** Create an endpoint for communication.
+@type: SOCK_*
+Return FF_BADSKT on error.
+Example:
+ffskt sk = ffskt_create(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); */
+FF_EXTN ffskt ffskt_create(uint domain, uint type, uint protocol);
+
 /** Initiate a connection on a socket. */
 static FFINL int ffskt_connect(ffskt sk, const struct sockaddr *addr, size_t addrlen) {
 	return connect(sk, addr, (socklen_t)addrlen);

@@ -17,8 +17,6 @@ enum {
 	, SOCK_NONBLOCK = 0x100
 };
 
-FF_EXTN ffskt ffskt_create(uint domain, uint type, uint protocol);
-
 FF_EXTN LPFN_ACCEPTEX _ffwsaAcceptEx;
 FF_EXTN LPFN_CONNECTEX _ffwsaConnectEx;
 FF_EXTN LPFN_DISCONNECTEX _ffwsaDisconnectEx;

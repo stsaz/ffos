@@ -346,10 +346,20 @@ int ffps_perf(struct ffps_perf *p, uint flags)
 	return _ffps_perf(RUSAGE_SELF, p, flags);
 }
 
+#if defined FF_APPLE
+int ffthd_perf(struct ffps_perf *p, uint flags)
+{
+	int r = _ffps_perf(RUSAGE_SELF + 1, p, flags);
+	if (flags & FFPS_PERF_RUSAGE)
+		r = -1;
+	return r;
+}
+#else
 int ffthd_perf(struct ffps_perf *p, uint flags)
 {
 	return _ffps_perf(RUSAGE_THREAD, p, flags);
 }
+#endif
 
 
 int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)

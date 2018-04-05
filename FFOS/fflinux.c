@@ -103,6 +103,12 @@ int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 	return timerfd_settime(tmr, 0, &its, NULL);
 }
 
+
+ffskt ffskt_create(uint domain, uint type, uint protocol)
+{
+	return socket(domain, type, protocol);
+}
+
 int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)
 {
 	int npush = 0;

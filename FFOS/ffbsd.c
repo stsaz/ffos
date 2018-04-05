@@ -132,6 +132,12 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	return r;
 }
 
+
+ffskt ffskt_create(uint domain, uint type, uint protocol)
+{
+	return socket(domain, type, protocol);
+}
+
 /* sendfile() sends the whole file if 'file size' argument is 0.
 We don't want this behaviour. */
 int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)
