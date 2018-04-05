@@ -3,6 +3,7 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <FFOS/time.h>
+#include <FFOS/dir.h>
 #include <FFOS/error.h>
 #include <FFOS/process.h>
 #include <FFOS/sig.h>
@@ -49,8 +50,6 @@ int fferr_str(int code, char *dst, size_t dst_cap) {
 	return 0;
 }
 
-
-extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
 
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {

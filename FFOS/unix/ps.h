@@ -43,7 +43,11 @@ FF_EXTN int ffps_wait(ffps h, uint, int *exit_code);
 #define ffps_exit  _exit
 
 
+#ifdef FF_APPLE
+#define FFDL_EXT  "dylib"
+#else
 #define FFDL_EXT  "so"
+#endif
 
 typedef void * ffdl;
 typedef void * ffdl_proc;

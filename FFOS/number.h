@@ -108,6 +108,14 @@ do { \
 #define ff_align_floor(n, align)  ((n) / (align) * (align))
 #define ff_align_ceil(n, align)  ff_align_floor((n) + (align) - 1, align)
 
+/** Align number to the next power of 2.
+For n=1 value 1 is returned. */
+static FFINL uint64 ff_align_power2(uint64 n)
+{
+	uint one = ffbit_find64((n - 1) << 1);
+	return FF_BIT64(64 - one);
+}
+
 
 #ifndef FF_64
 	/** Safe cast 'uint64' to 'size_t'. */

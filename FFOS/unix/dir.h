@@ -106,3 +106,5 @@ static FFINL uint64 ffpath_info(ffpathinfo *st, uint name)
 
 	return 0;
 }
+
+FF_EXTN const char* _ffpath_real(char *name, size_t cap, const char *argv0);

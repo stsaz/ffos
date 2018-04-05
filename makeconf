@@ -39,11 +39,12 @@ PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
 
 else ifeq ($(OS),bsd)
 CP := cp -v
-PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+PACK := tar -cJv -f
 
 else ifeq ($(OS),apple)
+SO := dylib
 CP := cp -v
-PACK := tar --uid=0 --gid=0 --numeric-owner -cJv -f
+PACK := tar -cJv -f
 
 endif
 
@@ -134,6 +135,10 @@ endif
 
 endif #OS
 
+CNAME := gcc
+ifeq ($(C),clang)
+CNAME := clang
+endif
 override C += -c
 override CXX += -c
 
@@ -161,17 +166,26 @@ else ifeq ($(CPU),i686)
 CFLAGS += -m32 -march=i686
 LDFLAGS += -m32 -march=i686
 
-ifeq ($(OS),win)
-# Remove dependency on libgcc_s_sjlj-1.dll
+endif #CPU
+
+
+ifeq ($(CNAME),gcc)
+# Remove dependency on libgcc_s_sjlj-1.dll (Windows), libgcc_s.so.1 (Linux)
 LDFLAGS += -static-libgcc
 endif
-
-endif #CPU
 
 
 # rule for separate .debug files
 %.debug: %
+ifeq ($(OS),apple)
+	# dsymutil $< -o $@
+	$(STRIP) -u -r $<
+
+else
+
 	$(OBJCOPY) --only-keep-debug $< $@
 	$(STRIP) $<
 	$(OBJCOPY) --add-gnu-debuglink=$@ $<
+endif
+
 	touch $@

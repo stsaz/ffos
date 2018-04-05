@@ -2,6 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include <FFOS/dir.h>
 #include <FFOS/socket.h>
 #include <FFOS/process.h>
 #include <FFOS/sig.h>
@@ -10,8 +11,6 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/wait.h>
 #include <sys/sysctl.h>
 
-
-extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
 
 #ifdef KERN_PROC_PATHNAME
 static const int sysctl_pathname[] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, /*PID=*/ -1 };

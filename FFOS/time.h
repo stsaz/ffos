@@ -72,6 +72,12 @@ static FFINL void fftime_fromtimeval(fftime *t, const struct timeval *ts) {
 	fftime_setusec(t, ts->tv_usec);
 }
 
+static FFINL void fftime_to_timeval(const fftime *t, struct timeval *ts)
+{
+	ts->tv_sec = fftime_sec(t);
+	ts->tv_usec = fftime_usec(t);
+}
+
 /** Convert 'timespec' to 'fftime'. */
 static FFINL void fftime_fromtimespec(fftime *t, const struct timespec *ts) {
 	fftime_setsec(t, ts->tv_sec);

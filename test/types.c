@@ -37,6 +37,13 @@ int test_types() {
 	x(10 == ff_align_floor(11, 5));
 	x(15 == ff_align_ceil(11, 5));
 
+	x(0x8000000000000000ULL == ff_align_power2(0x8000000000000000ULL));
+	x(32 == ff_align_power2(17));
+	x(16 == ff_align_power2(16));
+	x(16 == ff_align_power2(15));
+	x(2 == ff_align_power2(2));
+	x(1 == ff_align_power2(1));
+
 	x(ffhton32(0x12345678) == 0x78563412);
 
 	x(ffint_bswap16(0x1234) == 0x3412);

@@ -2,6 +2,7 @@
 Copyright (c) 2017 Simon Zolin
 */
 
+#include <FFOS/dir.h>
 #include <FFOS/socket.h>
 #include <FFOS/process.h>
 #include <FFOS/sig.h>
@@ -10,8 +11,6 @@ Copyright (c) 2017 Simon Zolin
 #include <sys/wait.h>
 #include <mach-o/dyld.h>
 
-
-extern const char* _ffpath_real(char *name, size_t cap, const char *argv0);
 
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {
@@ -53,6 +52,17 @@ int ffkqu_post(ffkevpost *p, void *data)
 	struct kevent ev;
 	EV_SET(&ev, KQ_EVUSER_ID, EVFILT_USER, 0, NOTE_TRIGGER, 0, data);
 	return kevent(kq, &ev, 1, NULL, 0, NULL);
+}
+
+
+void fftime_local(fftime_zone *tz)
+{
+	tzset();
+	struct tm tm;
+	time_t t = time(NULL);
+	localtime_r(&t, &tm);
+	tz->off = tm.tm_gmtoff;
+	tz->have_dst = 0;
 }
 
 
