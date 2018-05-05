@@ -3,7 +3,7 @@
 
 # set initial values for:
 # . CPU: IA-32/AMD64
-# . OS: linux/bsd/windows
+# . OS: linux/bsd/macos/windows
 # . compiler: gcc/clang
 # . packaging: tar.xz/zip
 
@@ -28,25 +28,23 @@ CP := cp -u -v -p
 PACK := zip -9 -r -v
 PACK_EXT := zip
 
-else #OS
-
+else ifeq ($(OS),linux)
 SO := so
-PACK_EXT := tar.xz
-
-ifeq ($(OS),linux)
 CP := cp -u -v -p
 PACK := tar --owner=0 --group=0 --numeric-owner -cJv -f
+PACK_EXT := tar.xz
 
 else ifeq ($(OS),bsd)
+SO := so
 CP := cp -v
 PACK := tar -cJv -f
+PACK_EXT := tar.xz
 
 else ifeq ($(OS),apple)
 SO := dylib
 CP := cp -v
-PACK := tar -cJv -f
-
-endif
+PACK := zip -9 -r -v
+PACK_EXT := zip
 
 endif #OS
 
@@ -112,11 +110,11 @@ CFLAGS += -fpic -fvisibility=hidden
 LDFLAGS += -fpic
 LD_LPTHREAD := -pthread
 LD_LMATH := -lm
-LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN'
 
 ifeq ($(OS),linux)
 LD_LDL := -ldl
 LDFLAGS += -Wl,-no-undefined
+LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN' -Wl,--disable-new-dtags
 
 else ifeq ($(OS),bsd)
 C := clang
@@ -124,6 +122,7 @@ LD := $(C)
 CXX := clang++
 LDXX := $(CXX)
 LDFLAGS += -Wl,-no-undefined
+LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN'
 
 else ifeq ($(OS),apple)
 C := clang

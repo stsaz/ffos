@@ -26,7 +26,7 @@ ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size)
 			goto end;
 	}
 
-	if (0 != pthread_create(&th, pattr, (start_routine)proc, param))
+	if (0 != pthread_create(&th, pattr, (start_routine)(void*)proc, param))
 		th = 0;
 
 end:

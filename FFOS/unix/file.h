@@ -64,7 +64,10 @@ static FFINL ssize_t fffile_write(fffd fd, const void *in, size_t size) {
 /** Truncate a file to a specified length.
 Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PARAMETER
  due to un-aligned seeking request. */
-#define fffile_trunc(fd, len)  ftruncate(fd, len)
+static FFINL int fffile_trunc(fffd fd, uint64 len)
+{
+	return ftruncate(fd, len);
+}
 
 /** Set file non-blocking mode. */
 static FFINL int fffile_nblock(fffd fd, int nblock) {
