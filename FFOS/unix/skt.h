@@ -9,10 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
-
-#if defined FF_BSD || defined FF_APPLE
 #include <sys/uio.h>
-#endif
 
 
 enum {
