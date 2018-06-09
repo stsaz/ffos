@@ -16,6 +16,8 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/unix/fmap.h>
 #endif
 
+#define fffile_safeclose(fd)  FF_SAFECLOSE(fd, FF_BADFD, fffile_close)
+
 /** Write constant string to a file. */
 #define fffile_writecz(fd, csz)  fffile_write(fd, csz, sizeof(csz)-1)
 
