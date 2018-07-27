@@ -7,10 +7,12 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/queue.h>
 
-#if defined FF_LINUX
+#if defined FF_LINUX_MAINLINE
 	#include <FFOS/linux/tmr.h>
 #elif defined FF_BSD || defined FF_APPLE
 	#include <FFOS/bsd/tmr.h>
+#elif defined FF_ANDROID
+	typedef fffd fftmr;
 #endif
 
 #if defined FF_UNIX

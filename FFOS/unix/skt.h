@@ -30,7 +30,7 @@ static FFINL int ffskt_init(int flags) {
 	return 0;
 }
 
-#if defined FF_APPLE || defined FF_OLDLIBC
+#if !((defined FF_LINUX_MAINLINE || defined FF_BSD) && !defined FF_OLDLIBC)
 FF_EXTN ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrlen, int flags);
 #else
 /** Accept a connection on a socket.

@@ -26,6 +26,7 @@ Use SEEK_*
 Return -1 on error. */
 #define fffile_seek  lseek64
 
+#ifdef FF_LINUX_MAINLINE
 static FFINL int fffile_readahead(fffd fd, size_t size)
 {
 	int er = posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
@@ -35,6 +36,7 @@ static FFINL int fffile_readahead(fffd fd, size_t size)
 	}
 	return 0;
 }
+#endif
 
 /** Return last-write time from fileinfo. */
 static FFINL fftime fffile_infomtime(const fffileinfo *fi)

@@ -84,19 +84,6 @@ void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop)
 }
 
 
-#if defined FF_APPLE || defined FF_OLDLIBC
-ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
-{
-	ffskt sk = accept(listenSk, a, addrSize);
-	if ((flags & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
-		ffskt_close(sk);
-		return FF_BADSKT;
-	}
-	return sk;
-}
-#endif
-
-
 size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len)
 {
 	size_t i;

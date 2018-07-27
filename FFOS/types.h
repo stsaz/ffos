@@ -26,6 +26,11 @@ Copyright (c) 2013 Simon Zolin
 #if defined __linux__
 	#define FF_UNIX
 	#define FF_LINUX
+	#ifdef ANDROID
+		#define FF_ANDROID
+	#else
+		#define FF_LINUX_MAINLINE
+	#endif
 	#include <FFOS/linux/types.h>
 	#include <FFOS/unix/types.h>
 

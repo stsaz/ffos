@@ -19,6 +19,7 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/eventfd.h>
 
 
+#ifdef FF_LINUX_MAINLINE
 int fffile_settime(fffd fd, const fftime *last_write)
 {
 	struct timespec ts[2];
@@ -26,6 +27,7 @@ int fffile_settime(fffd fd, const fftime *last_write)
 	fftime_to_timespec(last_write, &ts[1]);
 	return futimens(fd, ts);
 }
+#endif
 
 int fffile_settimefn(const char *fn, const fftime *last_write)
 {
@@ -36,6 +38,7 @@ int fffile_settimefn(const char *fn, const fftime *last_write)
 }
 
 
+#ifdef FF_LINUX_MAINLINE
 int fferr_str(int code, char *dst, size_t dst_cap) {
 	char *dst2;
 	if (0 == dst_cap)
@@ -49,6 +52,13 @@ int fferr_str(int code, char *dst, size_t dst_cap) {
 	}
 	return 0;
 }
+#else
+int fferr_str(int code, char *dst, size_t dst_cap)
+{
+	FF_ASSERT(0);
+	return 0;
+}
+#endif
 
 
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
@@ -76,6 +86,7 @@ void fftime_local(fftime_zone *tz)
 }
 
 
+#if defined FF_LINUX_MAINLINE
 int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
 {
 	struct itimerspec its;
@@ -197,6 +208,13 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	t->fd = sigfd;
 	return 0;
 }
+#else
+ffskt ffskt_create(uint domain, uint type, uint protocol)
+{
+	FF_ASSERT(0);
+	return socket(domain, type, protocol);
+}
+#endif
 
 
 static void _ffev_handler(void *udata)

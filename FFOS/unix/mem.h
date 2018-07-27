@@ -19,6 +19,15 @@ Copyright (c) 2013 Simon Zolin
 /** Deallocate heap memory region. */
 #define _ffmem_free  free
 
+#ifdef FF_ANDROID
+static FFINL void* _ffmem_align(size_t size, size_t align)
+{
+	FF_ASSERT(0);
+	(void)size;
+	(void)align;
+	return NULL;
+}
+#else
 /** Allocate aligned memory. */
 static FFINL void* _ffmem_align(size_t size, size_t align)
 {
@@ -30,6 +39,7 @@ static FFINL void* _ffmem_align(size_t size, size_t align)
 	}
 	return buf;
 }
+#endif
 
 /** Deallocate aligned memory. */
 #define _ffmem_alignfree  free

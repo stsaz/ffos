@@ -362,6 +362,19 @@ int ffthd_perf(struct ffps_perf *p, uint flags)
 #endif
 
 
+#if !((defined FF_LINUX_MAINLINE || defined FF_BSD) && !defined FF_OLDLIBC)
+ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
+{
+	ffskt sk = accept(listenSk, a, addrSize);
+	if ((flags & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
+		ffskt_close(sk);
+		return FF_BADSKT;
+	}
+	return sk;
+}
+#endif
+
+
 int ffaio_recv(ffaio_task *t, ffaio_handler handler, void *d, size_t cap)
 {
 	ssize_t r;
