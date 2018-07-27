@@ -89,7 +89,7 @@ typedef int ffbool;
 	#define FF_EXTN extern
 #endif
 
-#ifdef _DEBUG
+#if defined _DEBUG || defined FF_ASSERT_ENABLED
 	#include <assert.h>
 	#define FF_ASSERT(expr)  assert(expr)
 #else

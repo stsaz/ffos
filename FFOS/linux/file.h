@@ -29,6 +29,7 @@ Return -1 on error. */
 #ifdef FF_LINUX_MAINLINE
 static FFINL int fffile_readahead(fffd fd, size_t size)
 {
+	(void)size;
 	int er = posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (er != 0) {
 		errno = er;
