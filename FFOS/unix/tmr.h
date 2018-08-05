@@ -11,6 +11,8 @@ static FFINL int ffclk_get(fftime *result) {
 	int r = clock_gettime(CLOCK_MONOTONIC, &ts);
 	if (r == 0)
 		fftime_fromtimespec(result, &ts);
+	else
+		fftime_null(result);
 	return r;
 }
 

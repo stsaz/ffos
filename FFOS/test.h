@@ -14,6 +14,8 @@ Copyright (c) 2013 Simon Zolin
 enum FFTEST_F {
 	FFTEST_TRACE = 1
 	, FFTEST_FATALERR = 2
+	,
+	FFTEST_STOPERR = 4, //stop execution on first error
 };
 
 typedef struct fftest {

@@ -4,6 +4,7 @@ Copyright (c) 2014 Simon Zolin
 
 #include <FFOS/test.h>
 #include <FFOS/process.h>
+#include <assert.h>
 
 fftest fftestobj;
 
@@ -19,6 +20,9 @@ int fftest_chk(int res, const char *file, uint line, const char *func, const cha
 		printf("%s\tat %s:%u in %s():\t%s\t(%d) %s\n"
 			, (res == 0) ? "FAIL" : "OK", file, (int)line, func, sexp, (int)fferr_last(), msg);
 	}
+
+	if (res == 0 && (fftestobj.flags & FFTEST_STOPERR))
+		assert(0);
 
 	if (res == 0 && (fftestobj.flags & FFTEST_FATALERR))
 		ffps_exit(1);
