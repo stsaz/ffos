@@ -882,7 +882,10 @@ ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffai
 
 	if (ft->kev.pending) {
 		ft->kev.pending = 0;
-		return ffio_result(&ft->kev.ovl);
+		int r = ffio_result(&ft->kev.ovl);
+		if (r < 0 && fferr_last() == ERROR_HANDLE_EOF)
+			return 0;
+		return r;
 	}
 
 	ffmem_tzero(&ft->kev.ovl);
