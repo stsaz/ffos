@@ -656,15 +656,11 @@ static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
 
 ffps ffps_exec(const char *filename, const char **argv, const char **env)
 {
-	BOOL b;
-	PROCESS_INFORMATION info;
-	STARTUPINFOW si = { 0 };
+	ffps ps = FFPS_INV;
 	ffsyschar wfn_s[255], *wfn, *args
 		, *s;
 	ffbool has_space;
 	size_t cap = 0, i;
-
-	si.cb = sizeof(STARTUPINFOW);
 
 	cap = FFCNT(wfn_s);
 	if (NULL == (wfn = ffs_utow(wfn_s, &cap, filename, -1)))
@@ -703,28 +699,56 @@ ffps ffps_exec(const char *filename, const char **argv, const char **env)
 	}
 	*s = '\0';
 
-	b = CreateProcess(wfn, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
-		, NULL /*startup dir*/, &si, &info);
+	ps = ffps_exec_cmdln_q(wfn, args);
 
 	if (wfn != wfn_s)
 		ffmem_free(wfn);
 	ffmem_free(args);
-	if (!b)
-		return FF_BADFD;
+	return ps;
+}
 
+ffps ffps_exec_cmdln_q(const ffsyschar *filename, ffsyschar *cmdln)
+{
+	PROCESS_INFORMATION info;
+	STARTUPINFOW si = {};
+	si.cb = sizeof(STARTUPINFOW);
+	BOOL b = CreateProcess(filename, cmdln, NULL, NULL, /*inherit handles*/ 0, 0, /*env*/ NULL
+		, /*startup dir*/ NULL, &si, &info);
+	if (!b)
+		return FFPS_INV;
 	CloseHandle(info.hThread);
 	return info.hProcess;
+}
+
+ffps ffps_exec_cmdln(const char *filename, const char *cmdln)
+{
+	ffps ps = FFPS_INV;
+	ffsyschar wfn_s[255], *wfn = NULL, wcmdln_s[255], *wcmdln = NULL;
+	size_t cap;
+
+	cap = FFCNT(wfn_s);
+	if (NULL == (wfn = ffs_utow(wfn_s, &cap, filename, -1)))
+		goto end;
+	cap = FFCNT(wcmdln_s);
+	if (NULL == (wcmdln = ffs_utow(wcmdln_s, &cap, cmdln, -1)))
+		goto end;
+
+	ps = ffps_exec_cmdln_q(wfn, wcmdln);
+
+end:
+	if (wfn != wfn_s)
+		ffmem_free(wfn);
+	if (wcmdln != wcmdln_s)
+		ffmem_free(wcmdln);
+	return ps;
 }
 
 /* Create a copy of the current process with @arg appended to process' command line. */
 ffps ffps_createself_bg(const char *arg)
 {
 	fffd ps = FF_BADFD;
-	BOOL b;
 	size_t cap, arg_len = strlen(arg), psargs_len;
 	ffsyschar *args, *p, *ps_args, fn[FF_MAXPATH];
-	PROCESS_INFORMATION info;
-	STARTUPINFO si = {0};
 
 	if (0 == GetModuleFileName(NULL, fn, FFCNT(fn)))
 		return FF_BADFD;
@@ -741,12 +765,7 @@ ffps ffps_createself_bg(const char *arg)
 	p += ff_utow(p, args + cap - p, arg, arg_len, 0);
 	*p++ = '\0';
 
-	b = CreateProcess(fn, args, NULL, NULL, 0 /*inherit handles*/, 0, NULL /*env*/
-		, NULL /*startup dir*/, &si, &info);
-	if (b) {
-		CloseHandle(info.hThread);
-		ps = info.hProcess;
-	}
+	ps = ffps_exec_cmdln_q(fn, args);
 
 	ffmem_free(args);
 	return ps;

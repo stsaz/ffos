@@ -16,6 +16,11 @@ argv: quotes in arguments are not escaped.
 env: not implemented. */
 FF_EXTN ffps ffps_exec(const char *filename, const char **argv, const char **env);
 
+/** Start a new process with command line.
+Return FFPS_INV on error. */
+FF_EXTN ffps ffps_exec_cmdln(const char *filename, const char *cmdln);
+FF_EXTN ffps ffps_exec_cmdln_q(const ffsyschar *filename, ffsyschar *cmdln);
+
 #define ffps_id  GetProcessId
 
 /** Send signal to a process.  Works only if the other process has called ffsig_ctl(). */
