@@ -42,7 +42,7 @@ int test_types() {
 	x(16 == ff_align_power2(16));
 	x(16 == ff_align_power2(15));
 	x(2 == ff_align_power2(2));
-	x(1 == ff_align_power2(1));
+	x(2 == ff_align_power2(1));
 
 	x(ffhton32(0x12345678) == 0x78563412);
 

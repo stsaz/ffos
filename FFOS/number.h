@@ -113,11 +113,12 @@ do { \
 #define ff_align_ceil(n, align)  ff_align_floor((n) + (align) - 1, align)
 
 /** Align number to the next power of 2.
-For n=1 value 1 is returned. */
+Note: values n=0 and n>2^63 aren't supported. */
 static FFINL uint64 ff_align_power2(uint64 n)
 {
-	uint one = ffbit_find64((n - 1) << 1);
-	return FF_BIT64(64 - one);
+	uint one = ffbit_find64((n - 1) | 1);
+	FF_ASSERT(one > 1);
+	return FF_BIT64(64 - one + 1);
 }
 
 
