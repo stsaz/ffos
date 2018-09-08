@@ -43,7 +43,8 @@ typedef struct fflock {
 
 FF_EXTN uint _ffsc_ncpu;
 
-/** Store the number of active CPUs for spinlock. */
+/** Store the number of active CPUs for spinlock.
+Must be called once per module where fflock is used for better performance on a single CPU system. */
 FF_EXTN void fflk_setup(void);
 
 /** Initialize fflock object. */

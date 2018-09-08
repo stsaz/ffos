@@ -150,6 +150,7 @@ FF_EXTN int fffile_hardlink(const char *target, const char *linkname);
 
 static FFINL int fffile_symlink(const char *target, const char *linkname)
 {
+	(void)target; (void)linkname;
 	fferr_set(ENOSYS);
 	return -1;
 }
@@ -213,6 +214,7 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 /// return FF_BADFD on error
 static FFINL fffd ffpipe_create_namedq(const ffsyschar *name, uint flags)
 {
+	(void)flags;
 	return CreateNamedPipe(name
 		, PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED
 		, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT

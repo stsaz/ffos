@@ -54,7 +54,8 @@ C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS := -pipe -std=c99 -fno-strict-aliasing -Wno-deprecated-declarations
+CFLAGS := -pipe -std=c99 -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
+CXXFLAGS := -pipe -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
 LDFLAGS := -pipe
 AR := $(CPREFIX)ar
 OBJCOPY := $(CPREFIX)objcopy
@@ -106,7 +107,7 @@ WINDRES := $(CPREFIX)windres
 
 else #OS
 
-CFLAGS += -fpic -fvisibility=hidden
+CFLAGS += -fpic
 LDFLAGS += -fpic
 LD_LPTHREAD := -pthread
 LD_LMATH := -lm

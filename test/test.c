@@ -258,7 +258,7 @@ int main(int argc, const char **argv)
 	size_t i, iarg;
 	ffmem_init();
 
-	fftestobj.flags |= FFTEST_FATALERR;
+	fftestobj.flags |= FFTEST_STOPERR;
 
 	if (argc == 1) {
 		printf("Supported tests: all ");

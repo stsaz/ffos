@@ -26,10 +26,12 @@ static FFINL fffd ffmap_create(fffd fd, uint64 maxSize, enum FFMAP_PAGEACCESS ac
 }
 
 static FFINL void *ffmap_open(fffd hfilemap, uint64 offs, size_t size, int prot, int flags) {
+	(void)flags;
 	return MapViewOfFile(hfilemap, prot, FF_HI32(offs), FF_LO32(offs), size);
 }
 
 static FFINL int ffmap_unmap(void *p, size_t sz) {
+	(void)sz;
 	return 0 == UnmapViewOfFile(p);
 }
 

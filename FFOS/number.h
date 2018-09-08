@@ -62,12 +62,16 @@ static FFINL size_t ffmin(size_t a, size_t b)
 #define ffmax(i0, i1) \
 	(((i0) < (i1)) ? (i1) : (i0))
 
+/** Set the minimum value.
+The same as: dst = min(dst, src) */
 #define ffint_setmin(dst, src) \
 do { \
 	if ((dst) > (src)) \
 		(dst) = (src); \
 } while (0)
 
+/** Set the maximum value.
+The same as: dst = max(dst, src) */
 #define ffint_setmax(dst, src) \
 do { \
 	if ((dst) < (src)) \
