@@ -123,7 +123,7 @@ static FFINL fftime fftime_from_winftime(const fftime_winftime *ft)
 
 static FFINL void fftime_to_winftime(const fftime *t, fftime_winftime *ft)
 {
-	uint64 d = fftime_sec(t) * 1000000 * 10 + fftime_usec(t) * 10 + FFTIME_100NS;
+	uint64 d = fftime_sec(t) * 1000000 * 10 + fftime_nsec(t) / 100 + FFTIME_100NS;
 	ft->lo = (uint)d;
 	ft->hi = (uint)(d >> 32);
 }
