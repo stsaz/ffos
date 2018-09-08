@@ -12,15 +12,13 @@ static FFINL uint ffint_addcarry32(uint a, uint b)
 
 static FFINL size_t ffatom_fetchadd(ffatomic *a, size_t add)
 {
-	FF_ASSERT(0);
-	return 0;
+	return __sync_fetch_and_add((volatile size_t*)&a->val, add);
 }
 
 static FFINL int ffatom_cmpset(ffatomic *a, size_t old, size_t newval)
 {
-	FF_ASSERT(0);
-	return 0;
+	return __sync_bool_compare_and_swap((volatile size_t*)&a->val, old, newval);
 }
 
-#define ffatom_fence_rel()  FF_ASSERT(0)
-#define ffcpu_pause()  FF_ASSERT(0)
+#define ffatom_fence_rel()  __sync_synchronize()
+#define ffcpu_pause()
