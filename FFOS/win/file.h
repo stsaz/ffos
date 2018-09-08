@@ -154,9 +154,7 @@ static FFINL int fffile_symlink(const char *target, const char *linkname)
 	return -1;
 }
 
-static FFINL int fffile_rmq(const ffsyschar *name) {
-	return 0 == DeleteFile(name);
-}
+FF_EXTN int fffile_rmq(const ffsyschar *name);
 
 /**
 Note: fails with error "Access is denied" if file mapping is opened. */

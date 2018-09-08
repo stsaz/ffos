@@ -210,6 +210,24 @@ fail:
 	return r;
 }
 
+int fffile_rmq(const ffsyschar *name)
+{
+	if (!!DeleteFile(name))
+		return 0;
+
+	if (fferr_last() == EACCES) {
+		int attr = GetFileAttributes(name);
+		if (attr == -1
+			|| !(attr & FFWIN_FILE_READONLY)
+			|| !!fffile_attrsetfnq(name, attr & ~FFWIN_FILE_READONLY))
+			return 1;
+		if (!!DeleteFile(name))
+			return 0;
+	}
+
+	return 1;
+}
+
 int fffile_rm(const char *name)
 {
 	ffsyschar ws[FF_MAXFN], *w;

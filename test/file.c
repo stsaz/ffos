@@ -202,6 +202,27 @@ static void file_link(void)
 	fffile_rm(hlink);
 }
 
+static void file_ro(const char *fn)
+{
+#if !defined FF_WIN
+	return;
+#endif
+
+	fffd f;
+	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_WRONLY)));
+	fffile_close(f);
+	fffileinfo i;
+	x(0 == fffile_infofn(fn, &i));
+	uint attr = fffile_infoattr(&i);
+	x(!(attr & FFWIN_FILE_READONLY));
+	x(0 == fffile_attrsetfn(fn, attr | FFWIN_FILE_READONLY));
+	x(0 == fffile_infofn(fn, &i));
+	attr = fffile_infoattr(&i);
+	x(!!(attr & FFWIN_FILE_READONLY));
+	x(0 == fffile_rm(fn));
+	x(FF_BADFD == fffile_open(fn, O_RDONLY));
+}
+
 int test_file()
 {
 	const char *tmpdir = TMP_PATH;
@@ -236,7 +257,7 @@ int test_file()
 	test_std();
 	test_pipe();
 	file_link();
-
+	file_ro(fn);
 	return 0;
 }
 
