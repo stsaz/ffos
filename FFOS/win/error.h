@@ -15,8 +15,11 @@ static FFINL int fferr_str(int code, char *dst, size_t dst_cap)
 {
 	ffsyschar w[255];
 	fferr_strq(code, w, FFCNT(w));
-	if (0 == ff_wtou(dst, dst_cap, w, -1, 0))
+	if (0 == ff_wtou(dst, dst_cap, w, -1, 0)) {
+		if (dst_cap != 0)
+			dst[0] = '\0';
 		return -1;
+	}
 	return 0;
 }
 

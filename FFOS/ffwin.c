@@ -507,6 +507,11 @@ int fferr_strq(int code, ffsyschar *dst, size_t dst_cap)
 	int n = FormatMessage(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK
 		, 0, code, 0, (LPWSTR)dst, FF_TOINT(dst_cap), 0);
+	if (n == 0) {
+		if (dst_cap != 0)
+			dst[0] = '\0';
+		return -1;
+	}
 	if (n > 2 && dst[n - 2] == '.' && dst[n - 1] == ' ') {
 		n -= FFSLEN(". ");
 		dst[n] = L'\0';
