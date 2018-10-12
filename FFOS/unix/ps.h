@@ -14,10 +14,6 @@ Return child PID.  Return 0 in the child process.
 Return -1 on error. */
 #define ffps_fork  fork
 
-/** Create a new process.
-Return FFPS_INV on error. */
-FF_EXTN ffps ffps_exec(const char *filename, const char **argv, const char **env);
-
 /** Get process ID by process handle. */
 #define ffps_id(h)  ((uint)(h))
 

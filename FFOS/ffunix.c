@@ -236,15 +236,25 @@ void ffthd_sleep(uint ms)
 	}
 }
 
-ffps ffps_exec(const char *filename, const char **argv, const char **env)
+ffps ffps_exec2(const char *filename, ffps_execinfo *info)
 {
 	pid_t p = vfork();
-	if (p == 0) {
-		execve(filename, (char**)argv, (char**)env);
-		ffps_exit(255);
-		return 0;
-	}
-	return p;
+	if (p != 0)
+		return p;
+
+	struct sigaction sa = {};
+	sa.sa_handler = SIG_DFL;
+	sigaction(SIGPIPE, &sa, NULL);
+
+	if (info->in != FF_BADFD)
+		dup2(info->in, ffstdin);
+	if (info->out != FF_BADFD)
+		dup2(info->out, ffstdout);
+	if (info->err != FF_BADFD)
+		dup2(info->err, ffstderr);
+	execve(filename, (char**)info->argv, (char**)info->env);
+	ffps_exit(255);
+	return 0;
 }
 
 int ffps_wait(ffps h, uint timeout, int *exit_code)

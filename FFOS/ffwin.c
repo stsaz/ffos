@@ -23,6 +23,9 @@ Copyright (c) 2013 Simon Zolin
 
 HANDLE _ffheap;
 
+static ffps ffps_exec_cmdln_q2(const ffsyschar *filename, ffsyschar *cmdln, ffps_execinfo *i);
+
+
 /* [allocated-start] ... [pointer to allocated-start] [aligned] ... [allocated-end] */
 void* _ffmem_align(size_t size, size_t align)
 {
@@ -735,39 +738,32 @@ static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
 	return dst;
 }
 
-ffps ffps_exec(const char *filename, const char **argv, const char **env)
+/** Convert argv[] to command line string.
+[ "filename", "arg space", "arg", NULL ] -> "filename \"arg space\" arg"
+argv:
+ Must not contain double quotes.
+ Strings containing spaces are enclosed in double quotes.
+Return a newly allocated string. */
+static ffsyschar* argv_to_cmdln(const char **argv)
 {
-	ffps ps = FFPS_INV;
-	ffsyschar wfn_s[255], *wfn, *args
-		, *s;
+	ffsyschar *args, *s;
 	ffbool has_space;
-	size_t cap = 0, i;
+	size_t cap, i;
 
-	cap = FFCNT(wfn_s);
-	if (NULL == (wfn = ffs_utow(wfn_s, &cap, filename, -1)))
-		return FF_BADFD;
-
-	cap += FFSLEN("\"\" ");
+	cap = 0;
 	for (i = 0;  argv[i] != NULL;  i++) {
+		if (NULL != strchr(argv[i], '"')) {
+			fferr_set(EINVAL);
+			return NULL;
+		}
 		cap += ff_utow(NULL, 0, argv[i], -1, 0) + FFSLEN("\"\" ");
 	}
 
 	args = ffmem_alloc((cap + 1) * sizeof(ffsyschar));
-	if (args == NULL) {
-		if (wfn != wfn_s)
-			ffmem_free(wfn);
-		return FF_BADFD;
-	}
+	if (args == NULL)
+		return NULL;
+
 	s = args;
-
-	has_space = (NULL != strchr(filename, ' '));
-	if (has_space)
-		*s++ = '"';
-	s = scopyz(s, wfn);
-	if (has_space)
-		*s++ = '"';
-	*s++ = ' ';
-
 	for (i = 0;  argv[i] != NULL;  i++) {
 		has_space = (NULL != strchr(argv[i], ' '));
 		if (has_space)
@@ -778,27 +774,84 @@ ffps ffps_exec(const char *filename, const char **argv, const char **env)
 			*s++ = '"';
 		*s++ = ' ';
 	}
+	if (i != 0)
+		s--;
 	*s = '\0';
 
-	ps = ffps_exec_cmdln_q(wfn, args);
+	return args;
+}
 
+ffps ffps_exec2(const char *filename, ffps_execinfo *info)
+{
+	ffsyschar wfn_s[FF_MAXFN], *wfn, *args;
+	ffps ps = FFPS_INV;
+	size_t cap;
+
+	cap = FFCNT(wfn_s);
+	if (NULL == (wfn = ffs_utow(wfn_s, &cap, filename, -1)))
+		return NULL;
+
+	if (NULL == (args = argv_to_cmdln(info->argv)))
+		goto end;
+
+	ps = ffps_exec_cmdln_q2(wfn, args, info);
+
+end:
 	if (wfn != wfn_s)
 		ffmem_free(wfn);
 	ffmem_free(args);
 	return ps;
 }
 
-ffps ffps_exec_cmdln_q(const ffsyschar *filename, ffsyschar *cmdln)
+static ffps ffps_exec_cmdln_q2(const ffsyschar *filename, ffsyschar *cmdln, ffps_execinfo *i)
 {
+	BOOL inherit_handles = 0;
 	PROCESS_INFORMATION info;
-	STARTUPINFOW si = {};
-	si.cb = sizeof(STARTUPINFOW);
-	BOOL b = CreateProcess(filename, cmdln, NULL, NULL, /*inherit handles*/ 0, 0, /*env*/ NULL
+	STARTUPINFO si = {};
+	si.cb = sizeof(STARTUPINFO);
+
+	if (i->in != FF_BADFD) {
+		si.hStdInput = i->in;
+		SetHandleInformation(i->in, HANDLE_FLAG_INHERIT, 1);
+	}
+	if (i->out != FF_BADFD) {
+		si.hStdOutput = i->out;
+		SetHandleInformation(i->out, HANDLE_FLAG_INHERIT, 1);
+	}
+	if (i->err != FF_BADFD) {
+		si.hStdError = i->err;
+		SetHandleInformation(i->err, HANDLE_FLAG_INHERIT, 1);
+	}
+	if (i->in != FF_BADFD || i->out != FF_BADFD || i->err != FF_BADFD) {
+		si.dwFlags |= STARTF_USESTDHANDLES;
+		inherit_handles = 1;
+	}
+
+	uint f = CREATE_UNICODE_ENVIRONMENT;
+	BOOL b = CreateProcess(filename, cmdln, NULL, NULL, inherit_handles, f, /*env*/ NULL
 		, /*startup dir*/ NULL, &si, &info);
+
+	if (i->in != FF_BADFD) {
+		SetHandleInformation(i->in, HANDLE_FLAG_INHERIT, 0);
+	}
+	if (i->out != FF_BADFD) {
+		SetHandleInformation(i->out, HANDLE_FLAG_INHERIT, 0);
+	}
+	if (i->err != FF_BADFD) {
+		SetHandleInformation(i->err, HANDLE_FLAG_INHERIT, 0);
+	}
+
 	if (!b)
 		return FFPS_INV;
 	CloseHandle(info.hThread);
 	return info.hProcess;
+}
+
+ffps ffps_exec_cmdln_q(const ffsyschar *filename, ffsyschar *cmdln)
+{
+	ffps_execinfo info = {};
+	info.in = info.out = info.err = FF_BADFD;
+	return ffps_exec_cmdln_q2(filename, cmdln, &info);
 }
 
 ffps ffps_exec_cmdln(const char *filename, const char *cmdln)

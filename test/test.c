@@ -52,29 +52,45 @@ static int test_ps(void)
 		(void)ffps_kill(ffps_curhdl());
 	}
 
+	uint i = 0;
 #ifdef FF_UNIX
-	args[0] = "/bin/echo";
-	args[1] = "good";
-	args[2] = "day";
-	args[3] = "";
-	args[4] = NULL;
-	env[0] = NULL;
+	args[i++] = "/bin/echo";
 
 #else
-	args[0] = "c:\\windows\\system32\\cmd.exe";
-	args[1] = "/c";
-	args[2] = "echo";
-	args[3] = "very good";
-	args[4] = "day";
-	args[5] = NULL;
-	env[0] = NULL;
+	args[i++] = "c:\\windows\\system32\\cmd.exe";
+	args[i++] = "/c";
+	args[i++] = "echo";
 #endif
+	args[i++] = "very good";
+	args[i++] = "day";
+	args[i++] = NULL;
+	env[0] = NULL;
 
-	h = ffps_exec(args[0], args, env);
+	fffd pr, pw;
+	x(0 == ffpipe_create(&pr, &pw));
+	char buf[32];
+	ffps_execinfo info;
+	info.argv = args;
+	info.env = env;
+	info.in = FF_BADFD;
+	info.out = pw;
+	info.err = pw;
+	h = ffps_exec2(args[0], &info);
 	x(h != FFPS_INV);
 	printf("\ncreated process: %d\n", (int)ffps_id(h));
 	x(0 == ffps_wait(h, -1, &cod));
 	printf("process exited with code %d\n", (int)cod);
+#ifdef FF_UNIX
+	x(14 == ffpipe_read(pr, buf, sizeof(buf)));
+	buf[14] = '\0';
+	x(!strcmp(buf, "very good day\n"));
+#else
+	x(17 == ffpipe_read(pr, buf, sizeof(buf)));
+	buf[17] = '\0';
+	x(!strcmp(buf, "\"very good\" day\r\n"));
+#endif
+	ffpipe_close(pr);
+	ffpipe_close(pw);
 
 
 #ifdef FF_UNIX

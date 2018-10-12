@@ -31,6 +31,32 @@ FF_EXTN char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src);
 #include <FFOS/win/ps.h>
 #endif
 
+typedef struct ffps_execinfo {
+	/** List of process arguments: ["process", "arg1", "arg2", NULL]
+	 Windows: double-quotes in arguments are not escaped. */
+	const char **argv;
+
+	/** List of environment variables.
+	 Windows: not implemented. */
+	const char **env;
+
+	/** Standard file descriptors. */
+	fffd in, out, err;
+} ffps_execinfo;
+
+/** Create a new process.
+Return FFPS_INV on error. */
+FF_EXTN ffps ffps_exec2(const char *filename, ffps_execinfo *info);
+
+static inline ffps ffps_exec(const char *filename, const char **argv, const char **env)
+{
+	ffps_execinfo info = {};
+	info.argv = argv;
+	info.env = env;
+	info.in = info.out = info.err = FF_BADFD;
+	return ffps_exec2(filename, &info);
+}
+
 /** Get filename of the current process. */
 FF_EXTN const char* ffps_filename(char *name, size_t cap, const char *argv0);
 
