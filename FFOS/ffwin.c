@@ -112,7 +112,7 @@ fffd fffile_open(const char *filename, int flags)
 	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
 		return FF_BADFD;
 
-	f = fffile_openq(ws, flags);
+	f = fffile_openq(w, flags);
 	if (w != ws)
 		ffmem_free(w);
 	return f;
@@ -164,7 +164,7 @@ int fffile_attrsetfn(const char *fn, uint attr)
 	if (NULL == (w = ffs_utow(ws, &n, fn, -1)))
 		return -1;
 
-	r = fffile_attrsetfnq(ws, attr);
+	r = fffile_attrsetfnq(w, attr);
 	if (w != ws)
 		ffmem_free(w);
 	return r;
@@ -237,7 +237,7 @@ int fffile_rm(const char *name)
 
 	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return -1;
-	r = fffile_rmq(ws);
+	r = fffile_rmq(w);
 	if (w != ws)
 		ffmem_free(w);
 	return r;
@@ -394,7 +394,7 @@ fffd ffpipe_create_named(const char *name, uint flags)
 	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return FF_BADFD;
 
-	f = ffpipe_create_namedq(ws, flags);
+	f = ffpipe_create_namedq(w, flags);
 	if (w != ws)
 		ffmem_free(w);
 	return f;
@@ -896,7 +896,7 @@ ffdl ffdl_open(const char *filename, int flags)
 	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
 		return FF_BADFD;
 
-	f = ffdl_openq(ws, flags);
+	f = ffdl_openq(w, flags);
 	if (w != ws)
 		ffmem_free(w);
 	return f;
