@@ -206,12 +206,7 @@ FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 // UNNAMED/NAMED PIPES
 
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
-	SECURITY_ATTRIBUTES sa = {
-		sizeof(SECURITY_ATTRIBUTES),
-		NULL,
-		1
-	};
-	return 0 == CreatePipe(rd, wr, &sa, 0);
+	return 0 == CreatePipe(rd, wr, NULL, 0);
 }
 
 FF_EXTN int ffpipe_create2(fffd *rd, fffd *wr, uint flags);
