@@ -202,7 +202,8 @@ FF_EXTN fffd ffpipe_connect(const char *name);
 /** Close a client pipe fd returned by ffpipe_connect(). */
 #define ffpipe_client_close(fd)  close(fd)
 
-#define ffpipe_read(fd, buf, cap)  ffskt_recv(fd, buf, cap, 0)
+/** Read from a pipe descriptor. */
+#define ffpipe_read(fd, buf, cap)  fffile_read(fd, buf, cap)
 
 
 #define fffile_openq  fffile_open
