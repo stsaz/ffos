@@ -26,9 +26,6 @@ Return -1 on error. */
 /** Close process handle. */
 #define ffps_close(h)  (0)
 
-/** Wait for the process. */
-FF_EXTN int ffps_wait(ffps h, uint, int *exit_code);
-
 /** Get the current process handle. */
 #define ffps_curhdl  getpid
 

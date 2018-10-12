@@ -38,6 +38,7 @@ FEATURES
 * date and time - `FFOS/time.h`
 * system error codes - `FFOS/error.h`
 * atomic integer functions - `FFOS/atomic.h`
+* semaphores - `FFOS/semaphore.h`
 * CPUID - `FFOS/cpuid.h`
 * random number generator - `FFOS/random.h`
 

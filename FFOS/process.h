@@ -57,6 +57,12 @@ static inline ffps ffps_exec(const char *filename, const char **argv, const char
 	return ffps_exec2(filename, &info);
 }
 
+/** Wait for the process to exit.
+timeout_ms: Maximum time to wait
+ UNIX: only 0 or !0 value is supported.
+Return 0 on success.  Process handle is closed, so don't call ffps_close() in this case. */
+FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
+
 /** Get filename of the current process. */
 FF_EXTN const char* ffps_filename(char *name, size_t cap, const char *argv0);
 

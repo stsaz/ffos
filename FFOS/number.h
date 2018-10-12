@@ -25,6 +25,15 @@ Copyright (c) 2016 Simon Zolin
 	_old; \
 })
 
+/** Swap 2 objects. */
+#define FF_SWAP2(ptr1, ptr2) \
+do { \
+	__typeof__(*(ptr1)) _tmp = *(ptr1); \
+	*(ptr1) = *(ptr2); \
+	*(ptr2) = _tmp; \
+} while (0)
+
+
 #define FF_CMPSET(obj, old, newval) \
 	((*(obj) == (old)) ? *(obj) = (newval), 1 : 0)
 

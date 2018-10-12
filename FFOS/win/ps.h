@@ -27,8 +27,6 @@ static FFINL int ffps_close(ffps h) {
 	return 0 == CloseHandle(h);
 }
 
-FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
-
 #define ffps_curhdl  GetCurrentProcess
 
 #define ffps_curid  GetCurrentProcessId

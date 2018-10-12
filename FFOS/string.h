@@ -7,6 +7,18 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/types.h>
 
+/** Enclose multi-line text into double quotes.
+Double quotes inside FFS_QUOTE() are auto-escaped.
+Note: excessive whitespace is merged.
+
+Example:
+	FFS_QUOTE(
+		select *
+		from table
+	)
+is translated into "select * from table". */
+#define FFS_QUOTE(...)  #__VA_ARGS__
+
 #define FFSLEN(s)  (FFCNT(s) - 1)
 
 #define FFSTR(s)  (char*)(s), FFSLEN(s)

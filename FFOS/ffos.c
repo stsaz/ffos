@@ -355,12 +355,14 @@ const char * fferr_opstr(enum FFERR e)
 
 
 #ifdef FFMEM_DBG
+#include <FFOS/atomic.h>
 static ffatomic _ffmem_total; //accumulated size of (re)allocated memory; NOT the currently allocated memory size
 void* ffmem_alloc(size_t size)
 {
 	void *p = _ffmem_alloc(size);
 	ffatom_add(&_ffmem_total, size);
-	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L [%LK]", p, size, _ffmem_total / 1024);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L [%LK]"
+		, p, size, ffatom_get(&_ffmem_total) / 1024);
 	return p;
 }
 
@@ -368,7 +370,8 @@ void* ffmem_calloc(size_t n, size_t sz)
 {
 	void *p = _ffmem_calloc(n, sz);
 	ffatom_add(&_ffmem_total, n * sz);
-	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L*%L [%LK]", p, n, sz, _ffmem_total / 1024);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L*%L [%LK]"
+		, p, n, sz, ffatom_get(&_ffmem_total) / 1024);
 	return p;
 }
 
@@ -377,7 +380,8 @@ void* ffmem_realloc(void *ptr, size_t newsize)
 	void *p;
 	p = _ffmem_realloc(ptr, newsize);
 	ffatom_add(&_ffmem_total, newsize);
-	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, oldp:%p [%LK]", p, newsize, ptr, _ffmem_total / 1024);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, oldp:%p [%LK]"
+		, p, newsize, ptr, ffatom_get(&_ffmem_total) / 1024);
 	return p;
 }
 
@@ -391,7 +395,8 @@ void* ffmem_align(size_t size, size_t align)
 {
 	void *p = _ffmem_align(size, align);
 	ffatom_add(&_ffmem_total, size);
-	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, align:%L [%LK]", p, size, align, _ffmem_total / 1024);
+	FFDBG_PRINTLN(FFDBG_MEM | 10, "p:%p, size:%L, align:%L [%LK]"
+		, p, size, align, ffatom_get(&_ffmem_total) / 1024);
 	return p;
 }
 
