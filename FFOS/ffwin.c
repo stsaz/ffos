@@ -369,8 +369,23 @@ int ffstd_event(fffd fd, ffstd_ev *ev)
 }
 
 
-fffd ffpipe_create_named(const char *name, uint flags)
+int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
+{
+	if (0 != ffpipe_create(rd, wr))
+		return -1;
 
+	if ((flags & FFO_NONBLOCK)
+		&& (0 != ffpipe_nblock(*rd, 1)
+			|| 0 != ffpipe_nblock(*wr, 1))) {
+		ffpipe_close(*rd);
+		ffpipe_close(*wr);
+		return -1;
+	}
+
+	return 0;
+}
+
+fffd ffpipe_create_named(const char *name, uint flags)
 {
 	fffd f;
 	ffsyschar *w, ws[FF_MAXFN];
@@ -390,6 +405,8 @@ ssize_t ffpipe_read(fffd fd, void *buf, size_t cap)
 	if (0 > (r = fffile_read(fd, buf, cap))) {
 		if (fferr_last() == ERROR_BROKEN_PIPE)
 			return 0;
+		else if (fferr_last() == ERROR_NO_DATA)
+			fferr_set(EAGAIN);
 		return -1;
 	}
 	return r;

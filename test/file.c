@@ -144,16 +144,12 @@ static int test_pipe()
 
 	FFTEST_FUNC;
 
-	x(0 == ffpipe_create(&rd, &wr));
-
-#ifdef FF_UNIX
-	x(0 == fffile_nblock(rd, 1));
-	x(-1 == fffile_read(rd, buf, FFCNT(buf)) && fferr_again(fferr_last()));
-	x(0 == fffile_nblock(rd, 0));
-#endif
+	x(0 == ffpipe_create2(&rd, &wr, FFO_NONBLOCK));
+	x(-1 == ffpipe_read(rd, buf, FFCNT(buf)) && fferr_again(fferr_last()));
+	x(0 == ffpipe_nblock(rd, 0));
 
 	x(FFSLEN(HELLO) == fffile_write(wr, FFSTR(HELLO)));
-	x(FFSLEN(HELLO) == fffile_read(rd, buf, FFCNT(buf)));
+	x(FFSLEN(HELLO) == ffpipe_read(rd, buf, FFCNT(buf)));
 	x(!memcmp(buf, FFSTR(HELLO)));
 
 	x(0 == ffpipe_close(rd));

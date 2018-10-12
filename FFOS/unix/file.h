@@ -33,6 +33,7 @@ enum FFFILE_OPEN {
 	, FFO_APPEND = O_APPEND | O_CREAT
 
 	, FFO_NODOSNAME = 0
+	, FFO_NONBLOCK = O_NONBLOCK
 };
 
 
@@ -165,15 +166,24 @@ FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
 // UNNAMED/NAMED PIPES
 
-/** Create pipe. */
-static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
+/** Create pipe.
+flags: FFO_NONBLOCK */
+static inline int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
+{
 	fffd fd[2];
-	if (0 != pipe(fd))
+	if (0 != pipe2(fd, flags))
 		return -1;
 	*rd = fd[0];
 	*wr = fd[1];
 	return 0;
 }
+
+static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
+	return ffpipe_create2(rd, wr, 0);
+}
+
+/** Set non-blocking mode on a pipe descriptor. */
+#define ffpipe_nblock(fd, nblock)  fffile_nblock(fd, nblock)
 
 /** Create named pipe.
 @name: UNIX: file name to be used for UNIX socket.

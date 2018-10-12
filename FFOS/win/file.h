@@ -28,6 +28,9 @@ enum FFFILE_OPEN {
 	, O_DIRECT = FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED
 	, FFO_NODOSNAME = 0x00000100 //opening a file with 8.3 name will fail
 	, O_TRUNC = 0x00000200
+
+	// for ffpipe_create2()
+	, FFO_NONBLOCK = 0x00000400
 };
 
 FF_EXTN fffd fffile_openq(const ffsyschar *filename, int flags);
@@ -209,6 +212,15 @@ static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 		1
 	};
 	return 0 == CreatePipe(rd, wr, &sa, 0);
+}
+
+FF_EXTN int ffpipe_create2(fffd *rd, fffd *wr, uint flags);
+
+static inline int ffpipe_nblock(fffd p, int nblock)
+{
+	DWORD mode = PIPE_READMODE_BYTE;
+	mode |= (nblock) ? PIPE_NOWAIT : 0;
+	return !SetNamedPipeHandleState(p, &mode, NULL, NULL);
 }
 
 /// return FF_BADFD on error
