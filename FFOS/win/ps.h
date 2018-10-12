@@ -35,6 +35,17 @@ FF_EXTN int ffps_wait(ffps h, uint timeout_ms, int *exit_code);
 
 #define ffps_exit  ExitProcess
 
+/** Reset or disable a system timer.
+flags:
+ ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED: don't put the system to sleep
+ ES_DISPLAY_REQUIRED: don't switch off display
+ ES_CONTINUOUS:
+  0: reset once
+  1 + flags: disable
+  1 + no flags: restore default behaviour
+*/
+#define ffps_systimer(flags)  SetThreadExecutionState(flags)
+
 
 #define FFDL_EXT  "dll"
 
