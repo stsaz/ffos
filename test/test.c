@@ -9,6 +9,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/process.h>
 #include <FFOS/random.h>
 #include <FFOS/atomic.h>
+#include <FFOS/semaphore.h>
 
 #include <test/all.h>
 
@@ -105,6 +106,38 @@ static int test_ps(void)
 			, p.maxrss, p.inblock, p.outblock, p.vctxsw, p.ivctxsw);
 	}
 
+	return 0;
+}
+
+static int test_semaphore(void)
+{
+	const char *name = "/ffos-test.sem";
+	ffsem s, s2;
+
+	ffsem_unlink(name);
+
+	x(FFSEM_INV == ffsem_open(name, 0, 0));
+	x(FFSEM_INV != (s = ffsem_open(name, FFO_CREATENEW, 2)));
+	x(FFSEM_INV != (s2 = ffsem_open(name, 0, 0)));
+	x(0 == ffsem_wait(s, 0));
+	x(0 == ffsem_wait(s2, 0));
+	//cnt=0
+	x(0 != ffsem_wait(s, 0) && fferr_last() == ETIMEDOUT);
+	x(0 != ffsem_wait(s2, 0) && fferr_last() == ETIMEDOUT);
+
+	x(0 == ffsem_post(s));
+	x(0 == ffsem_post(s2));
+	//cnt=2
+
+	x(0 == ffsem_wait(s, 0));
+	x(0 == ffsem_wait(s2, 0));
+	//cnt=0
+	x(0 != ffsem_wait(s, 0));
+	x(0 != ffsem_wait(s2, 0));
+
+	x(0 == ffsem_unlink(name));
+	x(0 == ffsem_close(s));
+	x(0 == ffsem_close(s2));
 	return 0;
 }
 
@@ -246,7 +279,7 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(file), F(fileaio), F(ps), F(dl), F(cpu),
+	, F(skt), F(timer), F(kqu), F(file), F(fileaio), F(ps), F(semaphore), F(dl), F(cpu),
 #ifdef FF_WIN
 	F(wreg),
 #endif

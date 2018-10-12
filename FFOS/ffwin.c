@@ -10,6 +10,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/asyncio.h>
 #include <FFOS/sig.h>
 #include <FFOS/atomic.h>
+#include <FFOS/semaphore.h>
 
 #include <psapi.h>
 #include <time.h>
@@ -409,6 +410,51 @@ ssize_t ffpipe_read(fffd fd, void *buf, size_t cap)
 			fferr_set(EAGAIN);
 		return -1;
 	}
+	return r;
+}
+
+
+ffsem ffsem_openq(const ffsyschar *name, uint flags, uint value)
+{
+	if (flags == FFO_CREATENEW) {
+		ffsem s = OpenSemaphore(SEMAPHORE_ALL_ACCESS, 0, name);
+		if (s != FFSEM_INV) {
+			CloseHandle(s);
+			fferr_set(EEXIST);
+			return FFSEM_INV;
+		}
+		return CreateSemaphore(NULL, value, 0xffff, name);
+
+	} else if (flags == FFO_CREATE)
+		return CreateSemaphore(NULL, value, 0xffff, name);
+
+	else if (flags == 0)
+		return OpenSemaphore(SEMAPHORE_ALL_ACCESS, 0, name);
+
+	fferr_set(EINVAL);
+	return FFSEM_INV;
+}
+
+ffsem ffsem_open(const char *name, uint flags, uint value)
+{
+	ffsyschar *w, ws[FF_MAXFN];
+	size_t n = FFCNT(ws);
+	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+		return FFSEM_INV;
+
+	ffsem s = ffsem_openq(w, flags, value);
+	if (w != ws)
+		ffmem_free(w);
+	return s;
+}
+
+int ffsem_wait(ffsem s, uint time_ms)
+{
+	int r = WaitForSingleObject(s, time_ms);
+	if (r == WAIT_OBJECT_0)
+		r = 0;
+	else if (r == WAIT_TIMEOUT)
+		fferr_set(ETIMEDOUT);
 	return r;
 }
 

@@ -14,6 +14,7 @@ enum {
 enum FFFILE_OPEN {
 	// 0x0000 000f.  mode
 	O_CREAT = OPEN_ALWAYS
+	, FFO_CREATE = OPEN_ALWAYS
 	, FFO_CREATENEW = CREATE_NEW
 	, FFO_APPEND = 0x0e //hack
 

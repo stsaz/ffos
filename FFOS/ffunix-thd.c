@@ -3,8 +3,9 @@ Copyright (c) 2017 Simon Zolin
 */
 
 #include <FFOS/thread.h>
+#include <FFOS/semaphore.h>
+#include <FFOS/error.h>
 
-#include <errno.h>
 #if !defined FF_NOTHR && defined FF_BSD
 #include <pthread_np.h>
 #endif
@@ -106,5 +107,25 @@ ffthd_id ffthd_curid(void)
 	return pthread_getthreadid_np();
 }
 #endif //OS
+
+
+int ffsem_wait(ffsem s, uint time_ms)
+{
+	int r;
+	if (time_ms == 0) {
+		if (0 != (r = sem_trywait(s)) && fferr_again(fferr_last()))
+			fferr_set(ETIMEDOUT);
+
+	} else if (time_ms == (uint)-1) {
+		r = sem_wait(s);
+
+	} else {
+		struct timespec ts;
+		ts.tv_sec = time_ms / 1000;
+		ts.tv_nsec = (time_ms % 1000) * 1000 * 1000;
+		r = sem_timedwait(s, &ts);
+	}
+	return r;
+}
 
 #endif //FF_NOTHR
