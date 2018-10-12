@@ -70,3 +70,6 @@ FF_EXTN int ffthd_perf(struct ffps_perf *inf, uint flags);
 
 /** Get the difference between two perf data objects. */
 FF_EXTN void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop);
+
+/** Add up two perf data objects. */
+FF_EXTN void ffps_perf_add(struct ffps_perf *dst, const struct ffps_perf *src);

@@ -53,6 +53,16 @@ void fftimespec_addms(struct timespec *ts, uint64 ms)
 }
 #endif
 
+static void _fftime_add(fftime *t, const fftime *t2)
+{
+	t->sec += t2->sec;
+	t->nsec += t2->nsec;
+	if (t->nsec >= 1000000000) {
+		t->nsec -= 1000000000;
+		t->sec++;
+	}
+}
+
 static void _fftime_sub(fftime *t, const fftime *t2)
 {
 	t->sec -= t2->sec;
@@ -81,6 +91,20 @@ void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop)
 	stop->outblock -= start->outblock;
 	stop->vctxsw -= start->vctxsw;
 	stop->ivctxsw -= start->ivctxsw;
+}
+
+void ffps_perf_add(struct ffps_perf *dst, const struct ffps_perf *src)
+{
+	_fftime_add(&dst->realtime, &src->realtime);
+	_fftime_add(&dst->cputime, &src->cputime);
+	_fftime_add(&dst->usertime, &src->usertime);
+	_fftime_add(&dst->systime, &src->systime);
+	dst->pagefaults += src->pagefaults;
+	dst->maxrss += src->maxrss;
+	dst->inblock += src->inblock;
+	dst->outblock += src->outblock;
+	dst->vctxsw += src->vctxsw;
+	dst->ivctxsw += src->ivctxsw;
 }
 
 
