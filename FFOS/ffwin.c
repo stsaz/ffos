@@ -1358,8 +1358,10 @@ int ffps_perf(struct ffps_perf *p, uint flags)
 	int rc = 0, r;
 	HANDLE h = GetCurrentProcess();
 
-	if (flags & FFPS_PERF_REALTIME)
-		fftime_now(&p->realtime);
+	if (flags & FFPS_PERF_REALTIME) {
+		ffclk_get(&p->realtime);
+		ffclk_totime(&p->realtime);
+	}
 
 	if (flags & (FFPS_PERF_SEPTIME | FFPS_PERF_CPUTIME)) {
 		FILETIME cre, ex, kern, usr;

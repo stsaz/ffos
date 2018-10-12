@@ -6,6 +6,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
 #include <FFOS/thread.h>
+#include <FFOS/timer.h>
 #include <FFOS/string.h>
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
@@ -313,7 +314,7 @@ static int _ffps_perf(int who, struct ffps_perf *p, uint flags)
 	int rc = 0, r;
 
 	if (flags & FFPS_PERF_REALTIME)
-		fftime_now(&p->realtime);
+		ffclk_get(&p->realtime);
 
 	if (flags & FFPS_PERF_RUSAGE) {
 		struct rusage u;
