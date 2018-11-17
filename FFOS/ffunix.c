@@ -10,6 +10,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/string.h>
 #include <FFOS/process.h>
 #include <FFOS/asyncio.h>
+#include <FFOS/sig.h>
 
 #include <sys/wait.h>
 #if !defined FF_NOTHR && defined FF_BSD
@@ -371,6 +372,64 @@ int ffthd_perf(struct ffps_perf *p, uint flags)
 	return _ffps_perf(RUSAGE_THREAD, p, flags);
 }
 #endif
+
+
+/** User's signal handler. */
+static ffsig_handler _ffsig_userhandler;
+
+/** Called by OS with a signal we subscribed to.
+If user set FFSIG_STACK handler, then for SIGSEGV this function is called on alternative stack.
+Prior to this call the signal handler is set to default (SA_RESETHAND). */
+static void _ffsigfunc(int signo, siginfo_t *info, void *ucontext)
+{
+	struct ffsig_info i = {
+		.sig = signo,
+		.addr = info->si_addr,
+		.flags = info->si_code,
+		.si = info,
+	};
+	_ffsig_userhandler(&i);
+}
+
+int ffsig_subscribe(ffsig_handler handler, const uint *sigs, uint nsigs)
+{
+	if (handler != NULL)
+		_ffsig_userhandler = handler;
+
+	int have_stack_sig = 0;
+	struct sigaction sa = {};
+	sa.sa_sigaction = &_ffsigfunc;
+
+	for (uint i = 0;  i != nsigs;  i++) {
+		if (sigs[i] != FFSIG_STACK)
+			continue;
+
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND | SA_ONSTACK;
+		stack_t stack;
+		stack.ss_sp = ffmem_alloc(SIGSTKSZ);
+		stack.ss_size = SIGSTKSZ;
+		stack.ss_flags = 0;
+		if (stack.ss_sp == NULL)
+			return -1;
+		if (0 != sigaltstack(&stack, NULL))
+			return -1;
+		if (0 != sigaction(SIGSEGV, &sa, NULL))
+			return -1;
+		have_stack_sig = 1;
+		break;
+	}
+
+	sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
+	for (uint i = 0;  i != nsigs;  i++) {
+		if (sigs[i] == FFSIG_STACK
+			|| (sigs[i] == FFSIG_SEGV && have_stack_sig))
+			continue;
+
+		if (0 != sigaction(sigs[i], &sa, NULL))
+			return -1;
+	}
+	return 0;
+}
 
 
 #if !((defined FF_LINUX_MAINLINE || defined FF_BSD) && !defined FF_OLDLIBC)

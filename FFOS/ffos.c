@@ -10,6 +10,8 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/asyncio.h>
 #include <FFOS/atomic.h>
 #include <FFOS/process.h>
+#include <FFOS/sig.h>
+#include <assert.h>
 
 
 int ffdir_rmakeq(ffsyschar *path, size_t off)
@@ -105,6 +107,34 @@ void ffps_perf_add(struct ffps_perf *dst, const struct ffps_perf *src)
 	dst->outblock += src->outblock;
 	dst->vctxsw += src->vctxsw;
 	dst->ivctxsw += src->ivctxsw;
+}
+
+
+void ffsig_raise(uint sig)
+{
+	FFDBG_PRINTLN(0, "%u", sig);
+
+	switch (sig) {
+	case FFSIG_ABORT:
+		assert(0);
+		break;
+
+	case FFSIG_STACK:
+		ffsig_raise(sig);
+		break;
+
+	case FFSIG_SEGV: {
+		void *addr = (void*)0x16;
+		*(int*)addr = -1;
+		break;
+	}
+
+	case FFSIG_FPE: {
+		int i = 0;
+		i = 10 / i;
+		break;
+	}
+	}
 }
 
 
