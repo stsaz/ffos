@@ -3,7 +3,7 @@
 # FFOS = .
 # FFOS_OBJ_DIR = .
 override FFOS_CFLAGS += \
-	-Werror -Wall -Wextra -Wno-unused-parameter \
+	-Wall -Wextra -Wpointer-arith -Wno-unused-parameter \
 	-I$(FFOS)
 
 ifeq ($(LD),clang)

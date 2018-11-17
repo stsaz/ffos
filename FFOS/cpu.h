@@ -33,4 +33,6 @@ enum {
 #else
 	FFINT_SMAX = FFINT_SMAX32,
 #endif
+
+	FFCPU_CACHELINE = 64,
 };

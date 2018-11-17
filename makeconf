@@ -90,12 +90,12 @@ LDFLAGS += -Wl,-gc-sections
 endif
 
 else ifeq ($(OPT),LTO)
-CFLAGS += -O2 -flto -fno-asynchronous-unwind-tables
-LDFLAGS += -O2 -flto -fno-asynchronous-unwind-tables
+CFLAGS += -O2 -flto
+LDFLAGS += -O2 -flto
 
 else ifeq ($(OPT),LTO3)
-CFLAGS += -O3 -flto -fno-asynchronous-unwind-tables
-LDFLAGS += -O3 -flto -fno-asynchronous-unwind-tables
+CFLAGS += -O3 -flto
+LDFLAGS += -O3 -flto
 
 endif #OPT
 

@@ -14,7 +14,7 @@ else
 TEST_BIN := ffostest
 endif
 
-FFOS_CFLAGS := $(CFLAGS) -DFF_FFOS_ONLY
+FFOS_CFLAGS := $(CFLAGS) -DFF_FFOS_ONLY -Werror
 CFLAGS += -Werror -Wall \
 	-I$(FFOS)
 

@@ -24,6 +24,10 @@ Copyright (c) 2013 Simon Zolin
 #define ffmem_tcalloc1(T)  ((T*)ffmem_calloc(1, sizeof(T)))
 #define ffmem_new(T)  ((T*)ffmem_calloc(1, sizeof(T)))
 
+/** Allocate data on stack.
+Leads to unpredictable results when stack limit is reached. */
+#define ffmem_stack(sz)  alloca(sz)
+
 /** Zero the buffer. */
 #define ffmem_zero(p, len)  memset(p, 0, len)
 

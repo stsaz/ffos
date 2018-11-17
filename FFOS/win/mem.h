@@ -20,7 +20,10 @@ static FFINL void *_ffmem_realloc(void *ptr, size_t newSize) {
 	return HeapReAlloc(_ffheap, 0, ptr, newSize);
 }
 
-#define _ffmem_free(ptr)  HeapFree(_ffheap, 0, ptr)
+static inline void _ffmem_free(void *ptr)
+{
+	HeapFree(_ffheap, 0, ptr);
+}
 
 
 FF_EXTN void* _ffmem_align(size_t size, size_t align);

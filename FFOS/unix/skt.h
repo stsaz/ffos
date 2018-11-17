@@ -106,6 +106,7 @@ flags: NI_* */
 
 /** Get error message. */
 static FFINL const char * ffaddr_errstr(int code, char *buf, size_t bufcap) {
+	(void)buf; (void)bufcap;
 	return gai_strerror(code);
 }
 

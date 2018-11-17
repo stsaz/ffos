@@ -111,7 +111,7 @@ enum { FFTIME_100NS = 116444736000000000ULL }; //100-ns intervals within 1600..1
 
 static FFINL fftime fftime_from_winftime(const fftime_winftime *ft)
 {
-	fftime t = {0};
+	fftime t = {};
 	uint64 i = ((uint64)ft->hi << 32) | ft->lo;
 	if (i > FFTIME_100NS) {
 		i -= FFTIME_100NS;
