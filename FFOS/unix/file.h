@@ -169,15 +169,7 @@ FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
 /** Create pipe.
 flags: FFO_NONBLOCK */
-static inline int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
-{
-	fffd fd[2];
-	if (0 != pipe2(fd, flags))
-		return -1;
-	*rd = fd[0];
-	*wr = fd[1];
-	return 0;
-}
+FF_EXTN int ffpipe_create2(fffd *rd, fffd *wr, uint flags);
 
 static FFINL int ffpipe_create(fffd *rd, fffd *wr) {
 	return ffpipe_create2(rd, wr, 0);

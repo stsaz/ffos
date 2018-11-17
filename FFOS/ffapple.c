@@ -12,6 +12,23 @@ Copyright (c) 2017 Simon Zolin
 #include <mach-o/dyld.h>
 
 
+int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
+{
+	if (0 != ffpipe_create(rd, wr))
+		return -1;
+
+	if ((flags & FFO_NONBLOCK)
+		&& (0 != ffpipe_nblock(*rd, 1)
+			|| 0 != ffpipe_nblock(*wr, 1))) {
+		ffpipe_close(*rd);
+		ffpipe_close(*wr);
+		return -1;
+	}
+
+	return 0;
+}
+
+
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {
 	char fn[4096];

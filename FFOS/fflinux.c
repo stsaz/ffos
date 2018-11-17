@@ -38,6 +38,17 @@ int fffile_settimefn(const char *fn, const fftime *last_write)
 }
 
 
+int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
+{
+	fffd fd[2];
+	if (0 != pipe2(fd, flags))
+		return -1;
+	*rd = fd[0];
+	*wr = fd[1];
+	return 0;
+}
+
+
 #ifdef FF_LINUX_MAINLINE
 int fferr_str(int code, char *dst, size_t dst_cap) {
 	char *dst2;

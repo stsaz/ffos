@@ -120,10 +120,15 @@ int ffsem_wait(ffsem s, uint time_ms)
 		r = sem_wait(s);
 
 	} else {
+#ifdef FF_APPLE
+		fferr_set(EINVAL);
+		return -1;
+#else
 		struct timespec ts;
 		ts.tv_sec = time_ms / 1000;
 		ts.tv_nsec = (time_ms % 1000) * 1000 * 1000;
 		r = sem_timedwait(s, &ts);
+#endif
 	}
 	return r;
 }
