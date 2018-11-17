@@ -315,7 +315,7 @@ uint ffatom_waitchange(uint *p, uint curval)
 
 	if (_ffsc_ncpu == 1) {
 		for (;;) {
-			if (curval != (r = FF_READONCE(p)))
+			if (curval != (r = FF_READONCE(*p)))
 				return r;
 
 			ffcpu_yield();
@@ -323,11 +323,11 @@ uint ffatom_waitchange(uint *p, uint curval)
 	}
 
 	for (;;) {
-		if (curval != (r = FF_READONCE(p)))
+		if (curval != (r = FF_READONCE(*p)))
 			return r;
 		for (uint n = 0;  n != FFLK_SPIN;  n++) {
 			ffcpu_pause();
-			if (curval != (r = FF_READONCE(p)))
+			if (curval != (r = FF_READONCE(*p)))
 				return r;
 		}
 		ffcpu_yield();

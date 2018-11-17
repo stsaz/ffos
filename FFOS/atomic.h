@@ -8,10 +8,10 @@ Copyright (c) 2013 Simon Zolin
 
 
 /** Set new value. */
-#define ffatom_set(a, set)  FF_WRITEONCE(&(a)->val, set)
+#define ffatom_set(a, set)  FF_WRITEONCE((a)->val, set)
 
 /** Get value. */
-#define ffatom_get(a)  FF_READONCE(&(a)->val)
+#define ffatom_get(a)  FF_READONCE((a)->val)
 
 /** Add integer and return new value. */
 static FFINL size_t ffatom_addret(ffatomic *a, size_t add)

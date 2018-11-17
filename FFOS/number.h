@@ -37,9 +37,9 @@ do { \
 #define FF_CMPSET(obj, old, newval) \
 	((*(obj) == (old)) ? *(obj) = (newval), 1 : 0)
 
-#define FF_WRITEONCE(a, val)  (*(volatile __typeof__(a))(a) = (val))
+#define FF_WRITEONCE(obj, val)  (*(volatile __typeof__(obj)*)&(obj) = (val))
 
-#define FF_READONCE(a)  (*(volatile __typeof__(a))(a))
+#define FF_READONCE(obj)  (*(volatile __typeof__(obj)*)&(obj))
 
 /** Get the number of elements in array. */
 #define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))

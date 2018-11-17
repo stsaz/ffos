@@ -1161,7 +1161,7 @@ static int __stdcall _fftmr_thd(void *param)
 
 			// execute the command and set the result
 			ffatom_fence_acq();
-			uint cmd = FF_READONCE(&tmr->ctl);
+			uint cmd = FF_READONCE(tmr->ctl);
 			FFDBG_PRINTLN(10, "cmd: %xu", cmd);
 
 			switch (cmd) {
@@ -1189,7 +1189,7 @@ static int __stdcall _fftmr_thd(void *param)
 				r = 0;
 			}
 
-			FF_WRITEONCE(&tmr->ctl, r);
+			FF_WRITEONCE(tmr->ctl, r);
 
 			if (cmd == TMR_EXIT)
 				break;
@@ -1206,7 +1206,7 @@ static int __stdcall _fftmr_thd(void *param)
 static int _fftmr_cmd(fftmr tmr, uint cmd)
 {
 	FFDBG_PRINTLN(5, "cmd: %xu", cmd);
-	FF_WRITEONCE(&tmr->ctl, cmd);
+	FF_WRITEONCE(tmr->ctl, cmd);
 	ffatom_fence_rel();
 	if (!SetEvent(tmr->evt)) //wake up timer thread
 		return -1;
