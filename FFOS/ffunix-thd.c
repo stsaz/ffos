@@ -68,7 +68,7 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 		r = pthread_join(th, &result);
 	}
 
-#if defined FF_LINUX
+#if defined FF_LINUX_MAINLINE
 	else if (timeout_ms == 0) {
 		r = pthread_tryjoin_np(th, &result);
 		if (r == EBUSY)
@@ -76,12 +76,19 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	}
 #endif
 
+#if defined FF_LINUX_MAINLINE || defined FF_BSD
 	else {
 		struct timespec ts;
 		(void)clock_gettime(CLOCK_REALTIME, &ts);
 		fftimespec_addms(&ts, timeout_ms);
 		r = pthread_timedjoin_np(th, &result, &ts);
 	}
+#else
+	else {
+		errno = EINVAL;
+		return -1;
+	}
+#endif
 
 	if (r != 0)
 		return r;
