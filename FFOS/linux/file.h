@@ -22,9 +22,9 @@ static FFINL fffd fffile_open(const char *filename, int flags)
 }
 
 /** Reposition file offset.
-Use SEEK_*
+method: SEEK_CUR | SEEK_SET | SEEK_END
 Return -1 on error. */
-#define fffile_seek  lseek64
+#define fffile_seek(fd, pos, method)  lseek64(fd, pos, method)
 
 #ifdef FF_LINUX_MAINLINE
 static FFINL int fffile_readahead(fffd fd, size_t size)
