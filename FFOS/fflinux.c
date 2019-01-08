@@ -343,8 +343,14 @@ typedef struct _ffaio_filectx {
 	fffd kq;
 } _ffaio_filectx;
 
+#define FFAIO_FCTX_N  16 // max aio file contexts
 enum { _FFAIO_NWORKERS = 256 };
-static _ffaio_filectx _ffaio_fctx;
+struct _ffaio_filectx_m {
+	struct _ffaio_filectx **items;
+	uint n;
+	fflock lk;
+};
+static struct _ffaio_filectx_m _ffaio_fctx;
 
 static int _ffaio_ctx_init(struct _ffaio_filectx *fx, fffd kq);
 static struct _ffaio_filectx* _ffaio_ctx_get(fffd kq);
@@ -353,13 +359,21 @@ static void _ffaio_fctxhandler(void *udata);
 
 int ffaio_fctxinit(void)
 {
-	_ffaio_fctx.kq = FF_BADFD;
+	if (NULL == (_ffaio_fctx.items = ffmem_allocT(FFAIO_FCTX_N, struct _ffaio_filectx*)))
+		return 1;
+	fflk_init(&_ffaio_fctx.lk);
 	return 0;
 }
 
 void ffaio_fctxclose(void)
 {
-	_ffaio_ctx_close(&_ffaio_fctx);
+	uint n = _ffaio_fctx.n;
+	for (uint i = 0;  i != n;  i++) {
+		_ffaio_ctx_close(_ffaio_fctx.items[i]);
+		ffmem_free(_ffaio_fctx.items[i]);
+	}
+	ffmem_free0(_ffaio_fctx.items);
+	_ffaio_fctx.n = 0;
 }
 
 /** eventfd has signaled.  Call handlers of completed file I/O requests. */
@@ -410,18 +424,55 @@ static void _ffaio_fctxhandler(void *udata)
 Thread-safe. */
 static struct _ffaio_filectx* _ffaio_ctx_get(fffd kq)
 {
-	struct _ffaio_filectx *fx = &_ffaio_fctx;
+	struct _ffaio_filectx *fx, *fxnew = NULL;
+	uint n = _ffaio_fctx.n;
 
-	if (fx->kev.udata != NULL) {
-		if (fx->kq != kq) {
+	for (uint i = 0;  ;  i++) {
+
+		if (i == FFAIO_FCTX_N) {
 			errno = EINVAL;
-			return NULL;
+			fx = NULL;
+			break;
 		}
-		return fx;
+
+		if (i == n) {
+
+			if (fxnew == NULL) {
+				if (NULL == (fxnew = ffmem_new(struct _ffaio_filectx)))
+					return NULL;
+				if (0 != _ffaio_ctx_init(fxnew, kq)) {
+					ffmem_free(fxnew);
+					return NULL;
+				}
+			}
+
+			// atomically write new context pointer and increase counter
+			fflk_lock(&_ffaio_fctx.lk);
+			n = FF_READONCE(_ffaio_fctx.n);
+			if (i != n) {
+				// another thread has occupied this slot
+				fflk_unlock(&_ffaio_fctx.lk);
+				continue;
+			}
+			_ffaio_fctx.items[i] = fxnew;
+			ffatom_fence_rel();
+			FF_WRITEONCE(_ffaio_fctx.n, i + 1);
+			fflk_unlock(&_ffaio_fctx.lk);
+
+			return fxnew;
+		}
+
+		ffatom_fence_acq();
+		fx = _ffaio_fctx.items[i];
+		if (fx->kq == kq)
+			break;
 	}
 
-	if (0 != _ffaio_ctx_init(fx, kq))
-		return NULL;
+	if (fxnew != NULL) {
+		_ffaio_ctx_close(fxnew);
+		ffmem_free(fxnew);
+	}
+
 	return fx;
 }
 
