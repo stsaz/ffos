@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/socket.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/thread.h>
+#include <FFOS/atomic.h>
 
 #include <time.h>
 #include <signal.h>
@@ -298,6 +299,24 @@ done:
 }
 
 
+/*
+Asynchronous file I/O in Linux:
+
+1. Setup:
+ aioctx = io_setup()
+ eventfd handle = eventfd()
+ ffkqu_attach(eventfd handle) -> kq
+
+2. Add task:
+ io_submit() + eventfd handle -> aioctx
+
+3. Process event:
+ ffkqu_wait(kq) --(eventfd handle)-> _ffaio_fctxhandler()
+
+4. Execute task:
+ io_getevents(aioctx) --(ffkevent*)-> ffkev_call()
+*/
+
 static FFINL int io_setup(unsigned nr_events, aio_context_t *ctx_idp)
 {
 	return syscall(SYS_io_setup, nr_events, ctx_idp);
@@ -326,6 +345,22 @@ typedef struct _ffaio_filectx {
 
 enum { _FFAIO_NWORKERS = 256 };
 static _ffaio_filectx _ffaio_fctx;
+
+static int _ffaio_ctx_init(struct _ffaio_filectx *fx, fffd kq);
+static struct _ffaio_filectx* _ffaio_ctx_get(fffd kq);
+static void _ffaio_ctx_close(struct _ffaio_filectx *fx);
+static void _ffaio_fctxhandler(void *udata);
+
+int ffaio_fctxinit(void)
+{
+	_ffaio_fctx.kq = FF_BADFD;
+	return 0;
+}
+
+void ffaio_fctxclose(void)
+{
+	_ffaio_ctx_close(&_ffaio_fctx);
+}
 
 /** eventfd has signaled.  Call handlers of completed file I/O requests. */
 static void _ffaio_fctxhandler(void *udata)
@@ -371,64 +406,76 @@ static void _ffaio_fctxhandler(void *udata)
 	}
 }
 
-int ffaio_fctxinit(void)
+/** Find (or create new) file AIO context for kqueue descriptor.
+Thread-safe. */
+static struct _ffaio_filectx* _ffaio_ctx_get(fffd kq)
 {
-	_ffaio_filectx *fx = &_ffaio_fctx;
+	struct _ffaio_filectx *fx = &_ffaio_fctx;
 
+	if (fx->kev.udata != NULL) {
+		if (fx->kq != kq) {
+			errno = EINVAL;
+			return NULL;
+		}
+		return fx;
+	}
+
+	if (0 != _ffaio_ctx_init(fx, kq))
+		return NULL;
+	return fx;
+}
+
+static int _ffaio_ctx_init(struct _ffaio_filectx *fx, fffd kq)
+{
 	fx->aioctx = 0;
-	fx->kq = FF_BADFD;
 	ffkev_init(&fx->kev);
 
 	if (0 != io_setup(_FFAIO_NWORKERS, &fx->aioctx))
-		return 1;
+		goto err;
 
 	fx->kev.fd = eventfd(0, EFD_NONBLOCK);
 	if (fx->kev.fd == FF_BADFD) {
 		ffaio_fctxclose();
-		return 1;
+		goto err;
 	}
+	if (0 != ffkqu_attach(kq, fx->kev.fd, ffkev_ptr(&fx->kev), FFKQU_ADD | FFKQU_READ))
+		goto err;
+	fx->kq = kq;
 
 	fx->kev.oneshot = 0;
-	fx->kev.udata = fx;
 	fx->kev.handler = &_ffaio_fctxhandler;
+	ffatom_fence_rel();
+	fx->kev.udata = fx;
 	return 0;
+
+err:
+	_ffaio_ctx_close(fx);
+	return 1;
 }
 
-void ffaio_fctxclose(void)
+static void _ffaio_ctx_close(struct _ffaio_filectx *fx)
 {
-	_ffaio_filectx *fx = &_ffaio_fctx;
-
 	if (fx->kev.fd != FF_BADFD)
 		fffile_close(fx->kev.fd);
 	ffkev_fin(&fx->kev);
 
-	if (fx->aioctx != 0) {
+	if (fx->aioctx != 0)
 		io_destroy(fx->aioctx);
-		fx->aioctx = 0;
-	}
 }
 
-/* Attach eventfd to epoll */
 int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
-	_ffaio_filectx *fx = &_ffaio_fctx;
-
 	if (!direct) {
 		//don't use AIO
 		ft->cb.aio_resfd = FF_BADFD;
 		return 0;
 	}
 
-	if (fx->kq == FF_BADFD) {
-		if (0 != ffkqu_attach(kq, fx->kev.fd, ffkev_ptr(&fx->kev), FFKQU_ADD | FFKQU_READ))
-			return 1;
-		fx->kq = kq;
+	struct _ffaio_filectx *fx = _ffaio_ctx_get(kq);
+	if (fx == NULL)
+		return 1;
 
-	} else if (fx->kq != kq) {
-		errno = EINVAL;
-		return -1; //only 1 kq is supported
-	}
-
+	ft->fctx = fx;
 	ft->cb.aio_resfd = 0;
 	return 0;
 }
@@ -448,18 +495,20 @@ static ssize_t _ffaio_fop(ffaio_filetask *ft, void *data, size_t len, uint64 off
 		return ft->result;
 	}
 
+	struct _ffaio_filectx *fx = ft->fctx;
+
 	ffmem_tzero(cb);
 	cb->aio_data = (uint64)(size_t)ffkev_ptr(&ft->kev);
 	cb->aio_lio_opcode = op;
 	cb->aio_flags = IOCB_FLAG_RESFD;
-	cb->aio_resfd = _ffaio_fctx.kev.fd;
+	cb->aio_resfd = fx->kev.fd;
 
 	cb->aio_fildes = ft->kev.fd;
 	cb->aio_buf = (uint64)(size_t)data;
 	cb->aio_nbytes = len;
 	cb->aio_offset = off;
 
-	if (1 != io_submit(_ffaio_fctx.aioctx, 1, &cb)) {
+	if (1 != io_submit(fx->aioctx, 1, &cb)) {
 		if (errno == ENOSYS || errno == EAGAIN)
 			return -3; //no resources for this I/O operation or AIO isn't supported
 		return -1;

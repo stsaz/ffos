@@ -16,12 +16,14 @@ Copyright (c) 2013 Simon Zolin
 /** Initialize file I/O context. */
 FF_EXTN int ffaio_fctxinit(void);
 
+/** Close all asynchronous file I/O contexts. */
 FF_EXTN void ffaio_fctxclose(void);
 
 struct ffaio_filetask {
 	ffkevent kev;
 	struct iocb cb;
 	int result;
+	void *fctx;
 };
 
 /** Attach ffaio_filetask to kqueue.

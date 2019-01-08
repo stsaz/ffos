@@ -358,15 +358,11 @@ int test_fileaio(void)
 	x(faio.ok == 2);
 
 //read
-#ifdef FF_WIN
 	fffd f2;
 	x(FF_BADFD != (f2 = fffile_open(fn, O_RDWR)));
 	x(0 == fffile_trunc(f2, faio.len - 1));
 	fffile_close(f2);
 
-#else
-	x(0 == fffile_trunc(f, faio.len - 1));
-#endif
 	memset(faio.buf, '\0', faio.len);
 
 	fffile_writecz(ffstdout, "ffaio_fread...");
