@@ -60,11 +60,11 @@ char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src)
 	ExpandEnvironmentStrings(wsrc, wdst, wlen);
 
 	if (dst == NULL) {
-		cap = ff_wtou(dst, cap, wdst, wlen + 1, 0);
+		cap = ff_wtou(dst, cap, wdst, wlen, 0);
 		if (NULL == (dst = ffmem_alloc(cap)))
 			goto done;
 	}
-	ff_wtou(dst, cap, wdst, wlen + 1, 0);
+	ff_wtou(dst, cap, wdst, wlen, 0);
 
 done:
 	ffmem_free(wsrc);
