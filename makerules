@@ -32,7 +32,7 @@ FFOS_HDR := $(wildcard $(FFOS)/*.h) \
 FFOS_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_SRC)))))
 
 
-$(FFOS_OBJ_DIR)/%.o: $(FFOS)/FFOS/%.c $(FFOS_HDR) $(FFOS_OBJ_DIR)
+$(FFOS_OBJ_DIR)/%.o: $(FFOS)/FFOS/%.c $(FFOS_HDR)
 	$(C) $(FFOS_CFLAGS)  $< -o$@
 
 ffos: $(FFOS_OBJ)
