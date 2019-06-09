@@ -93,3 +93,23 @@ static FFINL int ffsc_get(ffsysconf *sc, int name) {
 	}
 	return 0;
 }
+
+
+enum FFLANG_F {
+	FFLANG_FLANG = LOCALE_ILANGUAGE, // enum FFLANG
+};
+
+enum FFLANG {
+	FFLANG_ENG = 0x0409,
+	FFLANG_RUS = 0x0419,
+};
+
+/** Get user locale information.
+flags: enum FFLANG_F
+*/
+static inline uint fflang_info(uint flags)
+{
+	WCHAR val[4];
+	GetLocaleInfo(LOCALE_USER_DEFAULT, flags | LOCALE_RETURN_NUMBER, val, FFCNT(val));
+	return *(ushort*)val;
+}

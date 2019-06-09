@@ -74,3 +74,18 @@ typedef void * ffsysconf;
 
 /** Get value from system config. */
 #define ffsc_get(sc, name)  sysconf(name)
+
+
+enum FFLANG_F {
+	FFLANG_FLANG = 1, // enum FFLANG
+};
+
+enum FFLANG {
+	FFLANG_ENG = 1,
+	FFLANG_RUS = 2,
+};
+
+/** Get user locale information.
+flags: enum FFLANG_F
+Return value or -1 on error. */
+FF_EXTN int fflang_info(uint flags);
