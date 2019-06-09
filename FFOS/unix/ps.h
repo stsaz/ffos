@@ -24,7 +24,7 @@ Return -1 on error. */
 #define ffps_sig(h, sig)  kill(h, sig)
 
 /** Close process handle. */
-#define ffps_close(h)  (0)
+static inline void ffps_close(ffps h){}
 
 /** Get the current process handle. */
 #define ffps_curhdl  getpid

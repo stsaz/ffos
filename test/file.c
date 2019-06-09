@@ -231,7 +231,7 @@ int test_file()
 	strcpy(fn, tmpdir);
 	strcat(fn, "/tmpfile");
 
-	fd = fffile_open(fn, O_CREAT | O_TRUNC | O_RDWR);
+	fd = fffile_open(fn, FFO_CREATE | FFO_TRUNC | FFO_RDWR);
 	x(fd != FF_BADFD);
 	x(FFSLEN(HELLO) == fffile_write(fd, FFSTR(HELLO)));
 

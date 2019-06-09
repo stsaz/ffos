@@ -68,8 +68,16 @@ static FFINL size_t ffmin(size_t a, size_t b)
 	return (a < b) ? a : b;
 }
 
+/** Get the maximum number.
+Note: in some cases it may be incorrect without the explicit signed-integer type. */
 #define ffmax(i0, i1) \
 	(((i0) < (i1)) ? (i1) : (i0))
+
+/** Get the maximum signed integer number. */
+static inline int64 ffmaxi(int64 a, int64 b)
+{
+	return ffmax(a, b);
+}
 
 /** Set the minimum value.
 The same as: dst = min(dst, src) */

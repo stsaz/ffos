@@ -122,7 +122,7 @@ static void client_sendfile(void *udata)
 	ffiov_set(&iovs[1], buf, 300);
 	ffsf_sethdtr(&hdtr, &iovs[0], 1, &iovs[1], 1);
 
-	f = fffile_open("/tmp/tmp-ffos", O_CREAT | O_TRUNC | O_RDWR);
+	f = fffile_open("/tmp/tmp-ffos", FFO_CREATE | FFO_TRUNC | FFO_RDWR);
 	x(f != FF_BADFD);
 	x(200 == fffile_write(f, buf, 200));
 

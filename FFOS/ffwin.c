@@ -98,7 +98,7 @@ fffd fffile_openq(const ffsyschar *filename, int flags)
 		access = STANDARD_RIGHTS_WRITE | FILE_APPEND_DATA | SYNCHRONIZE;
 	}
 
-	if (flags & O_TRUNC) {
+	if (flags & FFO_TRUNC) {
 		mode = (mode == OPEN_ALWAYS) ? CREATE_ALWAYS
 			: (mode == OPEN_EXISTING) ? TRUNCATE_EXISTING
 			: 0;

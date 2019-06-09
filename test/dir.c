@@ -92,7 +92,7 @@ int test_dir(const char *tmpdir)
 
 	x(0 == ffdir_make(path));
 
-	f = fffile_open(fn, O_CREAT | O_TRUNC | O_WRONLY);
+	f = fffile_open(fn, FFO_CREATE | FFO_TRUNC | FFO_WRONLY);
 	x(f != FF_BADFD);
 	x(1 == fffile_write(f, FFSTR("1")));
 	x(0 == fffile_close(f));
