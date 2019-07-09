@@ -100,8 +100,10 @@ enum FFLANG_F {
 };
 
 enum FFLANG {
-	FFLANG_ENG = 0x0409,
-	FFLANG_RUS = 0x0419,
+	FFLANG_NONE,
+	FFLANG_ENG = 0x0009,
+	FFLANG_RUS = 0x0019,
+	FFLANG_GER = 0x0007,
 };
 
 /** Get user locale information.
@@ -111,5 +113,5 @@ static inline uint fflang_info(uint flags)
 {
 	WCHAR val[4];
 	GetLocaleInfo(LOCALE_USER_DEFAULT, flags | LOCALE_RETURN_NUMBER, val, FFCNT(val));
-	return *(ushort*)val;
+	return *(ushort*)val & 0xff;
 }

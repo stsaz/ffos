@@ -81,8 +81,10 @@ enum FFLANG_F {
 };
 
 enum FFLANG {
-	FFLANG_ENG = 1,
-	FFLANG_RUS = 2,
+	FFLANG_NONE,
+	FFLANG_ENG,
+	FFLANG_GER,
+	FFLANG_RUS,
 };
 
 /** Get user locale information.
