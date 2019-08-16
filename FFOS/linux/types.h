@@ -13,6 +13,9 @@ Copyright (c) 2017 Simon Zolin
 #if defined FF_OLDLIBC && defined FF_64
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
 #endif
+#if defined FF_GLIBCVER && FF_GLIBCVER < 229
+__asm__(".symver pow,pow@GLIBC_2.2.5"); //override GLIBC_2.29
+#endif
 
 
 #include <asm/byteorder.h>
