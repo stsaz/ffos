@@ -54,9 +54,9 @@ C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS := -pipe -std=c99 -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
+CFLAGS_STD := -pipe -std=c99 -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
 CXXFLAGS := -pipe -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
-LDFLAGS := -pipe
+LDFLAGS_STD := -pipe
 AR := $(CPREFIX)ar
 OBJCOPY := $(CPREFIX)objcopy
 STRIP := $(CPREFIX)strip
@@ -65,37 +65,38 @@ DEBUG ?= 1
 
 # set debug options
 ifeq ($(DEBUG),1)
-CFLAGS += -g
-LDFLAGS += -g
+CFLAGS_DEBUG := -g
+LDFLAGS_DEBUG := -g
 else
-LDFLAGS += -s
+CFLAGS_DEBUG :=
+LDFLAGS_DEBUG := -s
 endif
 
 # set optimization options
 ifeq ($(OPT),0)
-CFLAGS += -D_DEBUG
+	CFLAGS_OPT := -D_DEBUG
 
 else ifeq ($(OPT),SECTIONS)
-CFLAGS += -O2
-ifneq ($(OS),win)
-CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,-gc-sections
-endif
+	CFLAGS_OPT := -O2
+	ifneq ($(OS),win)
+		CFLAGS_OPT += -ffunction-sections -fdata-sections
+		LDFLAGS_OPT := -Wl,-gc-sections
+	endif
 
 else ifeq ($(OPT),3)
-CFLAGS += -O3
-ifneq ($(OS),win)
-CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,-gc-sections
-endif
+	CFLAGS_OPT := -O3
+	ifneq ($(OS),win)
+		CFLAGS_OPT += -ffunction-sections -fdata-sections
+		LDFLAGS_OPT := -Wl,-gc-sections
+	endif
 
 else ifeq ($(OPT),LTO)
-CFLAGS += -O2 -flto
-LDFLAGS += -O2 -flto
+	CFLAGS_OPT := -O2 -flto
+	LDFLAGS_OPT := -O2 -flto
 
 else ifeq ($(OPT),LTO3)
-CFLAGS += -O3 -flto
-LDFLAGS += -O3 -flto
+	CFLAGS_OPT := -O3 -flto
+	LDFLAGS_OPT := -O3 -flto
 
 endif #OPT
 
@@ -107,14 +108,14 @@ WINDRES := $(CPREFIX)windres
 
 else #OS
 
-CFLAGS += -fpic
-LDFLAGS += -fpic
+CFLAGS_OS := -fpic
+LDFLAGS_OS := -fpic
 LD_LPTHREAD := -pthread
 LD_LMATH := -lm
 
 ifeq ($(OS),linux)
 LD_LDL := -ldl
-LDFLAGS += -Wl,-no-undefined
+LDFLAGS_OS := -Wl,-no-undefined
 LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN' -Wl,--disable-new-dtags
 
 else ifeq ($(OS),bsd)
@@ -122,7 +123,7 @@ C := clang
 LD := $(C)
 CXX := clang++
 LDXX := $(CXX)
-LDFLAGS += -Wl,-no-undefined
+LDFLAGS_OS := -Wl,-no-undefined
 LD_RPATH_ORIGIN := '-Wl,-rpath,$$ORIGIN'
 
 else ifeq ($(OS),apple)
@@ -159,20 +160,23 @@ endif #OS
 
 # CPU-specific options
 ifeq ($(CPU),amd64)
-CFLAGS += -m64 -march=x86-64
-LDFLAGS += -m64 -march=x86-64
+CFLAGS_CPU := -m64 -march=x86-64
+LDFLAGS_CPU := -m64 -march=x86-64
 
 else ifeq ($(CPU),i686)
-CFLAGS += -m32 -march=i686
-LDFLAGS += -m32 -march=i686
+CFLAGS_CPU := -m32 -march=i686
+LDFLAGS_CPU := -m32 -march=i686
 
 endif #CPU
 
 
 ifeq ($(CNAME),gcc)
 # Remove dependency on libgcc_s_sjlj-1.dll (Windows), libgcc_s.so.1 (Linux)
-LDFLAGS += -static-libgcc
+LDFLAGS_COMP := -static-libgcc
 endif
+
+CFLAGS := $(CFLAGS_STD) $(CFLAGS_DEBUG) $(CFLAGS_OPT) $(CFLAGS_OS) $(CFLAGS_CPU)
+LDFLAGS := $(LDFLAGS_STD) $(LDFLAGS_OPT) $(LDFLAGS_DEBUG) $(LDFLAGS_OS) $(LDFLAGS_CPU) $(LDFLAGS_COMP)
 
 
 # rule for separate .debug files
