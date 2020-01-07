@@ -107,7 +107,7 @@ typedef struct fftime_winftime {
 	uint lo, hi;
 } fftime_winftime;
 
-enum { FFTIME_100NS = 116444736000000000ULL }; //100-ns intervals within 1600..1970
+#define FFTIME_100NS  116444736000000000ULL //100-ns intervals within 1600..1970
 
 static FFINL fftime fftime_from_winftime(const fftime_winftime *ft)
 {
