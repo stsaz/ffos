@@ -2,6 +2,9 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#ifdef FF_LINUX
+#include <FFOS/linux/systimer.h>
+#endif
 #include <signal.h>
 #include <dlfcn.h>
 

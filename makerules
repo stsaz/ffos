@@ -32,6 +32,10 @@ FFOS_HDR := $(wildcard $(FFOS)/*.h) \
 FFOS_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_SRC)))))
 
 
+$(FF_OBJ_DIR)/fflin-dbus.o: $(FFOS)/FFOS/fflin-dbus.c $(FFOS_HDR)
+	$(C) $(FFOS_CFLAGS) -I/usr/include/dbus-1.0 -I/usr/lib64/dbus-1.0/include  $< -o$@
+# pkg-config --cflags dbus-1
+
 $(FFOS_OBJ_DIR)/%.o: $(FFOS)/FFOS/%.c $(FFOS_HDR)
 	$(C) $(FFOS_CFLAGS)  $< -o$@
 
