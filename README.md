@@ -27,8 +27,10 @@ FEATURES
 * timer, clock - `FFOS/timer.h`
 * process - `FFOS/process.h`
 * dynamically loaded libraries - `FFOS/process.h`
+* process/thread performance counters `ffps_perf` - `FFOS/process.h`
 * sockets - `FFOS/socket.h`
 * network address; IPv4/IPv6 address - `FFOS/socket.h`
+* network configuration `ffnetconf` - `FFOS/socket.h`
 * threads - `FFOS/thread.h`
 * kernel queue - `FFOS/queue.h`
 * asynchronous I/O - `FFOS/asyncio.h`

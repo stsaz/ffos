@@ -103,7 +103,7 @@ endif #OPT
 
 # set OS-specific values
 ifeq ($(OS),win)
-LD_LWS2_32 := -lws2_32
+LD_LWS2_32 := -lws2_32 -liphlpapi
 WINDRES := $(CPREFIX)windres
 
 else #OS

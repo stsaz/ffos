@@ -4,6 +4,7 @@ Copyright (c) 2016 Simon Zolin
 
 #include <FFOS/asyncio.h>
 #include <FFOS/socket.h>
+#include <iphlpapi.h>
 
 
 ffskt ffskt_create(uint domain, uint type, uint protocol)
@@ -360,4 +361,77 @@ int _ffaio_result(ffaio_task *t)
 done:
 	t->ev = NULL;
 	return r;
+}
+
+
+void ffnetconf_destroy(ffnetconf *nc)
+{
+	ffmem_free0(nc->dns_addrs);
+}
+
+static FIXED_INFO* getnet_info()
+{
+	FIXED_INFO *info = NULL;
+	DWORD sz = sizeof(FIXED_INFO);
+	ffbool first = 1;
+	for (;;) {
+		if (NULL == (info = ffmem_alloc(sz)))
+			return NULL;
+		uint r = GetNetworkParams(info, &sz);
+		if (r == ERROR_BUFFER_OVERFLOW) {
+			if (!first)
+				goto end;
+			first = 0;
+			ffmem_free0(info);
+			continue;
+		} else if (r != 0)
+			goto end;
+		break;
+	}
+	return info;
+
+end:
+	ffmem_free(info);
+	return NULL;
+}
+
+int ffnetconf_get(ffnetconf *nc, uint flags)
+{
+	int rc = -1;
+	switch (flags) {
+	case FFNETCONF_DNS_ADDR: {
+		FIXED_INFO *info = getnet_info();
+		if (info == NULL)
+			break;
+
+		IP_ADDR_STRING *ip;
+		size_t cap = 0;
+		uint n = 0;
+		for (ip = &info->DnsServerList;  ip != NULL;  ip = ip->Next) {
+			cap += strlen(ip->IpAddress.String) + 1;
+			n++;
+		}
+		if (NULL == (nc->dns_addrs = ffmem_alloc(cap + n * sizeof(void*))))
+			goto end;
+
+		// ptr1 ptr2 ... data1 data2 ...
+		char **ptr = nc->dns_addrs;
+		char *data = (char*)nc->dns_addrs + n * sizeof(void*);
+		for (ip = &info->DnsServerList;  ip != NULL;  ip = ip->Next) {
+			size_t len = strlen(ip->IpAddress.String) + 1;
+			memcpy(data, ip->IpAddress.String, len);
+			*(ptr++) = data;
+			data += len;
+		}
+		nc->dns_addrs_num = n;
+
+		rc = 0;
+
+end:
+		ffmem_free(info);
+		break;
+	}
+	}
+
+	return rc;
 }
