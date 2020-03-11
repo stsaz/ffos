@@ -30,6 +30,8 @@ FF_EXTN void* _ffmem_align(size_t size, size_t align);
 
 static FFINL void _ffmem_alignfree(void *ptr)
 {
+	if (ptr == NULL)
+		return;
 	void *buf = *((void**)ptr - 1);
 	_ffmem_free(buf);
 }

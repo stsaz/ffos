@@ -90,6 +90,12 @@ static inline ssize_t fffile_pread(fffd fd, void *buf, size_t cap, uint64 off)
 	return rd;
 }
 
+enum FFFILE_SEEK {
+	FFFILE_SEEK_BEGIN = FILE_BEGIN,
+	FFFILE_SEEK_CURRENT = FILE_CURRENT,
+	FFFILE_SEEK_END = FILE_END,
+};
+
 static FFINL int64 fffile_seek(fffd fd, int64 pos, int method) {
 	int64 ret;
 	if (0 == SetFilePointerEx(fd, *(LARGE_INTEGER *)&pos, (LARGE_INTEGER *)&ret, method))

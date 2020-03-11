@@ -21,8 +21,14 @@ static FFINL fffd fffile_open(const char *filename, int flags)
 	return f;
 }
 
+enum FFFILE_SEEK {
+	FFFILE_SEEK_BEGIN = SEEK_SET,
+	FFFILE_SEEK_CURRENT = SEEK_SET,
+	FFFILE_SEEK_END = SEEK_END,
+};
+
 /** Reposition file offset.
-method: SEEK_CUR | SEEK_SET | SEEK_END
+method: enum FFFILE_SEEK
 Return -1 on error. */
 #define fffile_seek(fd, pos, method)  lseek64(fd, pos, method)
 
