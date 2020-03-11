@@ -214,6 +214,48 @@ fail:
 	return r;
 }
 
+/** Create a system string and add a backslash to the end. */
+static ffsyschar* _ffs_utow_bslash(const char *s)
+{
+	ffsyschar *w;
+	size_t len = strlen(s);
+	if (len != 0 && s[len - 1] == '\\')
+		len--;
+	size_t n = ff_utow(NULL, 0, s, len, 0);
+	if (NULL == (w = ffq_alloc(n + 2)))
+		return NULL;
+	n = ff_utow(w, n, s, len, 0);
+	w[n++] = '\\';
+	w[n] = '\0';
+	return w;
+}
+
+int fffile_mount(const char *disk, const char *mount)
+{
+	int rc = -1;
+	ffsyschar *wdisk = NULL, *wmount = NULL;
+	if (NULL == (wmount = _ffs_utow_bslash(mount)))
+		goto end;
+
+	if (disk == NULL) {
+		if (!DeleteVolumeMountPoint(wmount))
+			goto end;
+
+	} else {
+		if (NULL == (wdisk = _ffs_utow_bslash(disk)))
+			goto end;
+		if (!SetVolumeMountPoint(wmount, wdisk))
+			goto end;
+	}
+
+	rc = 0;
+
+end:
+	ffmem_free(wdisk);
+	ffmem_free(wmount);
+	return rc;
+}
+
 int fffile_rmq(const ffsyschar *name)
 {
 	if (!!DeleteFile(name))

@@ -191,6 +191,13 @@ static FFINL int fffile_symlink(const char *target, const char *linkname)
 	return -1;
 }
 
+/** Create or delete a mount point for disk.
+When deleting, the mount point directory isn't deleted.
+disk: volume GUI name: "\\?\Volume{GUID}\"
+ NULL: delete mount point
+mount: mount point (an existing empty directory) */
+FF_EXTN int fffile_mount(const char *disk, const char *mount);
+
 FF_EXTN int fffile_rmq(const ffsyschar *name);
 
 /**
