@@ -68,6 +68,28 @@ static FFINL ssize_t fffile_write(fffd fd, const void *buf, size_t size) {
 	return written;
 }
 
+static inline ssize_t fffile_pwrite(fffd fd, const void *data, size_t len, uint64 off)
+{
+	OVERLAPPED ovl = {};
+	ovl.Offset = (uint)off;
+	ovl.OffsetHigh = (uint)(off >> 32);
+	DWORD wr;
+	if (!WriteFile(fd, data, FF_TOINT(len), &wr, &ovl))
+		return -1;
+	return wr;
+}
+
+static inline ssize_t fffile_pread(fffd fd, void *buf, size_t cap, uint64 off)
+{
+	OVERLAPPED ovl = {};
+	ovl.Offset = (uint)off;
+	ovl.OffsetHigh = (uint)(off >> 32);
+	DWORD rd;
+	if (!ReadFile(fd, buf, FF_TOINT(cap), &rd, &ovl))
+		return -1;
+	return rd;
+}
+
 static FFINL int64 fffile_seek(fffd fd, int64 pos, int method) {
 	int64 ret;
 	if (0 == SetFilePointerEx(fd, *(LARGE_INTEGER *)&pos, (LARGE_INTEGER *)&ret, method))

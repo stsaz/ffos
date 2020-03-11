@@ -235,8 +235,13 @@ int test_file()
 	x(fd != FF_BADFD);
 	x(FFSLEN(HELLO) == fffile_write(fd, FFSTR(HELLO)));
 
+	x(3 == fffile_pwrite(fd, "123", 3, 2));
+	x(3 == fffile_pread(fd, buf, 3, 2));
+	x(!strncmp(buf, "123", 3));
+
 	x(0 == fffile_seek(fd, 0, SEEK_SET));
-	x(FFSLEN(HELLO) == fffile_read(fd, buf, sizeof(buf)));
+	x(6 == fffile_read(fd, buf, sizeof(buf)));
+	x(!strncmp(buf, "he123\n", 6));
 	x(0 == fffile_close(fd));
 
 	test_fileinfo(fn);
