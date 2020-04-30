@@ -130,17 +130,22 @@ int ffsem_wait(ffsem sem, uint time_ms)
 			fferr_set(ETIMEDOUT);
 
 	} else if (time_ms == (uint)-1) {
-		r = sem_wait(s);
+		do {
+			r = sem_wait(s);
+		} while (r != 0 && fferr_last() == EINTR);
 
 	} else {
 #ifdef FF_APPLE
 		fferr_set(EINVAL);
 		return -1;
 #else
-		struct timespec ts;
-		ts.tv_sec = time_ms / 1000;
-		ts.tv_nsec = (time_ms % 1000) * 1000 * 1000;
-		r = sem_timedwait(s, &ts);
+		struct timespec ts = {};
+		clock_gettime(CLOCK_REALTIME, &ts);
+		ts.tv_sec += time_ms / 1000;
+		ts.tv_nsec += (time_ms % 1000) * 1000 * 1000;
+		do {
+			r = sem_timedwait(s, &ts);
+		} while (r != 0 && fferr_last() == EINTR);
 #endif
 	}
 	return r;

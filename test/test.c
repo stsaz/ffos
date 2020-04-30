@@ -159,7 +159,7 @@ static void test_semaphore_named()
 	x(0 == ffsem_wait(s, 0));
 	x(0 == ffsem_wait(s2, 0));
 	//cnt=0
-	x(0 != ffsem_wait(s, 0));
+	x(0 != ffsem_wait(s, 100));
 	x(0 != ffsem_wait(s2, 0));
 
 	x(0 == ffsem_unlink(name));
