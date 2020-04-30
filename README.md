@@ -32,6 +32,7 @@ FEATURES
 * network address; IPv4/IPv6 address - `FFOS/socket.h`
 * network configuration `ffnetconf` - `FFOS/socket.h`
 * threads - `FFOS/thread.h`
+* backtrace - `FFOS/backtrace.h`
 * kernel queue - `FFOS/queue.h`
 * asynchronous I/O - `FFOS/asyncio.h`
 * UNIX signals - `FFOS/sig.h`

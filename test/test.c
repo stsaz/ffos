@@ -10,6 +10,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/random.h>
 #include <FFOS/atomic.h>
 #include <FFOS/semaphore.h>
+#include <FFOS/backtrace.h>
 
 #include <test/all.h>
 
@@ -299,6 +300,30 @@ static int test_lock()
 	x(0 != fflk_trylock(&lk));
 	x(0 == fflk_trylock(&lk));
 	fflk_unlock(&lk);
+	return 0;
+}
+
+int test_backtrace()
+{
+	FFTEST_FUNC;
+	ffthd_bt bt = {};
+	uint n = ffthd_backtrace(&bt);
+	x(n != 0);
+	for (uint i = 0;  i != n;  i++) {
+
+#ifdef FF_UNIX
+		const ffsyschar *name = ffthd_backtrace_modname(&bt, i);
+#else
+		char name[512];
+		const ffsyschar *wname = ffthd_backtrace_modname(&bt, i);
+		ff_wtou(name, sizeof(name), wname, -1, 0);
+#endif
+
+		printf("#%u: 0x%p %s [0x%p]\n"
+			, i, ffthd_backtrace_frame(&bt, i)
+			, name
+			, ffthd_backtrace_modbase(&bt, i));
+	}
 	return 0;
 }
 
