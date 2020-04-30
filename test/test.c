@@ -125,7 +125,18 @@ static int test_ps(void)
 	return 0;
 }
 
-static int test_semaphore(void)
+static void test_semaphore_unnamed()
+{
+	ffsem s;
+	x(FFSEM_INV != (s = ffsem_open(NULL, 0, 0)));
+	x(0 != ffsem_wait(s, 0));
+	x(fferr_last() == ETIMEDOUT);
+	ffsem_close(s);
+	s = FFSEM_INV;
+	x(0 != ffsem_wait(s, 0));
+}
+
+static void test_semaphore_named()
 {
 	const char *name = "/ffos-test.sem";
 	ffsem s, s2;
@@ -152,8 +163,14 @@ static int test_semaphore(void)
 	x(0 != ffsem_wait(s2, 0));
 
 	x(0 == ffsem_unlink(name));
-	x(0 == ffsem_close(s));
-	x(0 == ffsem_close(s2));
+	ffsem_close(s);
+	ffsem_close(s2);
+}
+
+static int test_semaphore(void)
+{
+	test_semaphore_unnamed();
+	test_semaphore_named();
 	return 0;
 }
 

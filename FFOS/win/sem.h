@@ -12,9 +12,9 @@ typedef HANDLE ffsem;
 FF_EXTN ffsem ffsem_openq(const ffsyschar *name, uint flags, uint value);
 FF_EXTN ffsem ffsem_open(const char *name, uint flags, uint value);
 
-static inline int ffsem_close(ffsem s)
+static inline void ffsem_close(ffsem s)
 {
-	return !CloseHandle(s);
+	CloseHandle(s);
 }
 
 static inline int ffsem_unlink(const char *name)
@@ -22,6 +22,7 @@ static inline int ffsem_unlink(const char *name)
 	return 0;
 }
 
-#define ffsem_post(s)  !ReleaseSemaphore(s, 1, NULL)
-
-FF_EXTN int ffsem_wait(ffsem s, uint time_ms);
+static inline int ffsem_post(ffsem s)
+{
+	return !ReleaseSemaphore(s, 1, NULL);
+}

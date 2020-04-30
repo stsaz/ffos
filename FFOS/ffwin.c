@@ -461,6 +461,9 @@ ssize_t ffpipe_read(fffd fd, void *buf, size_t cap)
 
 ffsem ffsem_openq(const ffsyschar *name, uint flags, uint value)
 {
+	if (name == NULL)
+		return CreateSemaphore(NULL, value, 0xffff, NULL);
+
 	if (flags == FFO_CREATENEW) {
 		ffsem s = OpenSemaphore(SEMAPHORE_ALL_ACCESS, 0, name);
 		if (s != FFSEM_INV) {
@@ -482,9 +485,10 @@ ffsem ffsem_openq(const ffsyschar *name, uint flags, uint value)
 
 ffsem ffsem_open(const char *name, uint flags, uint value)
 {
-	ffsyschar *w, ws[FF_MAXFN];
+	ffsyschar *w = NULL, ws[FF_MAXFN];
 	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
+	if (name != NULL
+		&& NULL == (w = ffs_utow(ws, &n, name, -1)))
 		return FFSEM_INV;
 
 	ffsem s = ffsem_openq(w, flags, value);

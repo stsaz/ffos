@@ -116,8 +116,14 @@ ffthd_id ffthd_curid(void)
 #endif //OS
 
 
-int ffsem_wait(ffsem s, uint time_ms)
+int ffsem_wait(ffsem sem, uint time_ms)
 {
+	if (sem == FFSEM_INV) {
+		fferr_set(EINVAL);
+		return -1;
+	}
+	sem_t *s = (sem->psem != NULL) ? sem->psem : &sem->sem;
+
 	int r;
 	if (time_ms == 0) {
 		if (0 != (r = sem_trywait(s)) && fferr_again(fferr_last()))
