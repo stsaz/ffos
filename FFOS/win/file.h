@@ -17,9 +17,6 @@ enum FFFILE_OPEN {
 	, O_RDONLY = GENERIC_READ >> 24
 	, O_WRONLY = GENERIC_WRITE >> 24
 	, O_RDWR = (GENERIC_READ | GENERIC_WRITE) >> 24
-	, O_NOATIME = 0
-	, O_NONBLOCK = 0
-	, O_DIRECT = FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED
 	, O_TRUNC = 0x00000200
 
 	// 0x0000 000f.  mode
@@ -85,8 +82,11 @@ static inline ssize_t fffile_pread(fffd fd, void *buf, size_t cap, uint64 off)
 	ovl.Offset = (uint)off;
 	ovl.OffsetHigh = (uint)(off >> 32);
 	DWORD rd;
-	if (!ReadFile(fd, buf, FF_TOINT(cap), &rd, &ovl))
+	if (!ReadFile(fd, buf, FF_TOINT(cap), &rd, &ovl)) {
+		if (fferr_last() == ERROR_HANDLE_EOF)
+			return 0;
 		return -1;
+	}
 	return rd;
 }
 

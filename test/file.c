@@ -47,95 +47,6 @@ static int test_std()
 	return 0;
 }
 
-static int test_mapwr(const char *fn)
-{
-	fffd fd
-		, fmap;
-	void *mapd;
-	size_t mapsz;
-
-	FFTEST_FUNC;
-
-	fd = fffile_open(fn, O_RDWR);
-	x(fd != FF_BADFD);
-
-	mapsz = 64*1024 + FFSLEN(FOOBAR);
-	x(0 == fffile_trunc(fd, mapsz));
-	fmap = ffmap_create(fd, mapsz, FFMAP_PAGERW);
-	x(fmap != 0);
-
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
-	x(mapd != NULL);
-	x(!memcmp(mapd, FFSTR(HELLO)));
-	memcpy((char*)mapd + 64*1024, FOOBAR, FFSLEN(FOOBAR));
-	x(0 == ffmap_unmap(mapd, mapsz));
-
-	mapsz = FFSLEN(FOOBAR);
-	mapd = ffmap_open(fmap, 64*1024, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
-	x(mapd != NULL);
-	x(mapsz == FFSLEN(FOOBAR) && !memcmp(mapd, FFSTR(FOOBAR)));
-	x(0 == ffmap_unmap(mapd, mapsz));
-
-	ffmap_close(fmap);
-	x(0 == fffile_close(fd));
-	return 0;
-}
-
-static int test_mapanon()
-{
-	fffd fmap;
-	void *mapd;
-	size_t mapsz = 64*1024;
-
-	FFTEST_FUNC;
-
-	fmap = ffmap_create(FF_BADFD, mapsz, FFMAP_PAGERW);
-	x(fmap != 0);
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS);
-	x(mapd != NULL);
-
-	memcpy(mapd, HELLO, FFSLEN(HELLO));
-	x(!memcmp(mapd, FFSTR(HELLO)));
-
-	x(0 == ffmap_unmap(mapd, mapsz));
-	ffmap_close(fmap);
-
-	return 0;
-}
-
-static int test_map(const char *fn)
-{
-	fffd fd
-		, fmap;
-	uint64 fsiz;
-	void *mapd;
-	size_t mapsz;
-
-	FFTEST_FUNC;
-
-	fd = fffile_open(fn, O_RDONLY);
-	x(fd != FF_BADFD);
-	fsiz = fffile_size(fd);
-
-	fmap = ffmap_create(fd, fsiz, FFMAP_PAGEREAD);
-	x(fmap != 0);
-
-	mapsz = (size_t)fsiz;
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ, MAP_SHARED);
-	x(mapd != NULL);
-
-	x(mapsz == FFSLEN(HELLO) && !memcmp(mapd, FFSTR(HELLO)));
-
-	x(0 == ffmap_unmap(mapd, mapsz));
-	ffmap_close(fmap);
-	x(0 == fffile_close(fd));
-
-	test_mapwr(fn);
-	test_mapanon();
-
-	return 0;
-}
-
 static int test_pipe()
 {
 	char buf[64];
@@ -245,7 +156,6 @@ int test_file()
 	x(0 == fffile_close(fd));
 
 	test_fileinfo(fn);
-	test_map(fn);
 
 	x(0 == fffile_rm(fn));
 
@@ -337,7 +247,7 @@ int test_fileaio(void)
 	}
 
 	uint flags = 0;
-	flags |= O_DIRECT;
+	flags |= FFO_DIRECT;
 	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_RDWR | flags)));
 	x(FF_BADFD != (faio.kq = ffkqu_create()));
 	ffkqu_settm(&faio.kqtm, -1);
@@ -350,7 +260,7 @@ int test_fileaio(void)
 	x(0 == fffile_trunc(f, faio.len));
 
 	ffaio_finit(&tfil, f, &tfil);
-	x(0 == ffaio_fattach(&tfil, faio.kq, !!(flags & O_DIRECT)));
+	x(0 == ffaio_fattach(&tfil, faio.kq, !!(flags & FFO_DIRECT)));
 
 //write
 	fffile_writecz(ffstdout, "ffaio_fwrite...");

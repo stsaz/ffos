@@ -758,9 +758,10 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 			(void)GetExitCodeThread(th, (DWORD *)exit_code);
 		(void)CloseHandle(th);
 		ret = 0;
-	}
-	else if (ret == WAIT_TIMEOUT)
+	} else if (ret == WAIT_TIMEOUT) {
+		fferr_set(ETIMEDOUT);
 		ret = ETIMEDOUT;
+	}
 	return ret;
 }
 

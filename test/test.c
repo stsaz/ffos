@@ -327,6 +327,7 @@ int test_backtrace()
 	return 0;
 }
 
+extern int test_filemap();
 extern int test_fileaio(void);
 
 struct test_s {
@@ -337,7 +338,9 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(file), F(fileaio), F(ps), F(semaphore), F(dl), F(cpu),
+	, F(skt), F(timer), F(kqu), F(ps), F(semaphore), F(dl), F(cpu),
+	F(file), F(filemap), F(fileaio),
+	F(backtrace),
 #ifdef FF_WIN
 	F(wreg),
 #endif

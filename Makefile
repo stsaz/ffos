@@ -34,6 +34,7 @@ FFOS_TEST_SRC := \
 	$(FFOS)/test/cpu.c \
 	$(FFOS)/test/dir.c \
 	$(FFOS)/test/file.c \
+	$(FFOS)/test/filemap.c \
 	$(FFOS)/test/kqu.c \
 	$(FFOS)/test/mem.c \
 	$(FFOS)/test/socket.c \

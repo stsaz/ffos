@@ -66,11 +66,7 @@ static FFINL void* ffmem_saferealloc(void *ptr, size_t newsize)
 	return p;
 }
 
-#define ffmem_safefree(p) \
-do { \
-	if (p != NULL) \
-		ffmem_free(p); \
-} while (0)
+#define ffmem_safefree(p)  ffmem_free(p)
 
 #define ffmem_safefree0(p)  FF_SAFECLOSE(p, NULL, ffmem_free)
 

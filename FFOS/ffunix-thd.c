@@ -45,10 +45,13 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 
 	if (timeout_ms == (uint)-1) {
 		r = pthread_join(th, &result);
-		if (r != 0)
-			return r;
 	} else {
-		return ETIMEDOUT;
+		r = ETIMEDOUT;
+	}
+
+	if (r != 0) {
+		fferr_set(r);
+		return r;
 	}
 
 	if (exit_code != NULL)
@@ -85,13 +88,14 @@ int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
 	}
 #else
 	else {
-		errno = EINVAL;
-		return -1;
+		r = EINVAL;
 	}
 #endif
 
-	if (r != 0)
+	if (r != 0) {
+		fferr_set(r);
 		return r;
+	}
 
 	if (exit_code != NULL)
 		*exit_code = (int)(size_t)result;
