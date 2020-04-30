@@ -1,4 +1,4 @@
-/** Functions for IA-32.
+/** Functions for IA-32 and AMD64.
 Copyright (c) 2017 Simon Zolin
 */
 
@@ -15,11 +15,9 @@ static FFINL uint ffint_addcarry32(uint a, uint b)
 }
 
 
-#ifndef FF_64
-
 #define LOCK  "lock; "
 
-static FFINL size_t ffatom_swap(ffatomic *a, size_t val)
+static FFINL size_t ffatom32_swap(ffatomic32 *a, uint val)
 {
 	__asm volatile(
 		"xchgl %0, %1;"
@@ -28,7 +26,7 @@ static FFINL size_t ffatom_swap(ffatomic *a, size_t val)
 	return val;
 }
 
-static FFINL int ffatom_cmpset(ffatomic *a, size_t old, size_t newval)
+static FFINL int ffatom32_cmpset(ffatomic32 *a, uint old, uint newval)
 {
 	size_t ret;
 	__asm volatile(
@@ -40,7 +38,7 @@ static FFINL int ffatom_cmpset(ffatomic *a, size_t old, size_t newval)
 }
 
 
-static FFINL size_t ffatom_fetchadd(ffatomic *a, size_t add)
+static FFINL size_t ffatom32_fetchadd(ffatomic32 *a, uint add)
 {
 	__asm volatile(
 		LOCK "xaddl %0, %1;"
@@ -49,7 +47,7 @@ static FFINL size_t ffatom_fetchadd(ffatomic *a, size_t add)
 	return add;
 }
 
-static FFINL void ffatom_add(ffatomic *a, size_t add)
+static FFINL void ffatom32_add(ffatomic32 *a, uint add)
 {
 	__asm volatile(
 		LOCK "addl %1, %0;"
@@ -57,21 +55,21 @@ static FFINL void ffatom_add(ffatomic *a, size_t add)
 		: "ir" (add));
 }
 
-static FFINL void ffatom_inc(ffatomic *a)
+static FFINL void ffatom32_inc(ffatomic32 *a)
 {
 	__asm volatile(
 		LOCK "incl %0;"
 		: "+m" (a->val));
 }
 
-static FFINL void ffatom_dec(ffatomic *a)
+static FFINL void ffatom32_dec(ffatomic32 *a)
 {
 	__asm volatile(
 		LOCK "decl %0;"
 		: "+m" (a->val));
 }
 
-static FFINL void ffatom_or(ffatomic *a, size_t v)
+static FFINL void ffatom32_or(ffatomic32 *a, uint v)
 {
 	__asm volatile(
 		LOCK "orl %1, %0;"
@@ -80,7 +78,7 @@ static FFINL void ffatom_or(ffatomic *a, size_t v)
 		: "memory");
 }
 
-static FFINL void ffatom_xor(ffatomic *a, size_t v)
+static FFINL void ffatom32_xor(ffatomic32 *a, uint v)
 {
 	__asm volatile(
 		LOCK "xorl %1, %0;"
@@ -89,7 +87,7 @@ static FFINL void ffatom_xor(ffatomic *a, size_t v)
 		: "memory");
 }
 
-static FFINL void ffatom_and(ffatomic *a, size_t v)
+static FFINL void ffatom32_and(ffatomic32 *a, uint v)
 {
 	__asm volatile(
 		LOCK "andl %1, %0;"
@@ -99,11 +97,29 @@ static FFINL void ffatom_and(ffatomic *a, size_t v)
 }
 
 
+/** Ensure no "load-load" and "load-store" reorder by CPU. */
 #define ffatom_fence_acq()  ff_compiler_fence()
 
+/** Ensure no "store-store" and "load-store" reorder by CPU. */
 #define ffatom_fence_rel()  ff_compiler_fence()
 
+/** Ensure no "load-load", "load-store" and "store-store" reorder by CPU. */
 #define ffatom_fence_acq_rel()  ff_compiler_fence()
+
+#define ffcpu_pause()  __asm volatile("pause")
+
+
+#ifndef FF_64
+
+#define ffatom_swap(a, val)  ffatom32_swap((ffatomic32*)a, val)
+#define ffatom_cmpset(a, old, newval)  ffatom32_cmpset((ffatomic32*)a, old, newval)
+#define ffatom_fetchadd(a, add)  ffatom32_fetchadd((ffatomic32*)a, add)
+#define ffatom_add(a, add)  ffatom32_add((ffatomic32*)a, add)
+#define ffatom_inc(a)  ffatom32_inc((ffatomic32*)a)
+#define ffatom_dec(a)  ffatom32_dec((ffatomic32*)a)
+#define ffatom_or(a, v)  ffatom32_or((ffatomic32*)a, v)
+#define ffatom_xor(a, v)  ffatom32_xor((ffatomic32*)a, v)
+#define ffatom_and(a, v)  ffatom32_and((ffatomic32*)a, v)
 
 static FFINL void ffatom_fence_seq_cst(void)
 {
@@ -119,8 +135,6 @@ static FFINL uint64 ffcpu_rdtsc(void)
 	__asm volatile("rdtsc" : "=A" (r));
 	return r;
 }
-
-#define ffcpu_pause()  __asm volatile("pause")
 
 #undef LOCK
 

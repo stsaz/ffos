@@ -3,8 +3,6 @@ Copyright (c) 2017 Simon Zolin
 */
 
 
-#define LOCK  "lock; "
-
 /** Set new value and return old value. */
 static FFINL size_t ffatom_swap(ffatomic *a, size_t val)
 {
@@ -93,15 +91,6 @@ static FFINL void ffatom_and(ffatomic *a, size_t v)
 }
 
 
-/** Ensure no "load-load" and "load-store" reorder by CPU. */
-#define ffatom_fence_acq()  ff_compiler_fence()
-
-/** Ensure no "store-store" and "load-store" reorder by CPU. */
-#define ffatom_fence_rel()  ff_compiler_fence()
-
-/** Ensure no "load-load", "load-store" and "store-store" reorder by CPU. */
-#define ffatom_fence_acq_rel()  ff_compiler_fence()
-
 /** Ensure no "store-load" reorder by CPU (sequential consistency). */
 static FFINL void ffatom_fence_seq_cst(void)
 {
@@ -117,7 +106,5 @@ static FFINL uint64 ffcpu_rdtsc(void)
 	__asm volatile("rdtsc" : "=a" (lo), "=d" (hi));
 	return ((uint64)hi << 32) | lo;
 }
-
-#define ffcpu_pause()  __asm volatile("pause")
 
 #undef LOCK

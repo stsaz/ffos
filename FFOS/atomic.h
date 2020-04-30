@@ -19,11 +19,17 @@ static FFINL size_t ffatom_addret(ffatomic *a, size_t add)
 	return ffatom_fetchadd(a, add) + add;
 }
 
+static FFINL uint ffatom32_addret(ffatomic32 *a, uint add)
+{
+	return ffatom32_fetchadd(a, add) + add;
+}
+
 /** Increment and return new value. */
 #define ffatom_incret(a)  ffatom_addret(a, 1)
 
 /** Decrement and return new value. */
 #define ffatom_decret(a)  ffatom_addret(a, -1)
+#define ffatom32_decret(a)  ffatom32_addret(a, -1)
 
 /** Switch CPU to another task. */
 #ifdef FF_WIN
