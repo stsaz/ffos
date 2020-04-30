@@ -23,6 +23,7 @@ FFOS_SRC += $(FFOS)/FFOS/ffunix.c
 FFOS_SKT :=
 FFOS_WREG :=
 FFOS_THD := $(FFOS_OBJ_DIR)/ffunix-thd.o
+FFOS_NETCONF := $(FFOS_OBJ_DIR)/ffunix-netconf.o
 endif
 
 FFOS_HDR := $(wildcard $(FFOS)/*.h) \
