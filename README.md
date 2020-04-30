@@ -20,6 +20,7 @@ FEATURES
 --------
 
 * system types - `FFOS/types.h`
+* preprocessor detection of OS, CPU, compiler - `FFOS/detect-*.h`
 * files - `FFOS/file.h`
 * pipes - `FFOS/file.h`
 * directories - `FFOS/dir.h`

@@ -7,77 +7,28 @@ Copyright (c) 2013 Simon Zolin
 
 #define FF_VER  0x010d0000
 
-#if defined __amd64__ || defined _M_AMD64
-	#define FF_AMD64
-#elif defined __i386__ || defined _M_IX86
-	#define FF_X86
-#elif defined __arm__ || defined _M_ARM
-	#define FF_ARM
-#elif defined __aarch64__
-	#define FF_ARM
-#else
-	#error This CPU is not supported
-#endif
-#if defined __LP64__ || defined _WIN64
-	#define FF_64
-#endif
+#include <FFOS/detect-cpu.h>
+#include <FFOS/detect-os.h>
 
-
-#if defined __linux__
-	#define FF_UNIX
-	#define FF_LINUX
-	#ifdef ANDROID
-		#define FF_ANDROID
-	#else
-		#define FF_LINUX_MAINLINE
-	#endif
+#if defined FF_LINUX
 	#include <FFOS/linux/types.h>
-	#include <FFOS/unix/types.h>
 
-#elif defined __APPLE__ && defined __MACH__
-	#define FF_UNIX
-	#define FF_APPLE
+#elif defined FF_APPLE
 	#include <FFOS/bsd/types.h>
+
+#elif defined FF_BSD
+	#include <FFOS/bsd/types.h>
+#endif
+
+#if defined FF_UNIX
 	#include <FFOS/unix/types.h>
 
-#elif defined __unix__
-	#define FF_UNIX
-	#include <sys/param.h>
-	#if defined BSD
-		#define FF_BSD
-		#include <FFOS/bsd/types.h>
-	#endif
-	#include <FFOS/unix/types.h>
-
-#elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__
-	#ifndef FF_WIN
-		#define FF_WIN 0x0600
-	#endif
+#elif defined FF_WIN
 	#include <FFOS/win/types.h>
-
-#else
-	#error This kernel is not supported.
 #endif
 
-
-#if defined __clang__
-	#define FF_CLANG
-	#include <FFOS/compiler-gcc.h>
-
-// #elif defined _MSC_VER
-// 	#define FF_MSVC
-
-#elif defined __MINGW32__ || defined __MINGW64__
-	#define FF_MINGW
-	#include <FFOS/compiler-gcc.h>
-
-#elif defined __GNUC__
-	#define FF_GCC
-	#include <FFOS/compiler-gcc.h>
-
-#else
-	#error "This compiler is not supported"
-#endif
+#include <FFOS/detect-compiler.h>
+#include <FFOS/compiler-gcc.h>
 
 
 typedef signed char ffint8;
