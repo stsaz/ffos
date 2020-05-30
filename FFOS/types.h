@@ -30,6 +30,9 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/detect-compiler.h>
 #include <FFOS/compiler-gcc.h>
 
+#define ffmem_alloc // ffbase won't define memory allocation functions
+#include <ffbase/base.h>
+#undef ffmem_alloc
 
 typedef signed char ffint8;
 typedef int ffbool;
@@ -38,13 +41,6 @@ typedef int ffbool;
 	#define FF_EXTN extern "C"
 #else
 	#define FF_EXTN extern
-#endif
-
-#if defined _DEBUG || defined FF_ASSERT_ENABLED
-	#include <assert.h>
-	#define FF_ASSERT(expr)  assert(expr)
-#else
-	#define FF_ASSERT(expr)
 #endif
 
 
@@ -68,12 +64,12 @@ enum FFDBG_T {
 @t: enum FFDBG_T + level. */
 extern int ffdbg_print(int t, const char *fmt, ...);
 
-#ifdef _DEBUG
 extern int ffdbg_mask; //~(enum FFDBG_T) + level
 
 #define FFDBG_CHKLEV(t) \
 	((ffdbg_mask & 0x0f) >= ((t) & 0x0f) && !((ffdbg_mask & (t)) & ~0x0f))
 
+#ifdef FF_DEBUG
 #define FFDBG_PRINT(t, ...) \
 do { \
 	if (FFDBG_CHKLEV(t)) \

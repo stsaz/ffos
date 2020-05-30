@@ -18,15 +18,5 @@ __asm__(".symver pow,pow@GLIBC_2.2.5"); //override GLIBC_2.29
 #endif
 
 
-#include <asm/byteorder.h>
-#if defined __LITTLE_ENDIAN
-	#define FF_LITTLE_ENDIAN
-#elif defined __BIG_ENDIAN
-	#define FF_BIG_ENDIAN
-#else
-	#error Undefined endian
-#endif
-
-
 typedef unsigned short ushort;
 typedef unsigned int uint;

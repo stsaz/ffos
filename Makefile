@@ -2,6 +2,7 @@
 
 ROOT := ..
 FFOS := $(ROOT)/ffos
+FFBASE := $(ROOT)/ffbase
 FFOS_OBJ_DIR = .
 DEBUG := 1
 OPT := LTO
@@ -14,9 +15,10 @@ else
 TEST_BIN := ffostest
 endif
 
-FFOS_CFLAGS := $(CFLAGS) -DFF_FFOS_ONLY -Werror
+# CFLAGS += -DFF_WIN=0x0501
+FFOS_CFLAGS := $(CFLAGS) -Werror
 CFLAGS += -Werror -Wall \
-	-I$(FFOS)
+	-I$(FFBASE) -I$(FFOS)
 
 
 all: $(TEST_BIN)

@@ -8,28 +8,30 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/time.h>
 
 
-typedef struct ffenv {
-	size_t n;
-	char **ptr;
-} ffenv;
-
-FF_EXTN int ffenv_init(ffenv *env, char **envptr);
-
-FF_EXTN void ffenv_destroy(ffenv *env);
-
-/** Expand environment variables in a string.
-UNIX: "text $VAR text"
-Windows: "text %VAR% text"
-@dst: expanded string
-Return 'dst' or a new allocated buffer (if dst == NULL). */
-FF_EXTN char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src);
-
+typedef ffbyte ffenv;
+static inline int ffenv_init(ffenv *env, char **envptr){return 0;}
+static inline void ffenv_destroy(ffenv *env){}
 
 #ifdef FF_UNIX
+
+/** Expand environment variables in a string.
+src:
+UNIX: "text $VAR text"
+Windows: "text %VAR% text"
+dst: expanded string, NULL-terminated
+ NULL: allocate new buffer
+Return 'dst' or a new allocated buffer;
+ NULL on error */
+static char* ffenv_expand(void *unused, char *dst, size_t cap, const char *src);
+
 #include <FFOS/unix/ps.h>
 
 #elif defined FF_WIN
+
 #include <FFOS/win/ps.h>
+
+FF_EXTN char* ffenv_expand(void *unused, char *dst, size_t cap, const char *src);
+
 #endif
 
 typedef struct ffps_execinfo {

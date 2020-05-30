@@ -251,20 +251,3 @@ static FFINL void ffsf_sethdtr(sf_hdtr *ht, ffiovec *hdrs, size_t nhdrs, ffiovec
 	ht->trailers = trls;
 	ht->trl_cnt = (int)ntrls;
 }
-
-
-enum FFNETCONF_F {
-	FFNETCONF_DNS_ADDR = 1, // list of DNS server addresses
-};
-
-typedef struct {
-	char **dns_addrs; // char*[]
-	uint dns_addrs_num;
-} ffnetconf;
-
-FF_EXTN void ffnetconf_destroy(ffnetconf *nc);
-
-/** Get system network configuration.
-flags: enum FFNETCONF_F
-Return 0 on success. */
-FF_EXTN int ffnetconf_get(ffnetconf *nc, uint flags);

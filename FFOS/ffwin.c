@@ -46,7 +46,7 @@ void* _ffmem_align(size_t size, size_t align)
 }
 
 
-char* ffenv_expand(ffenv *env, char *dst, size_t cap, const char *src)
+char* ffenv_expand(void *unused, char *dst, size_t cap, const char *src)
 {
 	ffsyschar *wsrc, *wdst = NULL;
 	size_t wlen;
@@ -70,12 +70,6 @@ done:
 	ffmem_free(wsrc);
 	ffmem_safefree(wdst);
 	return dst;
-}
-
-int ffenv_update(void)
-{
-	DWORD_PTR r;
-	return !SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)L"Environment", SMTO_ABORTIFHUNG , 5000, &r);
 }
 
 
@@ -688,14 +682,6 @@ void fftime_local(fftime_zone *tz)
 }
 
 
-size_t ff_utow(WCHAR *dst, size_t dst_cap, const char *src, size_t srclen, int flags)
-{
-	int r;
-	r = MultiByteToWideChar(CP_UTF8, 0/*MB_ERR_INVALID_CHARS*/, src
-		, FF_TOINT(srclen), dst, FF_TOINT(dst_cap));
-	return r;
-}
-
 WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 {
 	size_t wlen;
@@ -723,31 +709,6 @@ done:
 		*dstlen = wlen;
 	return dst;
 }
-
-#ifdef FF_FFOS_ONLY
-size_t ff_wtou(char *dst, size_t dst_cap, const WCHAR *src, size_t srclen, int flags)
-{
-	int r;
-	r = WideCharToMultiByte(CP_UTF8, 0, src, FF_TOINT(srclen), dst, FF_TOINT(dst_cap), NULL, NULL);
-	return r;
-}
-
-#else
-FF_EXTN size_t ffutf8_encode(char *dst, size_t cap, const char *src, size_t *len, uint flags);
-size_t ff_wtou(char *dst, size_t cap, const wchar_t *src, size_t len, int flags)
-{
-	enum {
-		FFU_UTF16LE = 1,
-		FFU_FWHOLE = 1 << 31
-	};
-	len = (len != (size_t)-1) ? 2 * len : 2 * (ffq_len(src) + 1);
-	size_t ln = len;
-	size_t r = ffutf8_encode(dst, cap, (char*)src, &ln, FFU_UTF16LE | FFU_FWHOLE);
-	if (ln != len)
-		return 0; //not enough output space
-	return r;
-}
-#endif
 
 
 int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)

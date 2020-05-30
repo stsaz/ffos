@@ -36,6 +36,3 @@ is translated into "select * from table". */
 #endif
 
 #define ffq_alloc(n)  ffmem_allocT(n, ffsyschar)
-
-/** Convert wide string to UTF-8. */
-FF_EXTN size_t ff_wtou(char *dst, size_t dst_cap, const wchar_t *src, size_t srclen, int flags);

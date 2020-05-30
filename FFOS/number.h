@@ -11,8 +11,6 @@ Copyright (c) 2016 Simon Zolin
 
 #define FF_SIZEOF(struct_name, member)  sizeof(((struct_name*)0)->member)
 
-#define FF_PTR(p, off)  ((void*)((char*)(p) + (off)))
-
 /** Get structure object by its member. */
 #define FF_GETPTR(struct_T, member_name, member_ptr) \
 	((struct_T*)((char*)member_ptr - FFOFF(struct_T, member_name)))
@@ -52,26 +50,10 @@ do { \
 #define FF_HI32(i64)  ((uint)(((i64) >> 32) & 0xffffffff))
 
 
-#define ffabs(n) \
-({ \
-	__typeof__(n) _n = (n); \
-	(_n >= 0) ? _n : -_n; \
-})
-
 static FFINL uint64 ffmin64(uint64 a, uint64 b)
 {
 	return (a < b) ? a : b;
 }
-
-static FFINL size_t ffmin(size_t a, size_t b)
-{
-	return (a < b) ? a : b;
-}
-
-/** Get the maximum number.
-Note: in some cases it may be incorrect without the explicit signed-integer type. */
-#define ffmax(i0, i1) \
-	(((i0) < (i1)) ? (i1) : (i0))
 
 /** Get the maximum signed integer number. */
 static inline int64 ffmaxi(int64 a, int64 b)

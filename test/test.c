@@ -11,9 +11,13 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/atomic.h>
 #include <FFOS/semaphore.h>
 #include <FFOS/backtrace.h>
+#include <FFOS/netconf.h>
+#include <ffbase/stringz.h>
+#include <test/test.h>
 
 #include <test/all.h>
 
+#undef x
 #define x FFTEST_BOOL
 #define CALL FFTEST_TIMECALL
 
@@ -125,6 +129,57 @@ static int test_ps(void)
 
 	return 0;
 }
+
+int test_env()
+{
+	char *p, buf[256];
+	ffstr s;
+
+#ifdef FF_UNIX
+	char **ee = environ;
+	char *e_s[] = { "KEY1=VAL1", "KEY=VAL", NULL };
+	environ = e_s;
+
+	p = ffenv_expand(NULL, NULL, 0, "asdf $KEY$KEY2 1234");
+	ffstr_setz(&s, p);
+	xseq(&s, "asdf VAL 1234");
+	ffmem_free(p);
+
+	p = ffenv_expand(NULL, buf, sizeof(buf), "asdf $KEY$KEY1 1234");
+	x(p == buf);
+	ffstr_setz(&s, p);
+	xseq(&s, "asdf VALVAL1 1234");
+
+	environ = ee;
+
+#else
+	p = ffenv_expand(NULL, buf, sizeof(buf), "asdf %WINDIR%%WINDIR1% 1234");
+	x(p == buf);
+	ffstr_setz(&s, p);
+	xseq(&s, "asdf C:\\WINDOWS%WINDIR1% 1234");
+
+	p = ffenv_expand(NULL, NULL, 0, "asdf %WINDIR%%WINDIR1% 1234");
+	ffstr_setz(&s, p);
+	xseq(&s, "asdf C:\\WINDOWS%WINDIR1% 1234");
+	ffmem_free(p);
+#endif
+
+	x(0 != fflang_info(FFLANG_FLANG));
+	return 0;
+}
+
+int test_netconf()
+{
+	ffnetconf nc = {};
+	x(0 == ffnetconf_get(&nc, FFNETCONF_DNS_ADDR));
+	x(nc.dns_addrs_num != 0);
+	x(nc.dns_addrs[0] != NULL);
+	x(nc.dns_addrs[0][0] != '\0');
+	printf("dns_addrs[0]: '%s'\n", nc.dns_addrs[0]);
+	ffnetconf_destroy(&nc);
+	return 0;
+}
+
 
 static void test_semaphore_unnamed()
 {
@@ -340,6 +395,8 @@ static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
 	, F(skt), F(timer), F(kqu), F(ps), F(semaphore), F(dl), F(cpu),
 	F(file), F(filemap), F(fileaio),
+	F(netconf),
+	F(env),
 	F(backtrace),
 #ifdef FF_WIN
 	F(wreg),

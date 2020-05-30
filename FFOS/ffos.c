@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/atomic.h>
 #include <FFOS/process.h>
 #include <FFOS/sig.h>
+#include <ffbase/string.h>
 #include <assert.h>
 
 
@@ -191,7 +192,7 @@ static void _ffaio_run1(ffkqu_entry *e)
 	r = 0 != (evflags & FFKQU_READ);
 	w = 0 != (evflags & FFKQU_WRITE);
 
-	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%I, evflags:%xu, r:%u, w:%u, rhandler:%p, whandler:%p, stale:%u"
+	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%L, evflags:%xu, r:%u, w:%u, rhandler:%p, whandler:%p, stale:%u"
 		, t, (size_t)t->fd, (int)evflags, r, w, t->rhandler, t->whandler, (udata & 1) != t->instance);
 
 	if ((udata & 1) != t->instance)
@@ -255,7 +256,7 @@ void ffkev_call(ffkqu_entry *e)
 	evflags = 0;
 #endif
 	(void)evflags;
-	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%I, evflags:%xu, handler:%p, stale:%u"
+	FFDBG_PRINTLN(FFDBG_KEV | 10, "task:%p, fd:%L, evflags:%xu, handler:%p, stale:%u"
 		, kev, (size_t)kev->fd, evflags, kev->handler, (udata & 1) != kev->side);
 
 	if ((udata & 1) != kev->side) {
@@ -438,10 +439,23 @@ void ffmem_alignfree(void *ptr)
 #endif //FFMEM_DBG
 
 
-#if defined _DEBUG && defined FF_FFOS_ONLY
-int ffdbg_mask;
+int ffdbg_mask = 1;
+
 int ffdbg_print(int t, const char *fmt, ...)
 {
+	char buf[4096];
+	ffstr s;
+	ffstr_set(&s, buf, 0);
+
+	static ffatomic counter;
+	ffstr_addfmt(&s, sizeof(buf), "%p#%L "
+		, &counter, (ffsize)ffatom_incret(&counter));
+
+	va_list va;
+	va_start(va, fmt);
+	ffstr_addfmtv(&s, sizeof(buf), fmt, va);
+	va_end(va);
+
+	fffile_write(ffstdout, s.ptr, s.len);
 	return 0;
 }
-#endif

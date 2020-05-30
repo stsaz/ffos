@@ -5,7 +5,11 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/file.h>
 
 
-FF_EXTN int ffenv_update(void);
+static inline int ffenv_update(void)
+{
+	DWORD_PTR r;
+	return !SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)L"Environment", SMTO_ABORTIFHUNG, 5000, &r);
+}
 
 
 typedef HANDLE ffps;
@@ -102,6 +106,7 @@ enum FFLANG_F {
 enum FFLANG {
 	FFLANG_NONE,
 	FFLANG_ENG = LANG_ENGLISH,
+	FFLANG_ESP = LANG_SPANISH,
 	FFLANG_FRA = LANG_FRENCH,
 	FFLANG_GER = LANG_GERMAN,
 	FFLANG_RUS = LANG_RUSSIAN,

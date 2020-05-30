@@ -4,7 +4,7 @@
 # FFOS_OBJ_DIR = .
 override FFOS_CFLAGS += \
 	-Wall -Wextra -Wpointer-arith -Wno-unused-parameter \
-	-I$(FFOS)
+	-I$(FFBASE) -I$(FFOS)
 
 ifeq ($(LD),clang)
 override FFOS_CFLAGS += -Wno-missing-field-initializers
@@ -23,11 +23,11 @@ FFOS_SRC += $(FFOS)/FFOS/ffunix.c
 FFOS_SKT :=
 FFOS_WREG :=
 FFOS_THD := $(FFOS_OBJ_DIR)/ffunix-thd.o
-FFOS_NETCONF := $(FFOS_OBJ_DIR)/ffunix-netconf.o
 endif
 
-FFOS_HDR := $(wildcard $(FFOS)/*.h) \
-	$(wildcard $(FFOS)/$(OS)/*.h)
+FFOS_HDR := $(wildcard $(FFOS)/FFOS/*.h) \
+	$(wildcard $(FFOS)/FFOS/unix/*.h) \
+	$(wildcard $(FFOS)/FFOS/$(OS)/*.h)
 
 # FFOS_OBJ=$(FFOS_SRC:.c=.o)
 FFOS_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_SRC)))))

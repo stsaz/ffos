@@ -7,10 +7,6 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/string.h>
 #include <FFOS/error.h>
 
-#ifndef FF_FFOS_ONLY
-extern size_t ffutf8_from_utf16le(char *dst, size_t cap, const char *src, size_t *len, uint flags);
-#endif
-
 
 ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 {
@@ -143,13 +139,12 @@ int ffwreg_read(ffwreg k, const char *name, ffwreg_val *val)
 				size--;
 
 			if (val->data == NULL) {
-				n = size;
-#ifdef FF_FFOS_ONLY
-				r = n * 4;
-#else
-				r = ffutf8_from_utf16le(NULL, 0, valbuf, &n, 0);
-#endif
-
+				r = ff_wtou(NULL, 0, (void*)valbuf, size / sizeof(ffsyschar), 0);
+				if (r == 0) {
+					fferr_set(EINVAL);
+					r = -1;
+					goto end;
+				}
 				if (NULL == (val->data = ffmem_alloc(r))) {
 					r = -1;
 					goto end;

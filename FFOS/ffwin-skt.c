@@ -4,6 +4,7 @@ Copyright (c) 2016 Simon Zolin
 
 #include <FFOS/asyncio.h>
 #include <FFOS/socket.h>
+#include <FFOS/netconf.h>
 #include <iphlpapi.h>
 
 
@@ -363,11 +364,6 @@ done:
 	return r;
 }
 
-
-void ffnetconf_destroy(ffnetconf *nc)
-{
-	ffmem_free0(nc->dns_addrs);
-}
 
 static FIXED_INFO* getnet_info()
 {

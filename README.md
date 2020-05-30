@@ -15,6 +15,12 @@ The supported compilers: gcc (+MinGW), clang.
 The resulting code is almost completely inlined by a compiler: the code is native, high-performance but still cross-platform.
 
 
+## Requirements
+
+* gcc or clang
+* ffbase (base types & algorithms)
+
+
 --------
 FEATURES
 --------
