@@ -61,6 +61,8 @@ static inline int64 ffmaxi(int64 a, int64 b)
 	return ffmax(a, b);
 }
 
+#define ffabs  ffint_abs
+
 /** Set the minimum value.
 The same as: dst = min(dst, src) */
 #define ffint_setmin(dst, src) \
@@ -78,26 +80,12 @@ do { \
 } while (0)
 
 
-/** Convert host integer <-> little/big endian. */
-
-#if defined FF_BIG_ENDIAN
-	#define ffhtol64(i)  ffint_bswap64(i)
-	#define ffhtol32(i)  ffint_bswap32(i)
-	#define ffhtol16(i)  ffint_bswap16(i)
-
-	#define ffhton64(i)  (i)
-	#define ffhton32(i)  (i)
-	#define ffhton16(i)  (i)
-
-#elif defined FF_LITTLE_ENDIAN
-	#define ffhtol64(i)  (i)
-	#define ffhtol32(i)  (i)
-	#define ffhtol16(i)  (i)
-
-	#define ffhton64(i)  ffint_bswap64(i)
-	#define ffhton32(i)  ffint_bswap32(i)
-	#define ffhton16(i)  ffint_bswap16(i)
-#endif
+#define ffhtol64(i)  ffint_le_cpu64(i)
+#define ffhtol32(i)  ffint_le_cpu32(i)
+#define ffhtol16(i)  ffint_le_cpu16(i)
+#define ffhton64(i)  ffint_be_cpu64(i)
+#define ffhton32(i)  ffint_be_cpu32(i)
+#define ffhton16(i)  ffint_be_cpu16(i)
 
 
 #define ff_ispow2(n)  ((((n) - 1) & (n)) == 0)

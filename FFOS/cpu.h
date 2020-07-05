@@ -5,9 +5,9 @@ Copyright (c) 2017 Simon Zolin
 #pragma once
 
 #include <FFOS/types.h>
+#include <ffbase/atomic.h>
 
 
-typedef struct { size_t val; } ffatomic;
 typedef struct { uint val; } ffatomic32;
 
 #if defined FF_X86

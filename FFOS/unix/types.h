@@ -3,6 +3,7 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <unistd.h>
+#include <string.h>
 #include <stdint.h>
 
 

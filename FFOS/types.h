@@ -7,7 +7,6 @@ Copyright (c) 2013 Simon Zolin
 
 #define FF_VER  0x010d0000
 
-#include <FFOS/detect-cpu.h>
 #include <FFOS/detect-os.h>
 
 #if defined FF_LINUX
@@ -27,12 +26,12 @@ Copyright (c) 2013 Simon Zolin
 	#include <FFOS/win/types.h>
 #endif
 
-#include <FFOS/detect-compiler.h>
-#include <FFOS/compiler-gcc.h>
-
 #define ffmem_alloc // ffbase won't define memory allocation functions
 #include <ffbase/base.h>
 #undef ffmem_alloc
+
+#include <FFOS/detect-compiler.h>
+#include <FFOS/compiler-gcc.h>
 
 typedef signed char ffint8;
 typedef int ffbool;

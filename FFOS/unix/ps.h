@@ -182,6 +182,11 @@ enum FFLANG {
 	FFLANG_RUS,
 };
 
+static inline int _fflang_cmp(const void *a, const void *b)
+{
+	return ffmem_cmp(a, b, 2);
+}
+
 /** Get user locale information.
 flags: enum FFLANG_F
 Return value or -1 on error. */
@@ -200,13 +205,13 @@ static inline int fflang_info(uint flags)
 		return FFLANG_NONE;
 
 	static const char langstr_sorted[][2] = {
-		"de", // FFLANG_GER
-		"en", // FFLANG_ENG
-		"es", // FFLANG_ESP
-		"fr", // FFLANG_FRA
-		"ru", // FFLANG_RUS
+		{'d','e'}, // FFLANG_GER
+		{'e','n'}, // FFLANG_ENG
+		{'e','s'}, // FFLANG_ESP
+		{'f','r'}, // FFLANG_FRA
+		{'r','u'}, // FFLANG_RUS
 	};
-	int i = ffarrint16_binfind((ffushort*)langstr_sorted, FF_COUNT(langstr_sorted), *(ffushort*)val);
+	int i = ffarr_binfind(langstr_sorted, FF_COUNT(langstr_sorted), val, 2, _fflang_cmp);
 	if (i < 0)
 		return FFLANG_NONE;
 	return i + 1;
