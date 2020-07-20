@@ -50,7 +50,7 @@ endif
 
 FFOS_TEST_OBJ := $(addprefix $(FFOS_OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(FFOS_TEST_SRC)))))
 
-$(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR)
+$(FFOS_OBJ_DIR)/%.o: $(FFOS)/test/%.c $(FFOS_HDR) $(FFOS_TEST_HDR) $(FFOS)/Makefile
 	$(C) $(CFLAGS)  $< -o$@
 
 TEST_O := $(FFOS_TEST_OBJ) $(FFOS_WREG) \

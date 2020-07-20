@@ -13,137 +13,14 @@ Copyright (c) 2013 Simon Zolin
 #include <errno.h>
 
 
-/** File information. */
-typedef struct stat fffileinfo;
-
-#ifdef FF_LINUX
-#include <FFOS/linux/file.h>
-#else
-#include <FFOS/bsd/file.h>
-#endif
-
-
 enum {
 	FF_MAXPATH = 4096
 	, FF_MAXFN = 256
 };
 
-enum FFFILE_OPEN {
-	FFO_CREATE = O_CREAT,
-	FFO_CREATENEW = O_CREAT | O_EXCL
-	, FFO_APPEND = O_APPEND | O_CREAT
-
-	, FFO_RDONLY = O_RDONLY
-	, FFO_WRONLY = O_WRONLY
-	, FFO_RDWR = O_RDWR
-
-	, FFO_NODOSNAME = 0
-	, FFO_NONBLOCK = O_NONBLOCK
-	,
-	FFO_NOATIME = O_NOATIME,
-	FFO_TRUNC = O_TRUNC,
-	FFO_DIRECT = O_DIRECT,
-};
-
-
-static FFINL fffd fffile_createtemp(const char *filename, int flags) {
-	fffd fd = fffile_open(filename, FFO_CREATENEW | flags);
-	if (fd != FF_BADFD)
-		unlink(filename);
-	return fd;
-}
-
 #define fffile_createtempq  fffile_createtemp
 
-/** Read from a file descriptor.
-Return -1 on error. */
-static FFINL ssize_t fffile_read(fffd fd, void *out, size_t size) {
-	return read(fd, out, size);
-}
-
-/** Write to a file descriptor.
-Return -1 on error. */
-static FFINL ssize_t fffile_write(fffd fd, const void *in, size_t size) {
-	return write(fd, in, size);
-}
-
-/** File I/O at a specific offset. */
-#define fffile_pwrite(fd, buf, size, off)  pwrite(fd, buf, size, off)
-#define fffile_pread(fd, buf, size, off)  pread(fd, buf, size, off)
-
-/** Truncate a file to a specified length.
-Windows: un-aligned truncate on a file with O_DIRECT fails with ERROR_INVALID_PARAMETER
- due to un-aligned seeking request. */
-static FFINL int fffile_trunc(fffd fd, uint64 len)
-{
-	return ftruncate(fd, len);
-}
-
-/** Set file non-blocking mode. */
-static FFINL int fffile_nblock(fffd fd, int nblock) {
-	return ioctl(fd, FIONBIO, &nblock);
-}
-
-/** Duplicate a file descriptor.
-Return FF_BADFD on error. */
-#define fffile_dup(fd)  dup(fd)
-
-/** Close a file descriptor. */
-#define fffile_close(fd)  close(fd)
-
-/** Get file size.
-Return -1 on error. */
-static FFINL int64 fffile_size(fffd fd) {
-	struct stat s;
-	if (0 != fstat(fd, &s))
-		return -1;
-	return s.st_size;
-}
-
-/** Check whether directory flag is set in file attributes. */
-#define fffile_isdir(file_attr)  (((file_attr) & S_IFMT) == S_IFDIR)
-
-/** Set file attributes. */
-#define fffile_attrset(fd, mode)  fchmod(fd, mode)
-
-/** Set file attributes by file name. */
-#define fffile_attrsetfn(fn, mode)  chmod(fn, mode)
-
-/** Change ownership of a file. */
-#define fffile_chown(fd, uid, gid)  fchown(fd, uid, gid)
-
-
-/** Get file status by file descriptor. */
-#define fffile_info(fd, fi)  fstat(fd, fi)
-
-/** Get file status by name. */
-#define fffile_infofn(fn, fi)  stat(fn, fi)
-
-/** Return file size from fileinfo. */
-#define fffile_infosize(fi)  (fi)->st_size
-
-/** Return file attributes from fileinfo. */
-#define fffile_infoattr(fi)  (fi)->st_mode
-
 typedef ino_t fffileid;
-
-/** Get file ID. */
-#define fffile_infoid(fi)  (fi)->st_ino
-
-FF_EXTN int fffile_settime(fffd fd, const fftime *last_write);
-FF_EXTN int fffile_settimefn(const char *fn, const fftime *last_write);
-
-/** Change the name or location of a file. */
-#define fffile_rename(oldpath, newpath)  rename(oldpath, newpath)
-
-/** Create a hard link to the file. */
-#define fffile_hardlink(oldpath, newpath)  link(oldpath, newpath)
-
-/** Create a symbolic link to the file. */
-#define fffile_symlink(target, linkpath)  symlink(target, linkpath)
-
-/** Delete a name and possibly the file it refers to. */
-#define fffile_rm(fn)  unlink(fn)
 
 
 enum FFSTD {

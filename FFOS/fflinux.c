@@ -20,25 +20,6 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/eventfd.h>
 
 
-#ifdef FF_LINUX_MAINLINE
-int fffile_settime(fffd fd, const fftime *last_write)
-{
-	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
-	return futimens(fd, ts);
-}
-#endif
-
-int fffile_settimefn(const char *fn, const fftime *last_write)
-{
-	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
-	return utimensat(AT_FDCWD, fn, ts, 0);
-}
-
-
 int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 {
 	fffd fd[2];

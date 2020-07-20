@@ -73,141 +73,6 @@ done:
 }
 
 
-fffd fffile_openq(const ffsyschar *filename, int flags)
-{
-	enum { share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE };
-	int mode = (flags & 0x0000000f);
-	int access = (flags & 0x000000f0) << 24;
-	int f = (flags & 0xffff0000) | FILE_ATTRIBUTE_NORMAL
-		| FILE_FLAG_BACKUP_SEMANTICS /*open directories*/;
-
-	if ((flags & FFO_NODOSNAME) && !ffpath_islong(filename)) {
-		return FF_BADFD;
-	}
-
-	if (mode == 0)
-		mode = OPEN_EXISTING;
-	else if (mode == FFO_APPEND) {
-		mode = OPEN_ALWAYS;
-		access = STANDARD_RIGHTS_WRITE | FILE_APPEND_DATA | SYNCHRONIZE;
-	}
-
-	if (flags & FFO_TRUNC) {
-		mode = (mode == OPEN_ALWAYS) ? CREATE_ALWAYS
-			: (mode == OPEN_EXISTING) ? TRUNCATE_EXISTING
-			: 0;
-	}
-
-	return CreateFile(filename, access, share, NULL, mode, f, NULL);
-}
-
-fffd fffile_open(const char *filename, int flags)
-{
-	fffd f;
-	ffsyschar *w, ws[FF_MAXFN];
-	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
-		return FF_BADFD;
-
-	f = fffile_openq(w, flags);
-	if (w != ws)
-		ffmem_free(w);
-	return f;
-}
-
-int fffile_trunc(fffd f, uint64 pos)
-{
-	int r = 0;
-	int64 curpos = fffile_seek(f, 0, SEEK_CUR);
-	if (curpos == -1 || -1 == fffile_seek(f, pos, SEEK_SET))
-		return -1;
-	if (!SetEndOfFile(f))
-		r = -1;
-	if (-1 == fffile_seek(f, curpos, SEEK_SET))
-		r = -1;
-	return r;
-}
-
-int fffile_infofn(const char *fn, fffileinfo *fi)
-{
-	ffsyschar *w, wname[FF_MAXFN];
-	WIN32_FILE_ATTRIBUTE_DATA fad;
-	size_t n = FFCNT(wname);
-	BOOL b;
-
-	if (NULL == (w = ffs_utow(wname, &n, fn, -1)))
-		return -1;
-	b = GetFileAttributesEx(w, GetFileExInfoStandard, &fad);
-	if (w != wname)
-		ffmem_free(w);
-	if (!b)
-		return -1;
-
-	fi->dwFileAttributes = fad.dwFileAttributes;
-	fi->ftCreationTime = fad.ftCreationTime;
-	fi->ftLastAccessTime = fad.ftLastAccessTime;
-	fi->ftLastWriteTime = fad.ftLastWriteTime;
-	fi->nFileSizeHigh = fad.nFileSizeHigh;
-	fi->nFileSizeLow = fad.nFileSizeLow;
-	fi->nFileIndexHigh = fi->nFileIndexLow = 0;
-	return 0;
-}
-
-int fffile_attrsetfn(const char *fn, uint attr)
-{
-	int r;
-	ffsyschar *w, ws[FF_MAXFN];
-	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, fn, -1)))
-		return -1;
-
-	r = fffile_attrsetfnq(w, attr);
-	if (w != ws)
-		ffmem_free(w);
-	return r;
-}
-
-int fffile_rename(const char *src, const char *dst)
-{
-	ffsyschar wsrc[FF_MAXFN], wdst[FF_MAXFN], *ws = wsrc, *wd = wdst;
-	size_t ns = FFCNT(wsrc), nd = FFCNT(wdst);
-	int r = -1;
-
-	if (NULL == (ws = ffs_utow(wsrc, &ns, src, -1))
-		|| NULL == (wd = ffs_utow(wdst, &nd, dst, -1)))
-		goto fail;
-
-	r = fffile_renameq(ws, wd);
-
-fail:
-	if (ws != wsrc)
-		ffmem_free(ws);
-	if (wd != wdst)
-		ffmem_free(wd);
-	return r;
-}
-
-int fffile_hardlink(const char *target, const char *linkname)
-{
-	ffsyschar wsrc_s[FF_MAXFN], *wsrc = wsrc_s;
-	ffsyschar wdst_s[FF_MAXFN], *wdst = wdst_s;
-	size_t ns = FFCNT(wsrc_s), nd = FFCNT(wdst_s);
-	int r = -1;
-
-	if (NULL == (wsrc = ffs_utow(wsrc_s, &ns, target, -1))
-		|| NULL == (wdst = ffs_utow(wdst_s, &nd, linkname, -1)))
-		goto fail;
-
-	r = fffile_hardlinkq(wsrc, wdst);
-
-fail:
-	if (wsrc != wsrc_s)
-		ffmem_free(wsrc);
-	if (wdst != wdst_s)
-		ffmem_free(wdst);
-	return r;
-}
-
 /** Create a system string and add a backslash to the end. */
 static ffsyschar* _ffs_utow_bslash(const char *s)
 {
@@ -248,38 +113,6 @@ end:
 	ffmem_free(wdisk);
 	ffmem_free(wmount);
 	return rc;
-}
-
-int fffile_rmq(const ffsyschar *name)
-{
-	if (!!DeleteFile(name))
-		return 0;
-
-	if (fferr_last() == EACCES) {
-		int attr = GetFileAttributes(name);
-		if (attr == -1
-			|| !(attr & FFWIN_FILE_READONLY)
-			|| !!fffile_attrsetfnq(name, attr & ~FFWIN_FILE_READONLY))
-			return 1;
-		if (!!DeleteFile(name))
-			return 0;
-	}
-
-	return 1;
-}
-
-int fffile_rm(const char *name)
-{
-	ffsyschar ws[FF_MAXFN], *w;
-	size_t n = FFCNT(ws);
-	int r;
-
-	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
-		return -1;
-	r = fffile_rmq(w);
-	if (w != ws)
-		ffmem_free(w);
-	return r;
 }
 
 
@@ -1256,12 +1089,13 @@ int ffsig_read(ffsignal *t, ffsiginfo *si)
 int ffps_sig(int pid, int sig)
 {
 	ffsyschar name[64];
-	fffd p;
+	fffd p = FF_BADFD;
 	byte b;
 
 	pipename(name, FFCNT(name), pid);
 
-	p = fffile_openq(name, O_WRONLY);
+	const ffuint share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+	p = CreateFileW(name, GENERIC_WRITE, share, NULL, OPEN_EXISTING, 0, NULL);
 	if (p == FF_BADFD)
 		return 1;
 

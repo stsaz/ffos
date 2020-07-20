@@ -9,33 +9,28 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 #include <FFOS/asyncio.h>
+#include <ffbase/stringz.h>
+#include <test/test.h>
 
-#define x FFTEST_BOOL
 #define HELLO "hello\n"
 #define FOOBAR "foobar\n"
 
-static int test_diropen(const char *tmpdir)
+void test_diropen()
 {
-	fffd hdir;
-	char fn[FF_MAXPATH];
-	fffileinfo fi;
-
-	FFTEST_FUNC;
-
-	strcpy(fn, tmpdir);
-	strcat(fn, "/tmpdir");
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	ffdir_rm(fn);
 
 	x(0 == ffdir_make(fn));
 
-	hdir = fffile_open(fn, O_RDONLY);
-	x(hdir != FF_BADFD);
-	x(0 == fffile_info(hdir, &fi));
+	fffd d = fffile_open(fn, FFFILE_READONLY);
+	x_sys(d != FF_BADFD);
+	fffileinfo fi = {};
+	x_sys(0 == fffile_info(d, &fi));
 	x(fffile_isdir(fffile_infoattr(&fi)));
-	x(0 == fffile_close(hdir));
+	x_sys(0 == fffile_close(d));
 
-	x(0 == ffdir_rm(fn));
-
-	return 0;
+	x_sys(0 == ffdir_rm(fn));
+	ffmem_free(fn);
 }
 
 static int test_std()
@@ -68,107 +63,355 @@ static int test_pipe()
 	return 0;
 }
 
-static int test_fileinfo(char *fn)
+void test_file_rename()
 {
-	fffileinfo fi;
-	fffd fd;
-	fftime lw;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	char *fnnew = ffsz_allocfmt("%s/%s", TMP_PATH, "ff-new.tmp");
+	fffile_remove(fn);
+	fffile_remove(fnnew);
 
-	FFTEST_FUNC;
+	// create
+	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FF_BADFD);
+	fffile_close(fd);
 
-	fd = fffile_open(fn, O_RDONLY);
-	x(fd != FF_BADFD);
+	x_sys(0 == fffile_rename(fn, fnnew));
 
-	x(0 == fffile_info(fd, &fi));
-	x(0 != fffile_infoattr(&fi));
-	x(0 != fffile_infosize(&fi));
-	x(0 != fffile_infoid(&fi));
-	lw = fffile_infomtime(&fi);
-	x(fftime_sec(&lw) != 0);
+	// open - doesn't exist
+	fd = fffile_open(fn, FFFILE_READWRITE);
+	x(fd == FF_BADFD);
+	xieq(FFERR_FILENOTFOUND, fferr_last());
 
-	x(0 == fffile_close(fd));
-	return 0;
+	// open
+	fd = fffile_open(fnnew, FFFILE_READWRITE);
+	x_sys(fd != FF_BADFD);
+	fffile_close(fd);
+
+	x_sys(0 == fffile_remove(fnnew));
+	ffmem_free(fn);
 }
 
-static void file_link(void)
+/** Check symlink and hardlink */
+void test_file_link()
 {
-	const char *fn = "./ff-file", *slink = "./ff-slink", *hlink = "./ff-hlink";
-	fffd f;
-	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_WRONLY)));
-	fffile_close(f);
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	char *slink = ffsz_allocfmt("%s/%s", TMP_PATH, "ff-slink.tmp");
+	char *hlink = ffsz_allocfmt("%s/%s", TMP_PATH, "ff-hlink.tmp");
+	fffile_remove(fn);
+	fffile_remove(slink);
+	fffile_remove(hlink);
+
+	// create
+	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FF_BADFD);
+	fffile_close(fd);
 
 #ifdef FF_UNIX
-	x(0 == fffile_symlink(fn, slink));
-	x(0 == fffile_hardlink(fn, hlink));
+	x_sys(0 == fffile_symlink(fn, slink));
+	x_sys(0 == fffile_hardlink(fn, hlink));
 #else
-	x(0 == fffile_hardlink(fn, hlink) || fferr_last() == 1);
+	x_sys(0 == fffile_hardlink(fn, hlink) || fferr_last() == 1);
 #endif
 
-	fffile_rm(fn);
-	fffile_rm(slink);
-	fffile_rm(hlink);
+	fffile_remove(fn);
+	fffile_remove(slink);
+	fffile_remove(hlink);
+	ffmem_free(fn);
+	ffmem_free(slink);
+	ffmem_free(hlink);
 }
 
-static void file_ro(const char *fn)
+/** Check that FFFILE_CREATENEW and FFFILE_CREATE work */
+void test_file_create()
 {
-#if !defined FF_WIN
-	return;
+	fffd fd, fd2;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// open - doesn't exist
+	fd = fffile_open(fn, 0);
+	x(fd == FFFILE_BAD);
+	xieq(FFERR_FILENOTFOUND, fferr_last());
+
+	// create new
+	fd = fffile_open(fn, FFFILE_CREATENEW | FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+
+	// create new - already exists
+	fd2 = fffile_open(fn, FFFILE_CREATENEW | FFFILE_READWRITE);
+	x(fd2 == FFFILE_BAD);
+	xieq(FFERR_FILEEXISTS, fferr_last());
+
+	// create - open
+	fd2 = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd2 != FFFILE_BAD);
+	fffile_close(fd2);
+
+	// open
+	fd2 = fffile_open(fn, FFFILE_READWRITE);
+	x_sys(fd2 != FFFILE_BAD);
+	fffile_close(fd2);
+
+	x_sys(0 == fffile_close(fd));
+	x_sys(0 == fffile_remove(fn));
+
+	// create - create
+	fd2 = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x(fd2 != FFFILE_BAD);
+	fffile_close(fd2);
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+}
+
+/** Check that FFFILE_TRUNCATE works */
+void test_file_create_trunc()
+{
+	char buf[80];
+	fffd fd;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// create new
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_TRUNCATE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "123", 3));
+	fffile_close(fd);
+
+	// open - truncate
+	fd = fffile_open(fn, FFFILE_READWRITE | FFFILE_TRUNCATE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(0 == fffile_read(fd, buf, 3));
+	fffile_close(fd);
+
+	// create, truncate
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "123", 3));
+	x_sys(0 == fffile_trunc(fd, 2));
+	fffile_close(fd);
+
+	// open, read
+	fd = fffile_open(fn, FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(2 == fffile_read(fd, buf, sizeof(buf)));
+	x(!ffs_cmpz(buf, 2, "12"));
+	fffile_close(fd);
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+}
+
+/** Check that FFFILE_APPEND works */
+void test_file_append()
+{
+	char buf[80];
+	fffd fd;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// create new
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_APPEND);
+	x_sys(fd != FFFILE_BAD);
+	xieq_sys(3, fffile_write(fd, "123", 3));
+	fffile_close(fd);
+
+	// create
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_APPEND);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "456", 3));
+	fffile_close(fd);
+
+	// open
+	fd = fffile_open(fn, FFFILE_READWRITE | FFFILE_APPEND);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "789", 3));
+	x_sys(1 == fffile_seek(fd, 1, FFFILE_SEEK_BEGIN));
+	x_sys(1 == fffile_write(fd, "0", 1));
+
+	// check
+	xieq_sys(10, fffile_readat(fd, buf, sizeof(buf), 0));
+	x(!ffs_cmpz(buf, 10, "1234567890"));
+	fffile_close(fd);
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+}
+
+void test_file_io()
+{
+	char buf[80];
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// create
+	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+
+	// duplicate
+	fffd fd2 = fffile_dup(fd);
+	x_sys(fd2 != FFFILE_BAD);
+	fffile_close(fd);
+	fd = fd2;
+
+	// write/read
+	x_sys(3 == fffile_write(fd, "123", 3));
+	x_sys(0 == fffile_read(fd, buf, sizeof(buf)));
+	x_sys(1 == fffile_seek(fd, 1, FFFILE_SEEK_BEGIN));
+	x_sys(2 == fffile_read(fd, buf, sizeof(buf)));
+	x(!ffs_cmpz(buf, 2, "23"));
+	x_sys(0 == fffile_read(fd, buf, sizeof(buf)));
+
+	// writeat/readat
+	x_sys(3 == fffile_writeat(fd, "abc", 3, 0));
+	x_sys(2 == fffile_readat(fd, buf, sizeof(buf), 1));
+	x(!ffs_cmpz(buf, 2, "bc"));
+
+	x_sys(0 == fffile_close(fd));
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+}
+
+/** Check get/set file properties */
+void test_file_info()
+{
+	fffd fd;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// create
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "123", 3));
+
+	// get info
+	fffileinfo fi = {};
+	x_sys(0 == fffile_info(fd, &fi));
+
+	xieq(3, fffileinfo_size(&fi));
+	xieq(3, fffile_size(fd));
+
+	x(!fffile_isdir(fffileinfo_attr(&fi)));
+#ifdef FF_WIN
+	xieq(FILE_ATTRIBUTE_ARCHIVE, fffileinfo_attr(&fi));
+#else
+	xieq(FFFILE_UNIX_REG, fffileinfo_attr(&fi) & FFFILE_UNIX_TYPEMASK);
+	x(0 != fffileinfo_owner(&fi));
+	x_sys(0 == fffile_set_owner(fd, fi.st_uid, fi.st_gid));
 #endif
 
-	fffd f;
-	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_WRONLY)));
-	fffile_close(f);
-	fffileinfo i;
-	x(0 == fffile_infofn(fn, &i));
-	uint attr = fffile_infoattr(&i);
-	x(!(attr & FFWIN_FILE_READONLY));
-	x(0 == fffile_attrsetfn(fn, attr | FFWIN_FILE_READONLY));
-	x(0 == fffile_infofn(fn, &i));
-	attr = fffile_infoattr(&i);
-	x(!!(attr & FFWIN_FILE_READONLY));
-	x(0 == fffile_rm(fn));
-	x(FF_BADFD == fffile_open(fn, O_RDONLY));
+	x(0 != fffileinfo_id(&fi));
+	x(0 != fffileinfo_mtime(&fi).sec);
+
+	// set properties
+#if !defined FF_WIN || FF_WIN >= 0x0600
+	x_sys(0 == fffile_set_attr(fd, fffileinfo_attr(&fi)));
+#endif
+	fftime mtime = fffileinfo_mtime(&fi);
+	x_sys(0 == fffile_set_mtime(fd, &mtime));
+
+	fffile_close(fd);
+
+	// set properties by name
+	x_sys(0 == fffile_set_attr_path(fn, fffileinfo_attr(&fi)));
+	x_sys(0 == fffile_set_mtime_path(fn, &mtime));
+
+	// get info by name
+	x_sys(0 == fffile_info_path(fn, &fi));
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+}
+
+void test_file_temp()
+{
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	fffd fd;
+	fd = fffile_createtemp(fn, FFFILE_READWRITE);
+	x_sys(fd != FF_BADFD);
+	x_sys(0 == fffile_close(fd));
+
+	x(FF_BADFD == fffile_open(fn, FFFILE_READWRITE));
+	xieq(FFERR_FILENOTFOUND, fferr_last());
+
+	ffmem_free(fn);
+}
+
+void test_file_winattr()
+{
+#ifdef FF_WIN
+	fffd fd;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
+	fffile_remove(fn);
+
+	// create
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FILE_ATTRIBUTE_READONLY);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "123", 3));
+	fffile_close(fd);
+
+	// check
+	fffileinfo fi = {};
+	x(0 == fffile_info_path(fn, &fi));
+	x(0 != (fffileinfo_attr(&fi) & FILE_ATTRIBUTE_READONLY));
+	x(0 == (fffileinfo_attr(&fi) & FILE_ATTRIBUTE_NORMAL));
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+#endif
+}
+
+void test_file_dosname()
+{
+#ifdef FF_WIN
+	fffd fd;
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "somelonglongname.tmplong");
+	fffile_remove(fn);
+
+	// create
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+	x_sys(3 == fffile_write(fd, "123", 3));
+	fffile_close(fd);
+
+	char *fn_dos = ffsz_allocfmt("%s/%s", TMP_PATH, "somelo~1.tmp");
+
+	// open
+	fd = fffile_open(fn_dos, FFFILE_READWRITE);
+	x_sys(fd != FFFILE_BAD);
+	fffile_close(fd);
+
+	// open - fail
+	fd = fffile_open(fn_dos, FFFILE_READWRITE | FFFILE_NODOSNAME);
+	x(fd == FFFILE_BAD);
+	fffile_close(fd);
+
+	x_sys(0 == fffile_remove(fn));
+	ffmem_free(fn);
+	ffmem_free(fn_dos);
+#endif
 }
 
 int test_file()
 {
-	const char *tmpdir = TMP_PATH;
-	fffd fd;
-	char fn[FF_MAXPATH];
-	char buf[4096];
-
 	FFTEST_FUNC;
 
-	strcpy(fn, tmpdir);
-	strcat(fn, "/tmpfile");
-
-	fd = fffile_open(fn, FFO_CREATE | FFO_TRUNC | FFO_RDWR);
-	x(fd != FF_BADFD);
-	x(FFSLEN(HELLO) == fffile_write(fd, FFSTR(HELLO)));
-
-	x(3 == fffile_pwrite(fd, "123", 3, 2));
-	x(3 == fffile_pread(fd, buf, 3, 2));
-	x(!strncmp(buf, "123", 3));
-
-	x(0 == fffile_seek(fd, 0, SEEK_SET));
-	x(6 == fffile_read(fd, buf, sizeof(buf)));
-	x(!strncmp(buf, "he123\n", 6));
-	x(0 == fffile_close(fd));
-
-	test_fileinfo(fn);
-
-	x(0 == fffile_rm(fn));
-
-	fd = fffile_createtemp(fn, O_WRONLY);
-	x(fd != FF_BADFD);
-	x(0 == fffile_close(fd));
-	x(FF_BADFD == fffile_open(fn, O_RDONLY));
-
-	test_diropen(tmpdir);
+	test_file_create();
+	test_file_create_trunc();
+	test_file_append();
+	test_file_io();
+	test_file_info();
+	test_file_temp();
+	test_file_winattr();
+	test_file_dosname();
+	test_file_link();
+	test_file_rename();
+	test_diropen();
 	test_std();
 	test_pipe();
-	file_link();
-	file_ro(fn);
 	return 0;
 }
 
@@ -288,7 +531,7 @@ int test_fileaio(void)
 	ffmem_alignfree(faio.buf);
 	fffile_close(f);
 	ffkqu_close(faio.kq);
-	fffile_rm(fn);
+	fffile_remove(fn);
 
 	return 0;
 }
