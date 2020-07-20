@@ -57,3 +57,17 @@ static inline ffsize ff_wtou(char *dst, ffsize cap, const wchar_t *src, ffsize l
 		r = ffs_wtou(dst, cap, src, len);
 	return (r >= 0) ? r : 0;
 }
+
+/** Convert UTF-8 to UTF-16LE
+Try to use the buffer supplied by user,
+ but if dst==NULL or there's not enough space - allocate a new buffer.
+Return a static or newly allocated buffer (free with ffmem_free())
+  NULL on error */
+static inline wchar_t* ffsz_alloc_buf_utow(wchar_t *dst, ffsize cap_wchars, const char *sz)
+{
+	if (dst != NULL) {
+		if (0 < ffsz_utow(dst, cap_wchars, sz))
+			return dst;
+	}
+	return ffsz_alloc_utow(sz);
+}
