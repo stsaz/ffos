@@ -384,6 +384,7 @@ int test_backtrace()
 
 extern int test_filemap();
 extern int test_fileaio(void);
+extern int test_dir();
 
 struct test_s {
 	const char *nm;
@@ -395,6 +396,7 @@ static const struct test_s _ffostests[] = {
 	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
 	, F(skt), F(timer), F(kqu), F(ps), F(semaphore), F(dl), F(cpu),
 	F(file), F(filemap), F(fileaio),
+	F(dir),
 	F(netconf),
 	F(env),
 	F(backtrace),
@@ -424,8 +426,6 @@ int main(int argc, const char **argv)
 		for (i = 0;  i < FFCNT(_ffostests);  i++) {
 			FFTEST_TIMECALL(_ffostests[i].func());
 		}
-
-	CALL(test_dir(TMP_PATH));
 
 	} else {
 		//run the specified tests only

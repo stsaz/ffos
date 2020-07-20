@@ -2,11 +2,14 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include "all.h"
+#include <FFOS/mem.h>
 #include <FFOS/string.h>
 #include <FFOS/dir.h>
 #include <FFOS/file.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>
+#include <ffbase/stringz.h>
 
 #define x FFTEST_BOOL
 
@@ -45,11 +48,11 @@ static int test_dirwalk(char *path, size_t pathcap)
 	x(d != NULL);
 
 	for (;;) {
-		const ffsyschar *name;
-		const ffdir_einfo *fi;
+		const char *name;
+		const fffileinfo *fi;
 
 		if (0 != ffdir_read(d, &ent)) {
-			x(fferr_last() == ENOMOREFILES);
+			x(fferr_last() == FFERR_NOMOREFILES);
 			break;
 		}
 
@@ -59,11 +62,11 @@ static int test_dirwalk(char *path, size_t pathcap)
 		fi = ffdir_entryinfo(&ent);
 		x(fi != NULL);
 
-		if (!ffq_cmpz(name, TEXT("."))) {
+		if (!ffsz_cmp(name, ".")) {
 			x(fffile_isdir(fffile_infoattr(fi)));
 			nfiles++;
 		}
-		else if (!ffq_cmpz(name, TEXT("tmpfile"))) {
+		else if (!ffsz_cmp(name, "tmpfile")) {
 			x(!fffile_isdir(fffile_infoattr(fi)));
 			x(1 == fffile_infosize(fi));
 			nfiles++;
@@ -71,11 +74,11 @@ static int test_dirwalk(char *path, size_t pathcap)
 	}
 	x(nfiles == 2);
 
-	x(0 == ffdir_close(d));
+	ffdir_close(d);
 	return 0;
 }
 
-int test_dir(const char *tmpdir)
+int test_dir()
 {
 	fffd f;
 	char path[FF_MAXPATH];
@@ -84,7 +87,7 @@ int test_dir(const char *tmpdir)
 
 	FFTEST_FUNC;
 
-	strcpy(path, tmpdir);
+	strcpy(path, TMP_PATH);
 	strcat(path, "/tmpdir");
 
 	strcpy(fn, path);
@@ -104,9 +107,9 @@ int test_dir(const char *tmpdir)
 	x(0 == ffdir_rm(path));
 
 
-	strcpy(path, tmpdir);
+	strcpy(path, TMP_PATH);
 	strcat(path, "/tmpdir/tmpdir2");
-	x(0 == ffdir_rmake(path, strlen(tmpdir)));
+	x(0 == ffdir_rmake(path, strlen(TMP_PATH)));
 	x(0 == ffdir_rm(path));
 	path[strlen(path) - FFSLEN("/tmpdir2")] = '\0';
 	x(0 == ffdir_rm(path));

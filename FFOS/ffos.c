@@ -15,35 +15,6 @@ Copyright (c) 2013 Simon Zolin
 #include <assert.h>
 
 
-int ffdir_rmakeq(ffsyschar *path, size_t off)
-{
-	ffsyschar *s = path + off;
-
-	if (ffpath_slash(*s))
-		s++;
-
-	for (;; s++) {
-
-		if (ffpath_slash(*s) || *s == '\0') {
-			int er;
-			ffsyschar slash = *s;
-
-			*s = '\0';
-			er = ffdir_makeq(path);
-			*s = slash;
-
-			if (er != 0 && fferr_last() != EEXIST)
-				return er;
-
-			if (*s == '\0')
-				break;
-		}
-	}
-
-	return 0;
-}
-
-
 #ifdef FF_UNIX
 void fftimespec_addms(struct timespec *ts, uint64 ms)
 {

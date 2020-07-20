@@ -178,40 +178,6 @@ fffd ffpipe_connect(const char *name)
 }
 
 
-int ffdir_read(ffdir dir, ffdirentry *ent)
-{
-	struct dirent *d;
-	errno = ENOMOREFILES;
-	if (0 == readdir_r(dir, &ent->de, &d) && d != NULL) {
-		ent->namelen = (int)strlen(ent->de.d_name);
-		return 0;
-	}
-	return -1;
-}
-
-static const ffsyschar * fullPath(ffdirentry *ent, ffsyschar *nm, size_t nmlen) {
-	if (ent->pathlen + nmlen + FFSLEN("/") >= ent->pathcap) {
-		errno = EOVERFLOW;
-		return NULL;
-	}
-	ent->path[ent->pathlen] = FFPATH_SLASH;
-	memcpy(ent->path + ent->pathlen + 1, nm, nmlen);
-	ent->path[ent->pathlen + nmlen + 1] = '\0';
-	return ent->path;
-}
-
-ffdir_einfo * ffdir_entryinfo(ffdirentry *ent)
-{
-	int r;
-	const ffsyschar *nm = fullPath(ent, ffdir_entryname(ent), ent->namelen);
-	if (nm == NULL)
-		return NULL;
-	r = fffile_infofn(nm, &ent->info);
-	ent->path[ent->pathlen] = '\0';
-	return r == 0 ? &ent->info : NULL;
-}
-
-
 void fftime_now(fftime *t)
 {
 	struct timespec ts = { 0 };
