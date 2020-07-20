@@ -11,16 +11,8 @@ typedef uint ffthd_id;
 
 #define FFTHD_INV NULL
 
-static FFINL ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size) {
-	return CreateThread(NULL, stack_size, (PTHREAD_START_ROUTINE)proc, param, 0, NULL);
-}
-
-FF_EXTN int ffthd_join(ffthd th, uint timeout_ms, int *exit_code);
-
-static FFINL int ffthd_detach(ffthd th) {
-	return 0 == CloseHandle(th);
-}
-
-#define ffthd_sleep  Sleep
-
-#define ffthd_curid()  GetCurrentThreadId()
+#define ffthd_create(proc, param, stack_size)  ffthread_create(proc, param, stack_size)
+#define ffthd_join(th, timeout_ms, exit_code)  ffthread_join(th, timeout_ms, exit_code)
+#define ffthd_detach(th)  ffthread_detach(th)
+#define ffthd_sleep(ms)  ffthread_sleep(ms)
+#define ffthd_curid()  ffthread_curid()

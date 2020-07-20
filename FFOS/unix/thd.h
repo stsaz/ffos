@@ -15,22 +15,10 @@ typedef uint64 ffthd_id;
 
 #define FFTHD_INV 0
 
-/** Create a thread.
-@stack_size: 0=default.
-Return 0 on error. */
-FF_EXTN ffthd ffthd_create(ffthdproc proc, void *param, size_t stack_size);
-
-/** Join with the thread.
-Return 0 if thread has exited.
-Return ETIMEDOUT if time has expired. */
-FF_EXTN int ffthd_join(ffthd th, uint timeout_ms, int *exit_code);
-
-/** Detach thread. */
-#define ffthd_detach  pthread_detach
-
 #endif //FF_NOTHR
 
-FF_EXTN void ffthd_sleep(uint ms);
-
-/** Get ID of the current thread. */
-FF_EXTN ffthd_id ffthd_curid(void);
+#define ffthd_create(proc, param, stack_size)  ffthread_create(proc, param, stack_size)
+#define ffthd_join(th, timeout_ms, exit_code)  ffthread_join(th, timeout_ms, exit_code)
+#define ffthd_detach(th)  ffthread_detach(th)
+#define ffthd_sleep(ms)  ffthread_sleep(ms)
+#define ffthd_curid()  ffthread_curid()

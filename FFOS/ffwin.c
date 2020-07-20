@@ -606,21 +606,6 @@ done:
 }
 
 
-int ffthd_join(ffthd th, uint timeout_ms, int *exit_code)
-{
-	int ret = WaitForSingleObject(th, timeout_ms);
-	if (ret == WAIT_OBJECT_0) {
-		if (exit_code != NULL)
-			(void)GetExitCodeThread(th, (DWORD *)exit_code);
-		(void)CloseHandle(th);
-		ret = 0;
-	} else if (ret == WAIT_TIMEOUT) {
-		fferr_set(ETIMEDOUT);
-		ret = ETIMEDOUT;
-	}
-	return ret;
-}
-
 int ffps_wait(ffps h, uint timeout_ms, int *exit_code)
 {
 	int r = WaitForSingleObject(h, timeout_ms);

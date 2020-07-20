@@ -84,11 +84,6 @@ const char* ffps_filename(char *name, size_t cap, const char *argv0)
 	return _ffpath_real(name, cap, argv0);
 }
 
-ffthd_id ffthd_curid(void)
-{
-	return syscall(SYS_gettid);
-}
-
 
 void fftime_local(fftime_zone *tz)
 {

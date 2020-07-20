@@ -186,23 +186,6 @@ void fftime_now(fftime *t)
 }
 
 
-void ffthd_sleep(uint ms)
-{
-	struct timespec ts;
-
-	if (ms == (uint)-1) {
-		ts.tv_sec = 0x7fffffff;
-		ts.tv_nsec = 0;
-	}
-	else {
-		ts.tv_sec = ms / 1000;
-		ts.tv_nsec = (ms % 1000) * 1000 * 1000;
-	}
-
-	while (0 != nanosleep(&ts, &ts) && errno == EINTR) {
-	}
-}
-
 ffps ffps_exec2(const char *filename, ffps_execinfo *info)
 {
 	pid_t p = vfork();
