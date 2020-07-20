@@ -1,49 +1,184 @@
-/** Get backtrace info.
-Copyright (c) 2020 Simon Zolin
+/** ffos: get backtrace info
+2020, Simon Zolin
 */
 
 #pragma once
 
-#ifdef FF_UNIX
-#include <FFOS/unix/bt.h>
-#else
-#include <FFOS/win/bt.h>
+#include <FFOS/file.h>
+#include <FFOS/mem.h>
+#include <ffbase/string.h> // optional
+
+/*
+ffthread_backtrace
+ffthread_backtrace_frame
+ffthread_backtrace_modbase
+ffthread_backtrace_modname
+ffthread_backtrace_print
+*/
+
+#ifdef FF_WIN
+
+typedef struct ffthread_bt {
+	void *frames[64];
+	ffuint n;
+	int i_mod;
+	void *base;
+	wchar_t wname[1024];
+} ffthread_bt;
+
+static inline int ffthread_backtrace(ffthread_bt *bt)
+{
+	ffuint n = FF_COUNT(bt->frames);
+#if FF_WIN <= 0x0501
+	n = ffmin(62, FF_COUNT(bt->frames));
+#endif
+	bt->n = CaptureStackBackTrace(0, n, bt->frames, NULL);
+	bt->i_mod = -1;
+	return bt->n;
+}
+
+static inline void* ffthread_backtrace_modbase(ffthread_bt *bt, ffuint i)
+{
+	if (i >= bt->n)
+		return NULL;
+
+	if (i != (ffuint)bt->i_mod) {
+		HMODULE mod;
+		ffuint f = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+			| GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+		if (!GetModuleHandleEx(f, bt->frames[i], &mod))
+			return NULL;
+		bt->base = mod;
+		bt->i_mod = i;
+	}
+
+	return bt->base;
+}
+
+static inline const wchar_t* ffthread_backtrace_modname(ffthread_bt *bt, ffuint i)
+{
+	if (i >= bt->n || bt->frames[i] == NULL)
+		return NULL;
+
+	if (i != (ffuint)bt->i_mod) {
+		HMODULE mod;
+		ffuint f = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+			| GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+		if (!GetModuleHandleEx(f, bt->frames[i], &mod))
+			return NULL;
+		bt->base = mod;
+		bt->i_mod = i;
+	}
+
+	bt->wname[0] = '\0';
+	(void) GetModuleFileNameW((HMODULE)bt->base, bt->wname, FF_COUNT(bt->wname));
+	return bt->wname;
+}
+
+#else // unix:
+
+#include <execinfo.h>
+#include <dlfcn.h>
+
+typedef struct ffthread_bt {
+	void *frames[64];
+	ffuint n;
+	Dl_info info;
+	int i_info;
+} ffthread_bt;
+
+static inline int ffthread_backtrace(ffthread_bt *bt)
+{
+	bt->n = backtrace(bt->frames, FF_COUNT(bt->frames));
+	bt->i_info = -1;
+	return bt->n;
+}
+
+static inline void* ffthread_backtrace_modbase(ffthread_bt *bt, ffuint i)
+{
+	if (i >= bt->n)
+		return NULL;
+
+	if (i != (ffuint)bt->i_info) {
+		if (0 == dladdr(bt->frames[i], &bt->info))
+			return NULL;
+		bt->i_info = i;
+	}
+
+	return bt->info.dli_fbase;
+}
+
+static inline const char* ffthread_backtrace_modname(ffthread_bt *bt, ffuint i)
+{
+	if (i >= bt->n || bt->frames[i] == NULL)
+		return NULL;
+
+	if (i != (ffuint)bt->i_info) {
+		if (0 == dladdr(bt->frames[i], &bt->info))
+			return NULL;
+		bt->i_info = i;
+	}
+
+	return bt->info.dli_fname;
+}
+
+#endif
+
+static inline void* ffthread_backtrace_frame(ffthread_bt *bt, ffuint i)
+{
+	return bt->frames[i];
+}
+
+#ifdef _FFBASE_STRING_H
+static inline void ffthread_backtrace_print(fffd fd, ffuint limit)
+{
+	ffthread_bt bt = {};
+	ffuint n = ffthread_backtrace(&bt);
+	if (limit != 0 && limit < n)
+		n = limit;
+
+	ffsize cap = n * 80;
+	ffstr s = {};
+	ffstr_alloc(&s, cap);
+
+	for (ffuint i = 0;  i != n;  i++) {
+		ffsize offset = (char*)ffthread_backtrace_frame(&bt, i) - (char*)ffthread_backtrace_modbase(&bt, i);
+		ffstr_growfmt(&s, &cap, " #%u 0x%p +%xL %q [0x%p]\n"
+			, i
+			, ffthread_backtrace_frame(&bt, i)
+			, offset
+			, ffthread_backtrace_modname(&bt, i)
+			, ffthread_backtrace_modbase(&bt, i)
+			);
+	}
+
+	fffile_write(fd, s.ptr, s.len);
+	ffstr_free(&s);
+}
 #endif
 
 
 /** Get backtrace info */
-static int ffthd_backtrace(ffthd_bt *bt);
+static int ffthread_backtrace(ffthread_bt *bt);
 
-#define ffthd_backtrace_frame(bt, i)  ((bt)->frames[i])
+/** Get frame pointer */
+static void* ffthread_backtrace_frame(ffthread_bt *bt, ffuint i);
 
-/** Get module base address.
-Return NULL on error. */
-static void* ffthd_backtrace_modbase(ffthd_bt *bt, uint i);
+/** Get module base address
+Return NULL on error */
+static void* ffthread_backtrace_modbase(ffthread_bt *bt, ffuint i);
 
-/** Get module path.
-Return NULL on error. */
-static const ffsyschar* ffthd_backtrace_modname(ffthd_bt *bt, uint i);
+/** Get module path
+Return NULL on error */
+static const ffsyschar* ffthread_backtrace_modname(ffthread_bt *bt, ffuint i);
 
-#ifdef _DEBUG
-#include <stdio.h>
-static inline void _ffthd_backtrace_print(uint limit)
-{
-	ffthd_bt bt = {};
-	uint n = ffthd_backtrace(&bt);
-	if (limit != 0 && limit < n)
-		n = limit;
-	for (uint i = 0;  i != n;  i++) {
-#ifdef FF_WIN
-		printf(" #%u %p +%x %ls %p\n"
-#else
-		printf(" #%u %p +%x %s %p\n"
-#endif
-			, i
-			, ffthd_backtrace_frame(&bt, i)
-			, (int)((char*)ffthd_backtrace_frame(&bt, i) - (char*)ffthd_backtrace_modbase(&bt, i))
-			, ffthd_backtrace_modname(&bt, i)
-			, ffthd_backtrace_modbase(&bt, i)
-			);
-	}
-}
-#endif
+/** Print backtrace to fd (e.g. ffstdout) */
+static void ffthread_backtrace_print(fffd fd, ffuint limit);
+
+
+#define ffthd_bt  ffthread_bt
+#define ffthd_backtrace  ffthread_backtrace
+#define ffthd_backtrace_frame  ffthread_backtrace_frame
+#define ffthd_backtrace_modbase  ffthread_backtrace_modbase
+#define ffthd_backtrace_modname  ffthread_backtrace_modname
+#define ffthd_backtrace_print  ffthread_backtrace_print
