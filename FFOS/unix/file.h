@@ -57,8 +57,3 @@ FF_EXTN fffd ffpipe_connect(const char *name);
 
 /** Read from a pipe descriptor. */
 #define ffpipe_read(fd, buf, cap)  fffile_read(fd, buf, cap)
-
-
-#define fffile_openq  fffile_open
-#define fffile_renameq  fffile_rename
-#define fffile_rmq  fffile_rm

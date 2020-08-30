@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/sig.h>
 #include <FFOS/atomic.h>
 #include <FFOS/semaphore.h>
+#include <FFOS/dylib.h>
 
 #include <psapi.h>
 #include <time.h>
@@ -180,7 +181,7 @@ ffbool ffpath_abs(const char *path, size_t len)
 static VOID WINAPI (*_GetSystemTimePreciseAsFileTime)(LPFILETIME);
 void fftime_init(void)
 {
-	_GetSystemTimePreciseAsFileTime = (void*)ffdl_addr(GetModuleHandle(L"kernel32.dll"), "GetSystemTimePreciseAsFileTime");
+	_GetSystemTimePreciseAsFileTime = (VOID WINAPI (*)(LPFILETIME))ffdl_addr(GetModuleHandle(L"kernel32.dll"), "GetSystemTimePreciseAsFileTime");
 }
 #endif
 

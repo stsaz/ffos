@@ -35,7 +35,7 @@ static FFINL int ffaio_acceptinit(ffaio_acceptor *acc, fffd kq, ffskt lsk, void 
 	acc->sktype = sktype;
 	acc->csk = FF_BADSKT;
 	ffmem_zero(acc->addrs, sizeof(acc->addrs));
-	return ffkqu_attach(kq, acc->kev.sk, ffkev_ptr(&acc->kev), 0);
+	return ffkqu_attach(kq, (fffd)acc->kev.sk, ffkev_ptr(&acc->kev), 0);
 }
 
 static FFINL void ffaio_acceptfin(ffaio_acceptor *acc) {

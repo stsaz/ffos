@@ -42,6 +42,7 @@ struct ffaio_filetask {
 
 static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
+	(void)direct;
 	ft->acb.aio_sigevent.sigev_notify_kqueue = kq;
 	return 0;
 }
@@ -58,6 +59,7 @@ struct ffaio_filetask {
 
 static FFINL int ffaio_fattach(ffaio_filetask *ft, fffd kq, uint direct)
 {
+	(void)ft; (void)kq; (void)direct;
 	return 0;
 }
 

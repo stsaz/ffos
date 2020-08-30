@@ -2,20 +2,19 @@
 2020, Simon Zolin
 */
 
-#pragma once
-
-#include <FFOS/mem.h>
-#include <ffbase/string.h>
-
 /*
 ffdir_make ffdir_make_all
 ffdir_remove
 Directory listing:
 	ffdir_open ffdir_close
 	ffdir_read
-	ffdir_entryname
-	ffdir_entryinfo
+	ffdir_entry_name
+	ffdir_entry_info
 */
+
+#pragma once
+
+#include <FFOS/string.h>
 
 #ifdef FF_WIN
 
@@ -151,12 +150,12 @@ static inline int ffdir_read(ffdir dir, ffdirentry *ent)
 	return 0;
 }
 
-static inline const char* ffdir_entryname(ffdirentry *ent)
+static inline const char* ffdir_entry_name(ffdirentry *ent)
 {
 	return ent->name;
 }
 
-static inline fffileinfo* ffdir_entryinfo(ffdirentry *ent)
+static inline fffileinfo* ffdir_entry_info(ffdirentry *ent)
 {
 	const WIN32_FIND_DATAW *fd = &ent->find_data;
 	fffileinfo *fi = &ent->info;
@@ -172,7 +171,7 @@ static inline fffileinfo* ffdir_entryinfo(ffdirentry *ent)
 
 #include <FFOS/win/dir.h>
 
-#else // unix:
+#else // UNIX:
 
 #include <sys/stat.h>
 #include <dirent.h>
@@ -218,7 +217,9 @@ static inline int ffdir_remove(const char *name)
 
 
 typedef DIR* ffdir;
-typedef struct stat fffileinfo;
+#ifndef fffileinfo // may be defined in FFOS/file.h
+	#define fffileinfo  struct stat
+#endif
 
 typedef struct ffdirentry {
 	fffileinfo info;
@@ -250,7 +251,7 @@ static inline int ffdir_read(ffdir dir, ffdirentry *ent)
 	return 0;
 }
 
-static inline const char* ffdir_entryname(ffdirentry *ent)
+static inline const char* ffdir_entry_name(ffdirentry *ent)
 {
 	return ent->de->d_name;
 }
@@ -268,9 +269,9 @@ static inline const char* _ffdir_entry_fullpath(ffdirentry *ent, const char *nam
 	return ent->path;
 }
 
-static inline fffileinfo* ffdir_entryinfo(ffdirentry *ent)
+static inline fffileinfo* ffdir_entry_info(ffdirentry *ent)
 {
-	const char *name = ffdir_entryname(ent);
+	const char *name = ffdir_entry_name(ent);
 	if (NULL == (name = _ffdir_entry_fullpath(ent, name, ffsz_len(name))))
 		return NULL;
 	int r = stat(name, &ent->info);
@@ -323,7 +324,7 @@ static int ffdir_remove(const char *name);
 /** Open directory reader
 path: path to a directory
   Should have at least 256 characters of free space,
-   because ffdir_entryinfo() must append a file name (UNIX)
+   because ffdir_entry_info() must append a file name (UNIX)
    and ffdir_open() must append "\\*" (Windows).
 UNIX: doesn't fetch file information automatically
 Return NULL on error  */
@@ -339,12 +340,18 @@ Return !=0 on error
 static int ffdir_read(ffdir dir, ffdirentry *ent);
 
 /** Get entry name */
-static const char* ffdir_entryname(ffdirentry *ent);
+static const char* ffdir_entry_name(ffdirentry *ent);
 
 /** Get file information
 Return NULL on error */
-static fffileinfo* ffdir_entryinfo(ffdirentry *ent);
+static fffileinfo* ffdir_entry_info(ffdirentry *ent);
 
 
 #define ffdir_rm  ffdir_remove
 #define ffdir_rmake  ffdir_make_all
+#define ffdir_entryinfo  ffdir_entry_info
+#ifdef FF_WIN
+#define ffdir_entryname(ent)  ((ent)->find_data.cFileName)
+#else
+#define ffdir_entryname  ffdir_entry_name
+#endif

@@ -36,9 +36,10 @@ OS types:
 	#endif
 
 #elif defined _WIN32 || defined _WIN64 || defined __CYGWIN__
-	#ifndef FF_WIN
-		#define FF_WIN 0x0600
+	#ifndef FF_WIN_APIVER
+		#define FF_WIN_APIVER 0x0600
 	#endif
+	#define FF_WIN  FF_WIN_APIVER
 
 #else
 	#error "This OS is not supported"

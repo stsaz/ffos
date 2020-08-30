@@ -14,14 +14,17 @@ Copyright (c) 2017 Simon Zolin
 
 int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 {
-	if (0 != ffpipe_create(rd, wr))
+	fffd fd[2];
+	if (0 != pipe(fd))
 		return -1;
+	*rd = fd[0];
+	*wr = fd[1];
 
 	if ((flags & FFO_NONBLOCK)
 		&& (0 != ffpipe_nblock(*rd, 1)
 			|| 0 != ffpipe_nblock(*wr, 1))) {
-		ffpipe_close(*rd);
-		ffpipe_close(*wr);
+		close(*rd);
+		close(*wr);
 		return -1;
 	}
 
@@ -127,10 +130,12 @@ done:
 
 ssize_t ffaio_fwrite(ffaio_filetask *ft, const void *data, size_t len, uint64 off, ffaio_handler handler)
 {
+	(void)handler;
 	return fffile_pwrite(ft->kev.fd, data, len, off);
 }
 
 ssize_t ffaio_fread(ffaio_filetask *ft, void *data, size_t len, uint64 off, ffaio_handler handler)
 {
+	(void)handler;
 	return fffile_pread(ft->kev.fd, data, len, off);
 }

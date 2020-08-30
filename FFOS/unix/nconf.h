@@ -4,30 +4,33 @@ Copyright (c) 2020 Simon Zolin
 
 #include <ffbase/string.h>
 #include <ffbase/vector.h>
+#include <fcntl.h>
 
 
 /** Read system DNS configuration file and get DNS server addresses */
 static inline int _ffnetconf_getdns(ffnetconf *nc)
 {
-	int rc = -1, fd = FF_BADFD;
+	int rc = -1, fd = -1;
 	ffstr fdata = {};
 	ffvec servers = {}; //ffstr[]
 	ffsize cap = 4*1024;
+	char **ptr;
+	char *data;
+	const char *fn = "/etc/resolv.conf";
+	ffstr in, line, word, skip = FFSTR_INIT(" \t\r"), *el;
 
 	if (NULL == ffstr_alloc(&fdata, cap))
 		goto end;
 
-	const char *fn = "/etc/resolv.conf";
-	if (FF_BADFD == (fd = fffile_open(fn, O_RDONLY)))
+	if (-1 == (fd = open(fn, O_RDONLY)))
 		goto end;
 
 	ffssize n;
-	if (0 >= (n = fffile_read(fd, fdata.ptr, cap)))
+	if (0 >= (n = read(fd, fdata.ptr, cap)))
 		goto end;
 	fdata.len = n;
 
 	cap = 0;
-	ffstr in, line, word, skip = FFSTR_INIT(" \t\r"), *el;
 	in = fdata;
 	while (in.len != 0) {
 		ffstr_splitby(&in, '\n', &line, &in);
@@ -43,12 +46,12 @@ static inline int _ffnetconf_getdns(ffnetconf *nc)
 		}
 	}
 
-	if (NULL == (nc->dns_addrs = ffmem_alloc(cap + servers.len * sizeof(void*))))
+	if (NULL == (nc->dns_addrs = (char**)ffmem_alloc(cap + servers.len * sizeof(void*))))
 		goto end;
 
 	// ptr1 ptr2 ... data1 data2 ...
-	char **ptr = nc->dns_addrs;
-	char *data = (char*)nc->dns_addrs + servers.len * sizeof(void*);
+	ptr = nc->dns_addrs;
+	data = (char*)nc->dns_addrs + servers.len * sizeof(void*);
 	FFSLICE_WALK_T(&servers, el, ffstr) {
 		ffmem_copy(data, el->ptr, el->len);
 		*(ptr++) = data;
@@ -59,7 +62,7 @@ static inline int _ffnetconf_getdns(ffnetconf *nc)
 	rc = 0;
 
 end:
-	fffile_close(fd);
+	close(fd);
 	ffvec_free(&servers);
 	ffstr_free(&fdata);
 	return rc;

@@ -54,7 +54,7 @@ C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++
 LDXX := $(CXX)
-CFLAGS_STD := -pipe -std=c99 -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
+CFLAGS_STD := -pipe -std=gnu99 -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
 CXXFLAGS := -pipe -fno-strict-aliasing -fvisibility=hidden -Wno-deprecated-declarations
 LDFLAGS_STD := -pipe
 AR := $(CPREFIX)ar

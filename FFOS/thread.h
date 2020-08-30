@@ -2,16 +2,16 @@
 2020, Simon Zolin
 */
 
-#pragma once
-
-#include <FFOS/types.h>
-
 /*
 ffthread_create
 ffthread_join ffthread_detach
 ffthread_sleep
 ffthread_curid
 */
+
+#pragma once
+
+#include <FFOS/types.h>
 
 #ifdef FF_WIN
 
@@ -220,8 +220,4 @@ static ffuint64 ffthread_curid();
 static void ffthread_sleep(ffuint msec);
 
 
-#if defined FF_UNIX
-#include <FFOS/unix/thd.h>
-#elif defined FF_WIN
-#include <FFOS/win/thd.h>
-#endif
+#include <FFOS/thread-compat.h>

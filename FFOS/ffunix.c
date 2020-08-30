@@ -27,7 +27,7 @@ Copyright (c) 2013 Simon Zolin
 fffd ffpipe_create_named(const char *name, uint flags)
 {
 	ffskt p;
-	struct sockaddr_un a = {0};
+	struct sockaddr_un a = {};
 #if defined FF_BSD || defined FF_APPLE
 	a.sun_len = sizeof(struct sockaddr_un);
 #endif
@@ -56,7 +56,7 @@ err:
 fffd ffpipe_connect(const char *name)
 {
 	ffskt p;
-	struct sockaddr_un a = {0};
+	struct sockaddr_un a = {};
 #if defined FF_BSD || defined FF_APPLE
 	a.sun_len = sizeof(struct sockaddr_un);
 #endif
@@ -80,7 +80,7 @@ fffd ffpipe_connect(const char *name)
 
 void fftime_now(fftime *t)
 {
-	struct timespec ts = { 0 };
+	struct timespec ts = {};
 	(void)clock_gettime(CLOCK_REALTIME, &ts);
 	fftime_fromtimespec(t, &ts);
 }

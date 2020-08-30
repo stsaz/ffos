@@ -2,6 +2,8 @@
 Copyright (c) 2018 Simon Zolin
 */
 
+#include <FFOS/file.h>
+
 #ifdef FF_UNIX
 #include <FFOS/unix/sem.h>
 #elif defined FF_WIN

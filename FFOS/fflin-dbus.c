@@ -3,6 +3,7 @@ Copyright (c) 2020 Simon Zolin
 */
 
 #include <FFOS/process.h>
+#include <FFOS/error.h>
 #include <dbus/dbus.h>
 
 

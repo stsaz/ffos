@@ -15,6 +15,7 @@ Copyright (c) 2013 Simon Zolin
 #include <ffbase/string.h>
 #include <assert.h>
 
+#include <FFOS/ffos-extern.h>
 
 #if !defined FF_WIN || FF_WIN >= 0x0600
 void fftime_init(void)
@@ -185,68 +186,6 @@ void ffkev_call(ffkqu_entry *e)
 }
 
 
-uint _ffsc_ncpu;
-
-void fflk_setup(void)
-{
-	ffsysconf sc;
-	if (_ffsc_ncpu != 0)
-		return;
-	ffsc_init(&sc);
-	_ffsc_ncpu = ffsc_get(&sc, FFSYSCONF_NPROCESSORS_ONLN);
-}
-
-enum { FFLK_SPIN = 2048 };
-
-void fflk_lock(fflock *lk)
-{
-	if (_ffsc_ncpu == 1) {
-		for (;;) {
-			if (fflk_trylock(lk))
-				return;
-
-			ffcpu_yield();
-		}
-	}
-
-	for (;;) {
-		if (fflk_trylock(lk))
-			return;
-		for (uint n = 0;  n != FFLK_SPIN;  n++) {
-			ffcpu_pause();
-			if (fflk_trylock(lk))
-				return;
-		}
-		ffcpu_yield();
-	}
-}
-
-uint ffatom_waitchange(uint *p, uint curval)
-{
-	uint r;
-
-	if (_ffsc_ncpu == 1) {
-		for (;;) {
-			if (curval != (r = FF_READONCE(*p)))
-				return r;
-
-			ffcpu_yield();
-		}
-	}
-
-	for (;;) {
-		if (curval != (r = FF_READONCE(*p)))
-			return r;
-		for (uint n = 0;  n != FFLK_SPIN;  n++) {
-			ffcpu_pause();
-			if (curval != (r = FF_READONCE(*p)))
-				return r;
-		}
-		ffcpu_yield();
-	}
-}
-
-
 static const char *const err_ops[] = {
 	"success"
 	, "internal error"
@@ -300,6 +239,7 @@ int ffdbg_mask = 1;
 
 int ffdbg_print(int t, const char *fmt, ...)
 {
+	(void)t;
 	char buf[4096];
 	ffstr s;
 	ffstr_set(&s, buf, 0);
