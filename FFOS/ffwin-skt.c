@@ -8,16 +8,6 @@ Copyright (c) 2016 Simon Zolin
 #include <iphlpapi.h>
 
 
-ffskt ffskt_create(uint domain, uint type, uint protocol)
-{
-	ffskt sk = socket(domain, type & ~SOCK_NONBLOCK, protocol);
-	if ((type & SOCK_NONBLOCK) && sk != FF_BADSKT && 0 != ffskt_nblock(sk, 1)) {
-		ffskt_close(sk);
-		sk = FF_BADSKT;
-	}
-	return sk;
-}
-
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
 {
 	ffskt sk = accept(listenSk, a, addrSize);
@@ -27,54 +17,6 @@ ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int 
 	}
 	return sk;
 }
-
-LPFN_DISCONNECTEX _ffwsaDisconnectEx;
-LPFN_CONNECTEX _ffwsaConnectEx;
-LPFN_ACCEPTEX _ffwsaAcceptEx;
-LPFN_GETACCEPTEXSOCKADDRS _ffwsaGetAcceptExSockaddrs;
-
-typedef void (*wsafunc_t)(void);
-
-static wsafunc_t* const _wsafuncs[] = {
-	(wsafunc_t*)&_ffwsaDisconnectEx, (wsafunc_t*)&_ffwsaConnectEx,
-	(wsafunc_t*)&_ffwsaAcceptEx, (wsafunc_t*)&_ffwsaGetAcceptExSockaddrs,
-};
-static const GUID _guids[] = {
-	WSAID_DISCONNECTEX, WSAID_CONNECTEX,
-	WSAID_ACCEPTEX, WSAID_GETACCEPTEXSOCKADDRS,
-};
-
-static FFINL wsafunc_t wsa_getfunc(ffskt sk, const GUID *guid)
-{
-	wsafunc_t func = NULL;
-	DWORD b;
-	WSAIoctl(sk, SIO_GET_EXTENSION_FUNCTION_POINTER
-		, (void*)guid, sizeof(GUID), &func, sizeof(wsafunc_t), &b, 0, 0);
-	if (func == NULL)
-		fferr_set(ERROR_PROC_NOT_FOUND);
-	return func;
-}
-
-int _ffwsaGetFuncs(void)
-{
-	int rc = 0;
-	uint i;
-	ffskt sk;
-
-	sk = ffskt_create(AF_INET, SOCK_STREAM, 0);
-	if (sk == FF_BADSKT)
-		return -1;
-
-	for (i = 0;  i != FFCNT(_guids);  i++) {
-		if (NULL == (*_wsafuncs[i] = wsa_getfunc(sk, &_guids[i]))) {
-			rc = -1;
-			break;
-		}
-	}
-	ffskt_close(sk);
-	return rc;
-}
-
 
 int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 {
@@ -119,7 +61,7 @@ static int _ffaio_acceptbegin(ffaio_acceptor *acc)
 		return FFAIO_ERROR;
 
 	ffmem_tzero(&acc->kev.ovl);
-	b = _ffwsaAcceptEx(acc->kev.sk, sk, acc->addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &r, &acc->kev.ovl);
+	b = _ff_AcceptEx(acc->kev.sk, sk, acc->addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &r, &acc->kev.ovl);
 	if (0 != fferr_ioret(b)) {
 		int er = fferr_last();
 		(void)ffskt_close(sk);
@@ -135,7 +77,7 @@ static FFINL void getNAddrs(byte *addrs, ffaddr *local, ffaddr *peer)
 {
 	int lenP = 0, lenL = 0;
 	struct sockaddr *lo, *pe;
-	_ffwsaGetAcceptExSockaddrs(addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &lo, &lenL, &pe, &lenP);
+	_ff_GetAcceptExSockaddrs(addrs, 0, FFADDR_MAXLEN + 16, FFADDR_MAXLEN + 16, &lo, &lenL, &pe, &lenP);
 
 	memcpy(&local->a, lo, lenL);
 	local->len = lenL;
@@ -199,7 +141,7 @@ int ffaio_connect(ffaio_task *t, ffaio_handler handler, const struct sockaddr *a
 		goto fail;
 
 	ffmem_tzero(&t->wovl);
-	b = _ffwsaConnectEx(t->sk, addr, addr_size, NULL, 0, &r, &t->wovl);
+	b = _ff_ConnectEx(t->sk, addr, addr_size, NULL, 0, &r, &t->wovl);
 
 	if (0 != fferr_ioret(b))
 		goto fail;

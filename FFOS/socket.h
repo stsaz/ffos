@@ -1,253 +1,605 @@
-/**
-Socket, network address, IPv4/IPv6 address functions.
-Copyright (c) 2013 Simon Zolin
+/** ffos: socket
+2020, Simon Zolin
+*/
+
+/*
+Address:
+	ffsockaddr_set_ipv4 ffsockaddr_set_ipv6
+	ffsockaddr_ip_port
+Creation:
+	ffsock_create ffsock_create_tcp ffsock_create_udp
+	ffsock_accept
+	ffsock_close
+Configuration:
+	ffsock_nonblock
+	ffsock_setopt ffsock_deferaccept
+	ffsock_getopt
+	ffsock_bind
+	ffsock_connect
+	ffsock_listen
+I/O:
+	ffsock_recv ffsock_recvfrom
+	ffsock_send ffsock_sendv ffsock_sendto
+I/O vector:
+	ffiovec_set
+	ffiovec_get
+	ffiovec_shift
 */
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/string.h>
+#include <ffbase/slice.h>
 
-#include <string.h>
-
-
-#ifdef FF_UNIX
-typedef int ffskt;
-typedef void * ffsktopt_t;
-
-#elif defined FF_WIN
-typedef SOCKET ffskt;
-typedef char * ffsktopt_t;
+#ifdef FF_WIN
+	#include <ws2tcpip.h>
+	#include <mswsock.h>
+#else
+	#include <netinet/in.h>
+	#include <netinet/tcp.h>
+	#include <sys/socket.h>
 #endif
 
-enum FFSKT_INIT {
-	FFSKT_SIGPIPE = 1, // UNIX: ignore SIGPIPE.  Use once per process.
-	FFSKT_WSA = 1, // Windows: initialize WSA library.  Use once per process.
-	FFSKT_WSAFUNCS = 2, // Windows: get WSA functions.  Use once per module.
-};
-
-
-#ifdef FF_LINUX
-#include <FFOS/unix/skt.h>
-#include <FFOS/linux/skt.h>
-
-#elif defined FF_BSD
-#include <FFOS/unix/skt.h>
-#include <FFOS/bsd/skt.h>
-
-#elif defined FF_APPLE
-#include <FFOS/unix/skt.h>
-
-#elif defined FF_WIN
-#include <FFOS/win/skt.h>
-#endif
-
-
-typedef struct ffaddr {
-	socklen_t len;
+typedef struct ffsockaddr {
+	ffuint len;
 	union {
-		struct sockaddr a;
 		struct sockaddr_in ip4;
 		struct sockaddr_in6 ip6;
 	};
-} ffaddr;
+} ffsockaddr;
 
-enum {
-	FFADDR_MAXLEN = sizeof(struct sockaddr_in6)
+/** Set IPv4 address and L4 port
+ipv4: byte[4]
+  NULL: "0.0.0.0" */
+static inline void ffsockaddr_set_ipv4(ffsockaddr *a, const void *ipv4, ffuint port)
+{
+	a->len = sizeof(struct sockaddr_in);
+	a->ip4.sin_family = AF_INET;
+	a->ip4.sin_port = ffint_be_cpu16(port);
+
+	if (ipv4 != NULL)
+		*(ffuint*)&a->ip4.sin_addr = *(ffuint*)ipv4;
+	else
+		*(ffuint*)&a->ip4.sin_addr = 0;
+}
+
+/** Set IPv6 address and L4 port
+ipv6: byte[16]
+  NULL: "::" */
+static inline void ffsockaddr_set_ipv6(ffsockaddr *a, const void *ipv6, ffuint port)
+{
+	a->len = sizeof(struct sockaddr_in6);
+	a->ip6.sin6_family = AF_INET6;
+	a->ip6.sin6_port = ffint_be_cpu16(port);
+
+	if (ipv6 != NULL)
+		ffmem_copy(&a->ip6.sin6_addr, ipv6, 16);
+	else
+		ffmem_fill(&a->ip6.sin6_addr, 0x00, 16);
+}
+
+/** Get IP address (IPv4 or IPv6) and L4 port */
+static inline ffslice ffsockaddr_ip_port(ffsockaddr *a, ffuint *port)
+{
+	ffslice s = {};
+	if (a->ip4.sin_family == AF_INET) {
+		ffslice_set(&s, &a->ip4.sin_addr, 4);
+		*port = ffint_be_cpu16(a->ip4.sin_port);
+
+	} else if (a->ip4.sin_family == AF_INET6) {
+		ffslice_set(&s, &a->ip6.sin6_addr, 16);
+		*port = ffint_be_cpu16(a->ip6.sin6_port);
+	}
+	return s;
+}
+
+enum FFSOCK_INIT {
+	FFSOCK_INIT_SIGPIPE = 1, // UNIX: ignore SIGPIPE.  Use once per process.
+	FFSOCK_INIT_WSA = 2, // Windows: initialize WSA library.  Use once per process.
+	FFSOCK_INIT_WSAFUNCS = 4, // Windows: get WSA functions.  Use once per module.
 };
 
-/** Initialize ffaddr structure. */
-static FFINL void ffaddr_init(ffaddr *adr) {
-	memset(adr, 0, sizeof(ffaddr));
-}
 
-/** Copy address. */
-static FFINL void ffaddr_copy(ffaddr *dst, const struct sockaddr *src, size_t len) {
-	if (len > FFADDR_MAXLEN) {
-		dst->len = 0;
-		return;
-	}
-	memcpy(&dst->a, src, len);
-	dst->len = (socklen_t)len;
-}
+#ifdef FF_WIN
 
-/** Get address family. */
-#define ffaddr_family(adr)  ((adr)->a.sa_family)
+typedef SOCKET ffsock;
+typedef WSABUF ffiovec;
+#define FFSOCK_NULL  INVALID_SOCKET
+#define FFSOCK_NONBLOCK  0x0100
 
-/** Set port (host byte order). */
-static FFINL void ffip_setport(ffaddr *adr, uint port) {
-	port = ffhton16((ushort)port);
-	if (adr->a.sa_family == AF_INET)
-		adr->ip4.sin_port = (short)port;
-	else //if (adr->a.sa_family == AF_INET6)
-		adr->ip6.sin6_port = (short)port;
-}
-
-/** Get port (host byte order). */
-static FFINL ushort ffip_port(const ffaddr *adr) {
-	return adr->a.sa_family == AF_INET
-		? ffhton16(adr->ip4.sin_port)
-		: ffhton16(adr->ip6.sin6_port);
-}
-
-/** Set IPv4 address. */
-static FFINL void ffip4_set(ffaddr *adr, const struct in_addr *net_addr) {
-	adr->ip4.sin_addr = *net_addr;
-	adr->a.sa_family = AF_INET;
-	adr->len = sizeof(struct sockaddr_in);
-}
-
-/** Set IPv4 address (host byte order).
-Example:
-ffip4_setint(&ip4, INADDR_LOOPBACK); */
-static FFINL void ffip4_setint(ffaddr *adr, int net_addr) {
-	union {
-		struct in_addr a;
-		uint i;
-	} un;
-	un.i = ffhton32(net_addr);
-	ffip4_set(adr, &un.a);
-}
-
-/** Set IPv4-mapped address (host byte order). */
-static FFINL void ffip6_setv4mapped(ffaddr *adr, int net_addr) {
-	union {
-		struct in6_addr *a;
-		uint *i;
-	} un;
-	un.a = &adr->ip6.sin6_addr;
-	un.i[0] = un.i[1] = 0;
-	un.i[2] = ffhton32(0x0000ffff);
-	un.i[3] = ffhton32(net_addr);
-	adr->a.sa_family = AF_INET6;
-	adr->len = sizeof(struct sockaddr_in6);
-}
-
-/** Set IPv6 address.
-Example:
-ffip6_set(&ip6, &in6addr_loopback); */
-static FFINL void ffip6_set(ffaddr *adr, const struct in6_addr *net_addr) {
-	adr->ip6.sin6_addr = *net_addr;
-	adr->a.sa_family = AF_INET6;
-	adr->len = sizeof(struct sockaddr_in6);
-}
-
-static FFINL void ffaddr_setip(ffaddr *a, uint family, const void *ip)
+static inline void ffsock_close(ffsock sk)
 {
-	if (family == AF_INET)
-		ffip4_set(a, (struct in_addr*)ip);
-	else
-		ffip6_set(a, (struct in6_addr*)ip);
+	closesocket(sk);
 }
 
-/** Set "any" address. */
-static FFINL void ffaddr_setany(ffaddr *adr, int family) {
-	if (family == AF_INET)
-		ffip4_setint(adr, INADDR_ANY);
-	else
-		ffip6_set(adr, &in6addr_any);
+static inline int ffsock_nonblock(ffsock sk, int nonblock)
+{
+	return ioctlsocket(sk, FIONBIO, (unsigned long*)&nonblock);
 }
 
-/** Return TRUE for IPv4-mapped address. */
-#define ffip6_isv4mapped(adr)  IN6_IS_ADDR_V4MAPPED(&(adr)->ip6.sin6_addr)
-
-/** Convert IPv4-mapped address to IPv4. */
-static FFINL void ffip_v4mapped_tov4(ffaddr *a) {
-	union {
-		struct in6_addr *a6;
-		struct in_addr *a;
-		char *b;
-	} un;
-	a->ip4.sin_port = a->ip6.sin6_port;
-	un.a6 = &a->ip6.sin6_addr;
-	un.b += 12;
-	ffip4_set(a, un.a);
+static inline int ffsock_setopt(ffsock sk, int level, int name, int val)
+{
+	return setsockopt(sk, level, name, (char*)&val, sizeof(int));
 }
 
-
-/** Create an endpoint for communication.
-@type: SOCK_*
-Return FF_BADSKT on error.
-Example:
-ffskt sk = ffskt_create(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); */
-FF_EXTN ffskt ffskt_create(uint domain, uint type, uint protocol);
-
-/** Initiate a connection on a socket. */
-static FFINL int ffskt_connect(ffskt sk, const struct sockaddr *addr, size_t addrlen) {
-	return connect(sk, addr, (socklen_t)addrlen);
-}
-
-/** Listen for connections on a socket.
-Example:
-ffskt_listen(lsn_sk, SOMAXCONN); */
-#define ffskt_listen  listen
-
-/** Set option on a socket.
-Example:
-ffskt_setopt(sk, IPPROTO_TCP, TCP_NODELAY, 1); */
-static FFINL int ffskt_setopt(ffskt sk, int lev, int optname, int val) {
-	return setsockopt(sk, lev, optname, (ffsktopt_t)&val, sizeof(int));
-}
-
-/** Get socket option. */
-static FFINL int ffskt_getopt(ffskt h, int lev, int opt, int *dst) {
+static inline int ffsock_getopt(ffsock sk, int level, int name, int *dst)
+{
 	socklen_t len = sizeof(int);
-	return getsockopt(h, lev, opt, (ffsktopt_t)dst, &len);
+	return getsockopt(sk, level, name, (char*)dst, &len);
 }
 
-/** Bind a name to a socket. */
-static FFINL int ffskt_bind(ffskt sk, const struct sockaddr *addr, size_t addrlen) {
-	(void)ffskt_setopt(sk, SOL_SOCKET, SO_REUSEADDR, 1);
-	return bind(sk, addr, (socklen_t)addrlen);
+static inline int ffsock_deferaccept(ffsock sk, int enable)
+{
+	(void)sk; (void)enable;
+	SetLastError(ERROR_NOT_SUPPORTED);
+	return -1;
 }
 
-/** Get local socket address.
-Return 0 on success. */
-static FFINL int ffskt_local(ffskt sk, ffaddr *adr) {
-	socklen_t size = FFADDR_MAXLEN;
-	if (0 != getsockname(sk, &adr->a, &size)
-		|| size > FFADDR_MAXLEN)
+static inline ffsock ffsock_create(int domain, int type, int protocol)
+{
+	ffsock sk = socket(domain, type & ~FFSOCK_NONBLOCK, protocol);
+
+	if ((type & FFSOCK_NONBLOCK) && sk != FFSOCK_NULL
+		&& 0 != ffsock_nonblock(sk, 1)) {
+		ffsock_close(sk);
+		return FFSOCK_NULL;
+	}
+
+	return sk;
+}
+
+#define FFSOCK_INPROGRESS  (-1000)
+
+static inline int ffsock_connect(ffsock sk, const ffsockaddr *addr)
+{
+	if (0 != connect(sk, (struct sockaddr*)&addr->ip4, addr->len))
 		return -1;
-	adr->len = size;
+	return 0;
+}
+
+static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *peer, int flags)
+{
+	socklen_t addr_size = sizeof(struct sockaddr_in6);
+	ffsock sk = accept(listen_sk, (struct sockaddr*)&peer->ip4, &addr_size);
+
+	if ((flags & FFSOCK_NONBLOCK) && sk != FFSOCK_NULL
+		&& 0 != ffsock_nonblock(sk, 1)) {
+		ffsock_close(sk);
+		return FFSOCK_NULL;
+	}
+
+	peer->len = addr_size;
+	return sk;
+}
+
+static inline ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags)
+{
+	return recv(sk, (char*)buf, ffmin(cap, 0xffffffff), flags);
+}
+
+static inline ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flags, ffsockaddr *peer_addr)
+{
+	socklen_t size = sizeof(struct sockaddr_in6);
+	int r = recvfrom(sk, (char*)buf, cap, flags, (struct sockaddr*)&peer_addr->ip4, &size);
+	if (r < 0)
+		return r;
+	peer_addr->len = size;
+	return r;
+}
+static inline ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags)
+{
+	return send(sk, (const char*)buf, ffmin(len, 0xffffffff), flags);
+}
+
+static inline ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n)
+{
+	DWORD sent;
+	if (0 == WSASend(sk, iov, iov_n, &sent, 0, NULL, NULL))
+		return sent;
+	return -1;
+}
+
+static inline ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr)
+{
+	return sendto(sk, (char*)buf, ffmin(len, 0xffffffff), flags, (struct sockaddr*)&peer_addr->ip4, peer_addr->len);
+}
+
+/** Get WSA function pointer */
+static inline void* _ff_wsa_getfunc(ffsock sk, const GUID *guid)
+{
+	void *func = NULL;
+	DWORD b;
+	WSAIoctl(sk, SIO_GET_EXTENSION_FUNCTION_POINTER, (void*)guid, sizeof(GUID), &func, sizeof(void*), &b, 0, 0);
+	if (func == NULL)
+		SetLastError(ERROR_PROC_NOT_FOUND);
+	return func;
+}
+
+FF_EXTN LPFN_DISCONNECTEX _ff_DisconnectEx;
+FF_EXTN LPFN_CONNECTEX _ff_ConnectEx;
+FF_EXTN LPFN_ACCEPTEX _ff_AcceptEx;
+FF_EXTN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
+
+static inline int _ff_wsa_getfuncs()
+{
+	static const GUID guids[] = {
+		WSAID_DISCONNECTEX,
+		WSAID_CONNECTEX,
+		WSAID_ACCEPTEX,
+		WSAID_GETACCEPTEXSOCKADDRS,
+	};
+	static void** const funcs[] = {
+		(void**)&_ff_DisconnectEx,
+		(void**)&_ff_ConnectEx,
+		(void**)&_ff_AcceptEx,
+		(void**)&_ff_GetAcceptExSockaddrs,
+	};
+
+	int rc = 0;
+	ffsock sk = ffsock_create(AF_INET, SOCK_STREAM, 0);
+	if (sk == FFSOCK_NULL)
+		return -1;
+
+	for (ffuint i = 0;  i != FF_COUNT(guids);  i++) {
+		if (NULL == (*funcs[i] = _ff_wsa_getfunc(sk, &guids[i]))) {
+			rc = -1;
+			break;
+		}
+	}
+
+	ffsock_close(sk);
+	return rc;
+}
+
+static inline int ffsock_init(int flags)
+{
+	if (flags & FFSOCK_INIT_WSA) {
+		WSADATA wsa;
+		if (0 != WSAStartup(MAKEWORD(2, 2), &wsa))
+			return -1;
+	}
+
+	if (flags & FFSOCK_INIT_WSAFUNCS) {
+		if (0 != _ff_wsa_getfuncs())
+			return -1;
+	}
+
+	return 0;
+}
+
+static inline int ffsock_fin(ffsock sk)
+{
+	return 0 == _ff_DisconnectEx(sk, (OVERLAPPED*)NULL, 0, 0);
+}
+
+
+static inline void ffiovec_set(ffiovec *iov, const void *buf, ffsize len)
+{
+	iov->buf = (char*)buf;
+	iov->len = ffmin(len, 0xffffffff);
+}
+
+static inline ffslice ffiovec_get(ffiovec *iov)
+{
+	ffslice s;
+	ffslice_set(&s, iov->buf, iov->len);
+	return s;
+}
+
+static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
+{
+	n = ffmin(n, iov->len);
+	iov->buf += n;
+	iov->len -= n;
+	return n;
+}
+
+#else // UNIX:
+
+#include <sys/uio.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <signal.h>
+
+typedef int ffsock;
+typedef struct iovec ffiovec;
+#define FFSOCK_NULL  (-1)
+
+#ifdef FF_APPLE
+	#define FFSOCK_NONBLOCK  0x40000000
+#else
+	#define FFSOCK_NONBLOCK  SOCK_NONBLOCK
+#endif
+
+static inline int ffsock_init(int flags)
+{
+	if (flags & FFSOCK_INIT_SIGPIPE)
+		signal(SIGPIPE, SIG_IGN);
+	return 0;
+}
+
+static inline void ffsock_close(ffsock sk)
+{
+	close(sk);
+}
+
+static inline int ffsock_nonblock(ffsock sk, int nonblock)
+{
+	return ioctl(sk, FIONBIO, &nonblock);
+}
+
+static inline ffsock ffsock_create(int domain, int type, int protocol)
+{
+#ifdef FF_APPLE
+	ffsock sk = socket(domain, type & ~FFSOCK_NONBLOCK, protocol);
+
+	if ((type & FFSOCK_NONBLOCK) && sk != FFSOCK_NULL
+		&& 0 != ffsock_nonblock(sk, 1)) {
+		ffsock_close(sk);
+		return FFSOCK_NULL;
+	}
+
+	return sk;
+
+#else
+	return socket(domain, type, protocol);
+#endif
+}
+
+#define FFSOCK_INPROGRESS  (-EINPROGRESS)
+
+static inline int ffsock_connect(ffsock sk, const ffsockaddr *addr)
+{
+	if (0 != connect(sk, (struct sockaddr*)&addr->ip4, addr->len))
+		return -errno;
+	return 0;
+}
+
+static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags)
+{
+	socklen_t addr_size = sizeof(struct sockaddr_in6);
+
+#if (defined FF_LINUX && !defined FF_ANDROID) || defined FF_BSD
+	ffsock sk = accept4(listen_sk, (struct sockaddr*)&addr->ip4, &addr_size, flags);
+
+#else
+	ffsock sk = accept(listen_sk, (struct sockaddr*)&addr->ip4, &addr_size);
+
+	if ((flags & FFSOCK_NONBLOCK) && sk != FFSOCK_NULL
+		&& 0 != ffsock_nonblock(sk, 1)) {
+		ffsock_close(sk);
+		return FFSOCK_NULL;
+	}
+
+#endif
+
+	addr->len = addr_size;
+	return sk;
+}
+
+static inline int ffsock_setopt(ffsock sk, int level, int name, int val)
+{
+	return setsockopt(sk, level, name, (void*)&val, sizeof(int));
+}
+
+static inline int ffsock_getopt(ffsock sk, int level, int name, int *dst)
+{
+	socklen_t len = sizeof(int);
+	return getsockopt(sk, level, name, (void*)dst, &len);
+}
+
+static inline int ffsock_deferaccept(ffsock sk, int enable)
+{
+#if defined FF_LINUX
+	return ffsock_setopt(sk, IPPROTO_TCP, TCP_DEFER_ACCEPT, enable);
+
+#elif defined FF_BSD
+	void *val = NULL;
+	struct accept_filter_arg af;
+	if (enable) {
+		ffmem_zero_obj(&af);
+		ffmem_copy(af.af_name, "dataready", FFS_LEN("dataready"));
+		val = &af;
+	}
+	return setsockopt(sk, SOL_SOCKET, SO_ACCEPTFILTER, val, sizeof(struct accept_filter_arg));
+
+#else
+	(void)sk; (void)enable;
+	errno = ENOSYS;
+	return -1;
+#endif
+}
+
+static inline ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags)
+{
+	return recv(sk, (char*)buf, cap, flags);
+}
+
+static inline ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flags, ffsockaddr *peer_addr)
+{
+	socklen_t size = sizeof(struct sockaddr_in6);
+	int r = recvfrom(sk, buf, cap, flags, (struct sockaddr*)&peer_addr->ip4, &size);
+	if (r < 0)
+		return r;
+	peer_addr->len = size;
+	return r;
+}
+
+static inline ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags)
+{
+	return send(sk, (char*)buf, len, flags);
+}
+
+static inline ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n)
+{
+	return writev(sk, iov, iov_n);
+}
+
+static inline ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr)
+{
+	return sendto(sk, buf, len, flags, (struct sockaddr*)&peer_addr->ip4, peer_addr->len);
+}
+
+static inline int ffsock_fin(ffsock sk)
+{
+	return shutdown(sk, SHUT_WR);
+}
+
+
+static inline void ffiovec_set(ffiovec *iov, const void *data, ffsize len)
+{
+	iov->iov_base = (char*)data;
+	iov->iov_len = len;
+}
+
+static inline ffslice ffiovec_get(ffiovec *iov)
+{
+	ffslice s;
+	ffslice_set(&s, iov->iov_base, iov->iov_len);
+	return s;
+}
+
+static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
+{
+	n = ffmin(n, iov->iov_len);
+	iov->iov_base = (char*)iov->iov_base + n;
+	iov->iov_len -= n;
+	return n;
+}
+
+#endif
+
+
+/** Prepare sockets for use
+flags: enum FFSOCK_INIT
+Return 0 on success */
+static int ffsock_init(int flags);
+
+/** Set option on a socket
+Examples:
+  SOL_SOCKET, SO_REUSEADDR, 1
+  SOL_SOCKET, SO_RCVBUF, 1024
+  IPPROTO_IPV6, IPV6_V6ONLY, 0
+  IPPROTO_TCP, TCP_NODELAY, 1
+  IPPROTO_TCP, TCP_NOPUSH, 1
+Return 0 on success */
+static int ffsock_setopt(ffsock sk, int level, int name, int val);
+
+/** Set defer-accept option on a listening TCP socket
+Linux and FreeBSD only
+Return 0 on success */
+static int ffsock_deferaccept(ffsock sk, int enable);
+
+/** Get socket option
+Return 0 on success */
+static int ffsock_getopt(ffsock sk, int level, int name, int *dst);
+
+/** Create an endpoint for communication
+domain: AF_... e.g. AF_INET | AF_INET6
+type: SOCK_... | FFSOCK_NONBLOCK
+Return FFSOCK_NULL on error */
+static ffsock ffsock_create(int domain, int type, int protocol);
+
+/** Create TCP socket
+domain: AF_... e.g. AF_INET | AF_INET6
+flags: FFSOCK_NONBLOCK
+Return FFSOCK_NULL on error */
+static inline ffsock ffsock_create_tcp(int domain, int flags)
+{
+	return ffsock_create(domain, SOCK_STREAM | flags, IPPROTO_TCP);
+}
+
+/** Create UDP socket
+domain: AF_... e.g. AF_INET | AF_INET6
+flags: FFSOCK_NONBLOCK
+Return FFSOCK_NULL on error */
+static inline ffsock ffsock_create_udp(int domain, int flags)
+{
+	return ffsock_create(domain, SOCK_DGRAM | flags, IPPROTO_UDP);
+}
+
+/** Accept a connection on a socket
+flags: FFSOCK_NONBLOCK
+Return FFSOCK_NULL on error */
+static ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags);
+
+/** Close a socket */
+static void ffsock_close(ffsock sk);
+
+/** Set non-blocking mode on a socket
+Return 0 on success */
+static int ffsock_nonblock(ffsock sk, int nonblock);
+
+/** Bind a name to a socket
+Return 0 on success */
+static inline int ffsock_bind(ffsock sk, const ffsockaddr *addr)
+{
+	ffsock_setopt(sk, SOL_SOCKET, SO_REUSEADDR, 1);
+	return bind(sk, (struct sockaddr*)&addr->ip4, addr->len);
+}
+
+/** Initiate a connection on a socket
+Return 0 on success
+  <0 on error
+    FFSOCK_INPROGRESS: non-blocking connect operation is in progress */
+static int ffsock_connect(ffsock sk, const ffsockaddr *addr);
+
+/** Listen for connections on a socket
+Example:
+  ffsock_listen(lsn_sk, SOMAXCONN);
+Return FFSOCK_NULL on error */
+static inline int ffsock_listen(ffsock listen_sk, ffuint max_conn)
+{
+	return listen(listen_sk, max_conn);
+}
+
+/** Receive data from a socket
+Return <0 on error */
+static ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags);
+
+/** Receive data from a socket
+Return <0 on error */
+static ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flags, ffsockaddr *peer_addr);
+
+/** Send data to a socket
+Return <0 on error */
+static ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags);
+
+/** Send data from multiple buffers
+Return <0 on error */
+static ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n);
+
+/** Send data to a socket
+Return <0 on error */
+static ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr);
+
+/** Send TCP FIN
+Windows: requires ffsock_init(FFSOCK_INIT_WSAFUNCS), because shutdown() fails with WSAENOTCONN on a connected and valid socket assigned to IOCP
+Return 0 on success */
+static int ffsock_fin(ffsock sk);
+
+/** Get local socket address
+Return 0 on success */
+static inline int ffsock_localaddr(ffsock sk, ffsockaddr *addr)
+{
+	socklen_t addr_size = sizeof(struct sockaddr_in6);
+	if (0 != getsockname(sk, (struct sockaddr*)&addr->ip4, &addr_size)
+		|| (ffuint)addr_size > sizeof(struct sockaddr_in6))
+		return -1;
+	addr->len = addr_size;
 	return 0;
 }
 
 
-/** Set buffer in ffiovec structure. */
-static FFINL void ffiov_set(ffiovec *iov, const void *data, size_t len) {
-	iov->iov_base = (char*)data;
-#if defined FF_UNIX
-	iov->iov_len = len;
-#elif defined FF_WIN
-	iov->iov_len = FF_TOINT(len);
-#endif
-}
+/** Set buffer */
+static void ffiovec_set(ffiovec *iov, const void *data, ffsize len);
 
-/** Shift buffer position in ffiovec structure. */
-static FFINL void ffiov_shift(ffiovec *iov, size_t len) {
-	ffiov_set(iov, (char*)iov->iov_base + len, (size_t)iov->iov_len - len);
-}
+/** Get buffer */
+static ffslice ffiovec_get(ffiovec *iov);
 
-/** Shift an array of ffiovec.
-Return the number of shifted elements. */
-FF_EXTN size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len);
+/** Shift offset
+Return number of shifted bytes */
+static ffsize ffiovec_shift(ffiovec *iov, ffsize n);
 
-/** Copy headers & trailers into a new array. */
-FF_EXTN size_t ffiov_copyhdtr(ffiovec *dst, size_t cap, const sf_hdtr *ht);
 
-/** Get the overall size of ffiovec[]. */
-static FFINL size_t ffiov_size(const ffiovec *iovs, size_t nels)
-{
-	size_t sz = 0;
-	size_t i;
-	for (i = 0;  i < nels;  ++i) {
-		sz += iovs[i].iov_len;
-	}
-	return sz;
-}
-
-static FFINL void ffsf_sethdtr(sf_hdtr *ht, ffiovec *hdrs, size_t nhdrs, ffiovec *trls, size_t ntrls) {
-	ht->headers = hdrs;
-	ht->hdr_cnt = (int)nhdrs;
-	ht->trailers = trls;
-	ht->trl_cnt = (int)ntrls;
-}
+#include <FFOS/socket-compat.h>

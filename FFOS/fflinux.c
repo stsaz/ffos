@@ -40,10 +40,6 @@ void fftime_local(fftime_zone *tz)
 
 
 #if defined FF_LINUX_MAINLINE
-ffskt ffskt_create(uint domain, uint type, uint protocol)
-{
-	return socket(domain, type, protocol);
-}
 
 int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)
 {
@@ -54,7 +50,7 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 	(void)flags;
 
 	if (hdtr != NULL && (hdtr->hdr_cnt | hdtr->trl_cnt) != 0
-		&& 0 == ffskt_setopt(sk, IPPROTO_TCP, TCP_NOPUSH, 1))
+		&& 0 == ffskt_setopt(sk, IPPROTO_TCP, TCP_CORK, 1))
 		npush = 1;
 
 	if (hdtr != NULL && hdtr->hdr_cnt != 0) {
@@ -95,7 +91,7 @@ int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uin
 
 end:
 	if (npush)
-		(void)ffskt_setopt(sk, IPPROTO_TCP, TCP_NOPUSH, 0);
+		(void)ffskt_setopt(sk, IPPROTO_TCP, TCP_CORK, 0);
 
 	*_sent = sent;
 	return res;
@@ -133,12 +129,6 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 
 	t->fd = sigfd;
 	return 0;
-}
-#else
-ffskt ffskt_create(uint domain, uint type, uint protocol)
-{
-	FF_ASSERT(0);
-	return socket(domain, type, protocol);
 }
 #endif
 

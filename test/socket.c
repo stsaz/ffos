@@ -1,224 +1,149 @@
+/** ffos: socket.h tester
+2020, Simon Zolin
+*/
+
+#include <FFOS/mem.h>
 #include <FFOS/socket.h>
-#include <FFOS/string.h>
 #include <FFOS/thread.h>
-#include <FFOS/error.h>
 #include <FFOS/test.h>
-#include <stdio.h>
 
-#define x FFTEST_BOOL
-
-#define HOST "localhost"
-#define PORT "8080"
-#define REQ "GET / HTTP/1.0" FFCRLF FFCRLF
-#define RESP_HDR "HTTP/1.0 200 OK" FFCRLF FFCRLF
-#define RESP_BODY "this is body" FFCRLF
-#define RESP RESP_HDR RESP_BODY
-
-typedef struct {
-	const char *host;
-	const char *port;
-	const char *req;
-	const char *respHdr;
-	const char *respBody;
-} servData;
-
-#define CLIID "client: "
-
-static int test_sktsyncclient(const servData *sd)
+int thread_socket_udp_server(void *param)
 {
-	ffskt sk = FF_BADSKT;
-	char buf[4096];
-	ssize_t r;
-	ffaddrinfo *a;
-	ffaddrinfo *addrs;
-	int e;
-	size_t reqsz = strlen(sd->req);
+	ffsock sk = *(ffsock*)param;
 
-	FFTEST_FUNC;
+	ffsockaddr addr;
+	char buf[100];
+	ffssize n = ffsock_recvfrom(sk, buf, sizeof(buf), 0, &addr);
+	xint_sys(5, n);
+	x(!ffmem_cmp(buf, "hello", 5));
 
-	e = ffaddr_info(&addrs, sd->host, sd->port, 0);
-	x(e == 0);
-
-	for (a = addrs;  a != NULL;  a = a->ai_next) {
-		sk = ffskt_create(a->ai_family, SOCK_STREAM, IPPROTO_TCP);
-		if (sk == FF_BADSKT)
-			break;
-		printf("%s", CLIID "connecting..." FF_NEWLN);
-		if (0 == ffskt_connect(sk, a->ai_addr, a->ai_addrlen))
-			break;
-		ffskt_close(sk);
-		sk = FF_BADSKT;
-	}
-	ffaddr_free(addrs);
-	if (!x(sk != FF_BADSKT))
-		return 1;
-
-	x(0 == ffskt_nblock(sk, 1));
-	x(-1 == ffskt_recv(sk, buf, sizeof(buf), 0) && fferr_again(fferr_last()));
-	x(0 == ffskt_nblock(sk, 0));
-
-	printf(CLIID "sending %d bytes..." FF_NEWLN, (int)reqsz);
-	x(reqsz == ffskt_send(sk, sd->req, reqsz, 0));
-	printf("%s", CLIID "sending FIN..." FF_NEWLN);
-	x(0 == ffskt_fin(sk));
-
-	for (;;) {
-		r = ffskt_recv(sk, buf, sizeof(buf), 0);
-		if (r > 0) {
-			printf(CLIID "received %d bytes" FF_NEWLN, (int)r);
-			continue;
-		}
-		x(r != -1);
-		if (r == 0)
-			printf("%s", CLIID "received FIN" FF_NEWLN);
-		break;
-	}
-
-	x(0 == ffskt_close(sk));
-	return 0;
-}
-
-#define SRVID "server: "
-
-static int FFTHDCALL test_sktsyncserver(void *param)
-{
-	const servData *sd = param;
-	ffskt sk
-		, csk;
-	ffaddrinfo *addrs;
-	ffaddrinfo *a;
-	ffaddr peer
-		, local;
-	char buf[1024];
-	size_t ibuf = 0;
-
-	FFTEST_FUNC;
-
-	x(0 == ffaddr_info(&addrs, sd->host, sd->port, AI_PASSIVE));
-	a = addrs;
-
-	sk = ffskt_create(a->ai_family, SOCK_STREAM, IPPROTO_TCP);
-	x(sk != FF_BADSKT);
-
-	x(0 == ffskt_bind(sk, a->ai_addr, a->ai_addrlen));
-	ffaddr_free(addrs);
-
-	x(0 == ffskt_listen(sk, SOMAXCONN));
-	printf(SRVID "listening..." FF_NEWLN);
-
-	peer.len = sizeof(struct sockaddr_in6);
-	csk = ffskt_accept(sk, &peer.a, &peer.len, 0);
-	x(csk != FF_BADSKT);
-	{
-		int recvbuf;
-		x(0 == ffskt_getopt(csk, SOL_SOCKET, SO_RCVBUF, &recvbuf));
-		x(recvbuf != 0);
-		x(0 == ffskt_setopt(csk, SOL_SOCKET, SO_RCVBUF, 1 * 1024));
-	}
-	x(0 == ffskt_local(csk, &local));
-
-	{
-		char peerAddr[FF_MAXIP6];
-		char peerPort[NI_MAXSERV];
-		char localAddr[FF_MAXIP6];
-		char localPort[NI_MAXSERV];
-		x(0 == ffaddr_name(&local.a, local.len, localAddr, sizeof(localAddr)
-			, localPort, sizeof(localPort), NI_NUMERICHOST | NI_NUMERICSERV));
-		x(0 == ffaddr_name(&peer.a, peer.len, peerAddr, sizeof(peerAddr)
-			, peerPort, sizeof(peerPort), NI_NUMERICHOST | NI_NUMERICSERV));
-		printf(SRVID "client %s:%s has connected to %s:%s" FF_NEWLN
-			, peerAddr, peerPort, localAddr, localPort);
-	}
-
-	for (;;) {
-		ssize_t r = ffskt_recv(csk, buf + ibuf, sizeof(buf) - ibuf, 0);
-		if (r > 0) {
-			printf(SRVID "received %d bytes" FF_NEWLN, (int)r);
-			ibuf += r;
-			if (0 == x(ibuf != sizeof(buf)))
-				break;
-			continue;
-		}
-		x(r != -1);
-		if (r == 0)
-			printf("%s", SRVID "received FIN" FF_NEWLN);
-		break;
-	}
-
-	x(ibuf == strlen(sd->req) && !memcmp(buf, sd->req, ibuf));
-
-	{
-		size_t r;
-		ffiovec iov[2];
-		ffiov_set(&iov[0], sd->respHdr, strlen(sd->respHdr));
-		ffiov_set(&iov[1], sd->respBody, strlen(sd->respBody));
-		r = ffskt_sendv(csk, iov, 2);
-		x(r == iov[0].iov_len + iov[1].iov_len);
-		printf(SRVID "sent %d bytes" FF_NEWLN, (int)r);
-	}
-
-	x(0 == ffskt_fin(csk));
-	x(0 == ffskt_close(csk));
-	x(0 == ffskt_close(sk));
-	return 0;
-}
-
-static int test_addr()
-{
-	ffaddr a;
-
-	FFTEST_FUNC;
-
-	ffaddr_init(&a);
-	ffip4_setint(&a, INADDR_LOOPBACK);
-	x(ffaddr_family(&a) == AF_INET);
-	x(a.ip4.sin_addr.s_addr == ffhton32(INADDR_LOOPBACK));
-	ffip_setport(&a, 8080);
-	x(ffip_port(&a) == 8080);
-
-	ffaddr_init(&a);
-	ffip6_set(&a, &in6addr_loopback);
-	x(ffaddr_family(&a) == AF_INET6);
-	x(ffip6_eq(&a.ip6.sin6_addr, &in6addr_loopback));
-	x(!ffip6_isv4mapped(&a));
-
-	ffip6_setv4mapped(&a, INADDR_LOOPBACK);
-	x(ffip6_isv4mapped(&a));
-	ffip_v4mapped_tov4(&a);
-	x(a.ip4.sin_addr.s_addr == ffhton32(INADDR_LOOPBACK));
-	x(ffaddr_family(&a) == AF_INET);
+	ffuint port = 0;
+	ffslice ips = ffsockaddr_ip_port(&addr, &port);
+	x(4 == ips.len);
+	ffbyte *ip = (void*)ips.ptr;
+	fflog("accepted connection from %u.%u.%u.%u port %d"
+		, ip[0], ip[1], ip[2], ip[3]
+		, port);
 
 	return 0;
 }
 
-int test_skt()
+void test_socket_udp()
 {
-	servData sd;
-	ffthd th;
+	ffsock l = ffsock_create_udp(AF_INET, 0);
+	x_sys(l != FFSOCK_NULL);
 
-	FFTEST_FUNC;
+	ffsockaddr addr = {};
+	ffsockaddr_set_ipv4(&addr, NULL, 0);
+	x_sys(0 == ffsock_bind(l, &addr));
 
-	test_addr();
+	x_sys(0 == ffsock_localaddr(l, &addr));
+	ffuint port = 0;
+	ffslice ips = ffsockaddr_ip_port(&addr, &port);
+	x(4 == ips.len);
+	ffbyte *ip = (void*)ips.ptr;
+	fflog("listening on %u.%u.%u.%u port %d"
+		, ip[0], ip[1], ip[2], ip[3]
+		, port);
 
-	x(0 == ffskt_init(FFSKT_WSA | FFSKT_WSAFUNCS));
+	ffthread th = ffthread_create(thread_socket_udp_server, &l, 0);
 
-	sd.host = HOST;
-	sd.port = PORT;
-	sd.req = REQ;
-	sd.respHdr = RESP_HDR;
-	sd.respBody = RESP_BODY;
-	th = ffthd_create(&test_sktsyncserver, &sd, 0);
-	x(th != 0);
-	x(ETIMEDOUT == ffthd_join(th, 100, NULL));
-	x(ETIMEDOUT == ffthd_join(th, 0, NULL));
+	ffsock c = ffsock_create_udp(AF_INET, 0);
+	x_sys(c != FFSOCK_NULL);
+	ffsockaddr_set_ipv4(&addr, "\x7f\x00\x00\x01", port);
+	ffssize n = ffsock_sendto(c, "hello", 5, 0, &addr);
+	xint_sys(5, n);
 
-	test_sktsyncclient(&sd);
+	ffthread_join(th, -1, NULL);
+	ffsock_close(l);
+	ffsock_close(c);
+}
 
-	{
-		int ecode;
-		x(0 == ffthd_join(th, (uint)-1, &ecode));
-		x(ecode == 0);
-	}
+int thread_socket_tcp_server(void *param)
+{
+	ffsock sk = *(ffsock*)param;
 
+	ffsockaddr addr;
+	ffsock c = ffsock_accept(sk, &addr, 0);
+	x_sys(c != FFSOCK_NULL);
+
+	ffuint port = 0;
+	ffslice ips = ffsockaddr_ip_port(&addr, &port);
+	x(16 == ips.len);
+	ffbyte *ip = (void*)ips.ptr;
+	fflog("accepted connection from %xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu port %d"
+		, ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7], ip[8], ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]
+		, port);
+
+	char buf[100];
+	ffssize n = ffsock_recv(c, buf, sizeof(buf), 0);
+	x_sys(n == 5);
+	x(!ffmem_cmp(buf, "hello", 5));
+
+	ffiovec iov[2];
+	ffiovec_set(&iov[0], "header ", 7);
+	ffiovec_set(&iov[1], "body", 4);
+	n = ffsock_sendv(c, iov, 2);
+	xint_sys(7+4, n);
+
+	x_sys(0 == ffsock_fin(c));
+	ffsock_close(c);
 	return 0;
+}
+
+void test_socket_tcp()
+{
+	ffsock l = ffsock_create_tcp(AF_INET6, 0);
+	x_sys(l != FFSOCK_NULL);
+	x_sys(0 == ffsock_setopt(l, IPPROTO_IPV6, IPV6_V6ONLY, 0));
+
+	x_sys(0 == ffsock_nonblock(l, 0));
+
+	int recvbuf;
+	x(0 == ffsock_getopt(l, SOL_SOCKET, SO_RCVBUF, &recvbuf));
+	fflog("recvbuf: %d", recvbuf);
+
+	x_sys(0 == ffsock_setopt(l, IPPROTO_TCP, TCP_NODELAY, 1));
+
+	int r = ffsock_deferaccept(l, 1);
+	fflog("ffsock_deferaccept(): %d", r);
+
+	ffsockaddr addr = {};
+	ffsockaddr_set_ipv6(&addr, NULL, 0);
+	x_sys(0 == ffsock_bind(l, &addr));
+	x_sys(0 == ffsock_listen(l, SOMAXCONN));
+
+	x_sys(0 == ffsock_localaddr(l, &addr));
+	ffuint port = 0;
+	ffslice ips = ffsockaddr_ip_port(&addr, &port);
+	x(16 == ips.len);
+	ffbyte *ip = (void*)ips.ptr;
+	fflog("listening on %xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu.%xu port %d"
+		, ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7], ip[8], ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]
+		, port);
+
+	ffthread th = ffthread_create(thread_socket_tcp_server, &l, 0);
+
+	ffsock c = ffsock_create_tcp(AF_INET6, 0);
+	x_sys(c != FFSOCK_NULL);
+	// ::1
+	ffsockaddr_set_ipv6(&addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01", port);
+	x_sys(0 == ffsock_connect(c, &addr));
+	ffssize n = ffsock_send(c, "hello", 5, 0);
+	xint_sys(5, n);
+	char buf[100];
+	n = ffsock_recv(c, buf, sizeof(buf), 0);
+	xint_sys(7+4, n);
+	x(!ffmem_cmp(buf, "header body", 7+4));
+
+	ffthread_join(th, -1, NULL);
+	ffsock_close(l);
+	ffsock_close(c);
+}
+
+void test_socket()
+{
+	x_sys(0 == ffsock_init(FFSOCK_INIT_SIGPIPE | FFSOCK_INIT_WSA | FFSOCK_INIT_WSAFUNCS));
+	test_socket_udp();
+	test_socket_tcp();
 }
