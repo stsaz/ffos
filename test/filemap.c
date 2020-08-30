@@ -2,15 +2,20 @@
 Copyright (c) 2020 Simon Zolin
 */
 
-#include "all.h"
 #include <FFOS/string.h>
 #include <FFOS/file.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 
-#define x FFTEST_BOOL
+
 #define HELLO "hello\n"
 #define FOOBAR "foobar\n"
+
+#ifdef FF_UNIX
+#define TMP_PATH "/tmp"
+#else
+#define TMP_PATH "."
+#endif
 
 static int test_mapwr(const char *fn)
 {
@@ -22,7 +27,7 @@ static int test_mapwr(const char *fn)
 	FFTEST_FUNC;
 
 	fd = fffile_open(fn, FFO_CREATE | FFO_RDWR);
-	x(fd != FF_BADFD);
+	x(fd != FFFILE_NULL);
 
 	mapsz = 64*1024 + FFSLEN(FOOBAR);
 	x(0 == fffile_trunc(fd, mapsz));
@@ -59,7 +64,7 @@ static int test_mapro(const char *fn)
 	FFTEST_FUNC;
 
 	fd = fffile_open(fn, O_RDONLY);
-	x(fd != FF_BADFD);
+	x(fd != FFFILE_NULL);
 	fsiz = fffile_size(fd);
 	fmap = ffmap_create(fd, fsiz, FFMAP_PAGEREAD);
 	x(fmap != 0);
@@ -87,7 +92,7 @@ static int test_mapanon()
 
 	FFTEST_FUNC;
 
-	fmap = ffmap_create(FF_BADFD, mapsz, FFMAP_PAGERW);
+	fmap = ffmap_create(FFFILE_NULL, mapsz, FFMAP_PAGERW);
 	x(fmap != 0);
 	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS);
 	x(mapd != NULL);

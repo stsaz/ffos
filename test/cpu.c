@@ -7,11 +7,9 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/test.h>
 
 
-#define x FFTEST_BOOL
-
 int test_cpu(void)
 {
-	ffcpuid c = {0};
+	ffcpuid c = {};
 	x(0 == ff_cpuid(&c, FFCPUID_VENDOR | FFCPUID_FEATURES | FFCPUID_BRAND));
 	printf("CPU:%s\nBrand:%s\n"
 		"SSE:%u\nSSE2:%u\nSSE3:%u\nSSSE3:%u\nSSE4.1:%u\nSSE4.2:%u\n"

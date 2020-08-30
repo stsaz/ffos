@@ -5,7 +5,7 @@
 #include <FFOS/perf.h>
 #include <FFOS/timer-compat.h>
 #include <FFOS/thread.h>
-#include <test/test.h>
+#include <FFOS/test.h>
 
 void test_clock()
 {

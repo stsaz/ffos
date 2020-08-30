@@ -2,103 +2,22 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
-#include <FFOS/timer.h>
 #include <FFOS/mem.h>
 #include <FFOS/process.h>
 #include <FFOS/random.h>
 #include <FFOS/atomic.h>
-#include <FFOS/semaphore.h>
-#include <FFOS/backtrace.h>
 #include <FFOS/netconf.h>
+#include <FFOS/test.h>
 #include <ffbase/stringz.h>
-#include <test/test.h>
 
-#include <test/all.h>
-
-#undef x
-#define x FFTEST_BOOL
-#define CALL FFTEST_TIMECALL
-
-static int FFTHDCALL thdfunc(void *param) {
-	printf("tid: %u\n", (int)ffthd_curid());
-	return 0;
-}
-
-int test_thd()
-{
-	ffthd th;
-
-	FFTEST_FUNC;
-
-	th = ffthd_create(&thdfunc, NULL, 64 * 1024);
-	x(th != 0);
-	x(0 == ffthd_join(th, -1, NULL));
-
-	return 0;
-}
-
-int test_netconf()
+void test_netconf()
 {
 	ffnetconf nc = {};
 	x(0 == ffnetconf_get(&nc, FFNETCONF_DNS_ADDR));
 	x(nc.dns_addrs_num != 0);
 	x(nc.dns_addrs[0] != NULL);
-	x(nc.dns_addrs[0][0] != '\0');
 	printf("dns_addrs[0]: '%s'\n", nc.dns_addrs[0]);
 	ffnetconf_destroy(&nc);
-	return 0;
-}
-
-
-static void test_semaphore_unnamed()
-{
-	ffsem s;
-	x(FFSEM_INV != (s = ffsem_open(NULL, 0, 0)));
-	x(0 != ffsem_wait(s, 0));
-	x(fferr_last() == ETIMEDOUT);
-	ffsem_close(s);
-	s = FFSEM_INV;
-	x(0 != ffsem_wait(s, 0));
-}
-
-static void test_semaphore_named()
-{
-	const char *name = "/ffos-test.sem";
-	ffsem s, s2;
-
-	ffsem_unlink(name);
-
-	x(FFSEM_INV == ffsem_open(name, 0, 0));
-	x(FFSEM_INV != (s = ffsem_open(name, FFO_CREATENEW, 2)));
-	x(FFSEM_INV != (s2 = ffsem_open(name, 0, 0)));
-	x(0 == ffsem_wait(s, 0));
-	x(0 == ffsem_wait(s2, 0));
-	//cnt=0
-	x(0 != ffsem_wait(s, 0) && fferr_last() == ETIMEDOUT);
-	x(0 != ffsem_wait(s2, 0) && fferr_last() == ETIMEDOUT);
-
-	x(0 == ffsem_post(s));
-	x(0 == ffsem_post(s2));
-	//cnt=2
-
-	x(0 == ffsem_wait(s, 0));
-	x(0 == ffsem_wait(s2, 0));
-	//cnt=0
-	x(0 != ffsem_wait(s, 100));
-	x(0 != ffsem_wait(s2, 0));
-
-	x(0 == ffsem_unlink(name));
-	ffsem_close(s);
-	ffsem_close(s2);
-}
-
-static int test_semaphore(void)
-{
-	test_semaphore_unnamed();
-	test_semaphore_named();
-	return 0;
 }
 
 void test_sconf()
@@ -109,7 +28,7 @@ void test_sconf()
 	x(0 != ffsysconf_get(&sc, FFSYSCONF_NPROCESSORS_ONLN));
 }
 
-static int test_rnd()
+void test_rnd()
 {
 	int n, n2;
 	fftime t;
@@ -126,10 +45,9 @@ static int test_rnd()
 	n2 = ffrnd_get();
 	x(n == n2);
 
-	return 0;
 }
 
-static int test_atomic()
+void test_atomic()
 {
 	ffatomic a;
 
@@ -182,10 +100,9 @@ static int test_atomic()
 	x(0xaa345678 == ffatom_get(&a));
 #endif
 
-	return 0;
 }
 
-static int test_lock()
+void test_lock()
 {
 	fflock lk;
 	FFTEST_FUNC;
@@ -194,92 +111,151 @@ static int test_lock()
 	x(0 != fflk_trylock(&lk));
 	x(0 == fflk_trylock(&lk));
 	fflk_unlock(&lk);
-	return 0;
 }
 
-int test_backtrace()
-{
-	FFTEST_FUNC;
-	ffthd_bt bt = {};
-	uint n = ffthd_backtrace(&bt);
-	x(n != 0);
-	for (uint i = 0;  i != n;  i++) {
+void test_atomic();
+void test_backtrace();
+void test_cpu();
+void test_dir();
+void test_dylib();
+void test_env();
+void test_error();
+void test_file();
+void test_fileaio();
+void test_filemap();
+void test_kqu();
+void test_kqueue();
+void test_lock();
+void test_mem();
+void test_netconf();
+void test_perf();
+void test_pipe();
+void test_process();
+void test_rnd();
+void test_sconf();
+void test_semaphore();
+void test_socket();
+void test_std();
+void test_std_event();
+void test_thread();
+void test_time();
+void test_timer();
+void test_types();
 
-#ifdef FF_UNIX
-		const ffsyschar *name = ffthd_backtrace_modname(&bt, i);
-#else
-		char name[512];
-		const ffsyschar *wname = ffthd_backtrace_modname(&bt, i);
-		ff_wtou(name, sizeof(name), wname, -1, 0);
-#endif
-
-		printf("#%u: 0x%p %s [0x%p]\n"
-			, i, ffthd_backtrace_frame(&bt, i)
-			, name
-			, ffthd_backtrace_modbase(&bt, i));
-	}
-	return 0;
-}
-
-extern int test_filemap();
-extern int test_fileaio(void);
-extern int test_dir();
+void test_sig_abort();
+void test_sig_segv();
+void test_sig_stack();
+void test_sig_fpe();
+void test_unixsignal();
+void test_winreg();
 
 struct test_s {
-	const char *nm;
-	int (*func)();
+	const char *name;
+	void (*func)();
 };
 
 #define F(nm) { #nm, &test_ ## nm }
-static const struct test_s _ffostests[] = {
-	F(types), F(atomic), F(lock), F(mem), F(time), F(thd), F(sconf), F(rnd)
-	, F(skt), F(timer), F(kqu), F(ps), F(semaphore), F(dl), F(cpu),
-	F(file), F(filemap), F(fileaio),
-	F(dir),
-	F(netconf),
-	F(env),
+static const struct test_s atests[] = {
+	F(atomic),
 	F(backtrace),
+	F(cpu),
+	F(dir),
+	F(dylib),
+	F(env),
+	F(error),
+	F(file),
+	F(fileaio),
+	F(filemap),
+	F(kqu),
+	F(kqueue),
+	F(lock),
+	F(mem),
+	F(netconf),
+	F(perf),
+	F(pipe),
+	F(process),
+	F(rnd),
+	F(sconf),
+	F(semaphore),
+	F(socket),
+	F(std),
+	F(std_event),
+	F(thread),
+	F(time),
+	F(timer),
+	F(types),
+};
+static const struct test_s natests[] = {
+	F(sig_abort),
+	F(sig_fpe),
+	F(sig_segv),
+	F(sig_stack),
 #ifdef FF_WIN
-	F(wreg),
+	F(winreg),
+#else
+	F(unixsignal),
 #endif
 };
 #undef F
 
+const char *ffostest_argv0;
+
 int main(int argc, const char **argv)
 {
-	size_t i, iarg;
-	ffmem_init();
-
-	fftestobj.flags |= FFTEST_STOPERR;
+	ffostest_argv0 = argv[0];
+	const struct test_s *t;
 
 	if (argc == 1) {
-		printf("Supported tests: all ");
-		for (i = 0;  i != FFCNT(_ffostests);  i++) {
-			printf("%s ", _ffostests[i].nm);
+		ffstdout_fmt("Supported tests: all ");
+		FFARRAY_FOREACH(atests, t) {
+			ffstdout_fmt("%s ", t->name);
 		}
-		printf("\n");
+		ffstdout_fmt("\n");
+		FFARRAY_FOREACH(natests, t) {
+			ffstdout_fmt("%s ", t->name);
+		}
+		ffstdout_fmt("\n");
 		return 0;
+	}
 
-	} else if (!strcmp(argv[1], "all")) {
+	if (ffsz_eq(argv[1], "all")) {
 		//run all tests
-		for (i = 0;  i < FFCNT(_ffostests);  i++) {
-			FFTEST_TIMECALL(_ffostests[i].func());
+		FFARRAY_FOREACH(atests, t) {
+			ffstdout_fmt("%s\n", t->name);
+			t->func();
+			ffstdout_fmt("  OK\n");
 		}
 
 	} else {
 		//run the specified tests only
 
-		for (iarg = 1;  iarg < argc;  iarg++) {
-			for (i = 0;  i < FFCNT(_ffostests);  i++) {
+		for (ffuint n = 1;  n < (ffuint)argc;  n++) {
+			const struct test_s *sel = NULL;
 
-				if (!strcmp(argv[iarg], _ffostests[i].nm)) {
-					FFTEST_TIMECALL(_ffostests[i].func());
-					break;
+			FFARRAY_FOREACH(atests, t) {
+				if (ffsz_eq(argv[n], t->name)) {
+					sel = t;
+					goto call;
 				}
 			}
+
+			FFARRAY_FOREACH(natests, t) {
+				if (ffsz_eq(argv[n], t->name)) {
+					sel = t;
+					goto call;
+				}
+			}
+
+			if (sel == NULL) {
+				ffstdout_fmt("unknown test: %s\n", argv[n]);
+				return 1;
+			}
+
+call:
+			ffstdout_fmt("%s\n", sel->name);
+			sel->func();
+			ffstdout_fmt("  OK\n");
 		}
 	}
-
-	printf("%u tests were run, failed: %u.\n", fftestobj.nrun, fftestobj.nfail);
 	return 0;
 }

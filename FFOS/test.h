@@ -1,57 +1,53 @@
-/**
-Unit testing.
-Copyright (c) 2013 Simon Zolin
+/** ffos: test functions
+2020, Simon Zolin
 */
 
-#pragma once
-
-#include <FFOS/types.h>
+#include <FFOS/mem.h>
 #include <FFOS/error.h>
-#include <FFOS/timer.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <FFOS/std.h>
+#include <FFOS/string.h>
+#include <ffbase/stringz.h>
 
+#define FFTEST_FUNC
+#define FFTEST_TIMECALL(f)  f
 
-enum FFTEST_F {
-	FFTEST_TRACE = 1
-	, FFTEST_FATALERR = 2
-	,
-	FFTEST_STOPERR = 4, //stop execution on first error
-};
+#define FFARRAY_FOREACH(static_array, it) \
+	for (it = static_array;  it != static_array + FF_COUNT(static_array);  it++)
 
-typedef struct fftest {
-	int flags; //enum FFTEST_F
-	uint nrun;
-	uint nfail;
-} fftest;
+static inline void test_check(int ok, const char *expr, const char *file, ffuint line, const char *func)
+{
+	if (ok) {
+		return;
+	}
 
-FF_EXTN fftest fftestobj;
-
-#define FFTEST_FUNC\
-	printf("at %s:%u in %s()\n", __FILE__, __LINE__, FF_FUNC)
-
-#define FFTEST_BOOL(expr)\
-	fftest_chk(expr, __FILE__, __LINE__, FF_FUNC, #expr)
-
-#define FFTEST_EQ(p1, p2)\
-	fftest_chk(p1 == p2, __FILE__, __LINE__, FF_FUNC, #p1 " == " #p2)
-
-FF_EXTN int fftest_chk(int res, const char *file, uint line, const char *func, const char *sexp);
-
-static FFINL void fftest_tm(fftime *start) {
-	fftime stop = {};
-	ffclk_get(&stop);
-	ffclk_diff(start, &stop);
-	printf("  %u.%06us\n", (int)fftime_sec(&stop), (int)fftime_usec(&stop));
+	ffstderr_fmt("FAIL: %s:%u: %s: %s\n"
+		, file, line, func, expr);
+	abort();
 }
 
-#define FFTEST_TIMECALL(func) \
-do { \
-	fftime start = {}; \
-	ffclk_get(&start); \
-	func; \
-	fftest_tm(&start); \
-} while (0)
+static inline void test_check_int_int(int ok, ffint64 i1, ffint64 i2, const char *file, ffuint line, const char *func)
+{
+	if (ok) {
+		return;
+	}
+
+	ffstderr_fmt("FAIL: %s:%u: %s: %D != %D\n"
+		, file, line, func
+		, i1, i2);
+	abort();
+}
+
+static inline void test_check_str_sz(int ok, ffsize slen, const char *s, const char *sz, const char *file, ffuint line, const char *func)
+{
+	if (ok) {
+		return;
+	}
+
+	ffstderr_fmt("FAIL: %s:%u: %s: %*s != %s\n"
+		, file, line, func
+		, slen, s, sz);
+	abort();
+}
 
 static inline void test_check_sys(int ok, const char *expr, const char *file, ffuint line, const char *func)
 {
@@ -59,9 +55,9 @@ static inline void test_check_sys(int ok, const char *expr, const char *file, ff
 		return;
 	}
 
-	fprintf(stderr, "FAIL: %s:%u: %s: %s (%d %s)\n"
+	ffstderr_fmt("FAIL: %s:%u: %s: %s (%d %s)\n"
 		, file, line, func, expr
-		, (int)fferr_last(), fferr_strp(fferr_last())
+		, (int)fferr_last(), fferr_strptr(fferr_last())
 		);
 	abort();
 }
@@ -72,30 +68,45 @@ static inline void test_check_int_int_sys(int ok, ffint64 i1, ffint64 i2, const 
 		return;
 	}
 
-#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
-	fprintf(stderr, "FAIL: %s:%u: %s: %d != %d (%d %s)\n"
-		, file, line, func
-		, (int)i1, (int)i2
-		, (int)fferr_last(), fferr_strp(fferr_last())
-		);
-#else
-	fprintf(stderr, "FAIL: %s:%u: %s: %lld != %lld (%d %s)\n"
+	ffstderr_fmt("FAIL: %s:%u: %s: %D != %D (%d %s)\n"
 		, file, line, func
 		, i1, i2
-		, fferr_last(), fferr_strp(fferr_last())
+		, (int)fferr_last(), fferr_strptr(fferr_last())
 		);
-#endif
 	abort();
 }
 
-#define xieq_sys(i1, i2) \
+#define x(expr) \
+	test_check(expr, #expr, __FILE__, __LINE__, __func__)
+
+#define xieq(i1, i2) \
+({ \
+	ffint64 __i1 = (i1); \
+	ffint64 __i2 = (i2); \
+	test_check_int_int(__i1 == __i2, __i1, __i2, __FILE__, __LINE__, __func__); \
+})
+
+#define xseq(s, sz) \
+({ \
+	ffstr __s = *(s); \
+	test_check_str_sz(ffstr_eqz(&__s, sz), __s.len, __s.ptr, sz, __FILE__, __LINE__, __func__); \
+})
+
+#define xsz(sz1, sz2) \
+({ \
+	test_check_str_sz(ffsz_eq(sz1, sz2), ffsz_len(sz1), sz1, sz2, __FILE__, __LINE__, __func__); \
+})
+
+/** Expect TRUE or die with system error */
+#define x_sys(expr) \
+({ \
+	test_check_sys(expr, #expr, __FILE__, __LINE__, __func__); \
+})
+
+/** Expect equal integers or die with system error */
+#define xint_sys(i1, i2) \
 ({ \
 	ffint64 __i1 = (i1); \
 	ffint64 __i2 = (i2); \
 	test_check_int_int_sys(__i1 == __i2, __i1, __i2, __FILE__, __LINE__, __func__); \
-})
-
-#define x_sys(expr) \
-({ \
-	test_check_sys(expr, #expr, __FILE__, __LINE__, __func__); \
 })

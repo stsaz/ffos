@@ -1,21 +1,20 @@
-/**
-Copyright (c) 2013 Simon Zolin
+/** ffos: file.h tester
+2020, Simon Zolin
 */
 
-#include "all.h"
 #include <FFOS/string.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
-#include <FFOS/error.h>
-#include <FFOS/test.h>
-#include <FFOS/asyncio.h>
 #include <ffbase/stringz.h>
-#include <test/test.h>
+#include <FFOS/test.h>
 
-#define HELLO "hello\n"
-#define FOOBAR "foobar\n"
+#ifdef FF_UNIX
+#define TMP_PATH "/tmp"
+#else
+#define TMP_PATH "."
+#endif
 
-void test_diropen()
+void test_file_diropen()
 {
 	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
 	ffdir_rm(fn);
@@ -23,7 +22,7 @@ void test_diropen()
 	x(0 == ffdir_make(fn));
 
 	fffd d = fffile_open(fn, FFFILE_READONLY);
-	x_sys(d != FF_BADFD);
+	x_sys(d != FFFILE_NULL);
 	fffileinfo fi = {};
 	x_sys(0 == fffile_info(d, &fi));
 	x(fffile_isdir(fffile_infoattr(&fi)));
@@ -31,36 +30,6 @@ void test_diropen()
 
 	x_sys(0 == ffdir_rm(fn));
 	ffmem_free(fn);
-}
-
-static int test_std()
-{
-	FFTEST_FUNC;
-
-	x(FFSLEN(HELLO) == fffile_write(ffstdout, FFSTR(HELLO)));
-	x(FFSLEN(HELLO) == ffstd_write(ffstdout, FFSTR(HELLO)));
-	return 0;
-}
-
-static int test_pipe()
-{
-	char buf[64];
-	fffd rd = FF_BADFD
-		, wr = FF_BADFD;
-
-	FFTEST_FUNC;
-
-	x(0 == ffpipe_create2(&rd, &wr, FFO_NONBLOCK));
-	x(-1 == ffpipe_read(rd, buf, FFCNT(buf)) && fferr_again(fferr_last()));
-	x(0 == ffpipe_nblock(rd, 0));
-
-	x(FFSLEN(HELLO) == fffile_write(wr, FFSTR(HELLO)));
-	x(FFSLEN(HELLO) == ffpipe_read(rd, buf, FFCNT(buf)));
-	x(!memcmp(buf, FFSTR(HELLO)));
-
-	x(0 == ffpipe_close(rd));
-	x(0 == ffpipe_close(wr));
-	return 0;
 }
 
 void test_file_rename()
@@ -72,19 +41,22 @@ void test_file_rename()
 
 	// create
 	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FF_BADFD);
+	x_sys(fd != FFFILE_NULL);
 	fffile_close(fd);
+
+	x_sys(fffile_exists(fn));
 
 	x_sys(0 == fffile_rename(fn, fnnew));
 
 	// open - doesn't exist
 	fd = fffile_open(fn, FFFILE_READWRITE);
-	x(fd == FF_BADFD);
+	x(fd == FFFILE_NULL);
 	xieq(FFERR_FILENOTFOUND, fferr_last());
+	x_sys(!fffile_exists(fn));
 
 	// open
 	fd = fffile_open(fnnew, FFFILE_READWRITE);
-	x_sys(fd != FF_BADFD);
+	x_sys(fd != FFFILE_NULL);
 	fffile_close(fd);
 
 	x_sys(0 == fffile_remove(fnnew));
@@ -103,7 +75,7 @@ void test_file_link()
 
 	// create
 	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FF_BADFD);
+	x_sys(fd != FFFILE_NULL);
 	fffile_close(fd);
 
 #ifdef FF_UNIX
@@ -130,26 +102,26 @@ void test_file_create()
 
 	// open - doesn't exist
 	fd = fffile_open(fn, 0);
-	x(fd == FFFILE_BAD);
+	x(fd == FFFILE_NULL);
 	xieq(FFERR_FILENOTFOUND, fferr_last());
 
 	// create new
 	fd = fffile_open(fn, FFFILE_CREATENEW | FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 
 	// create new - already exists
 	fd2 = fffile_open(fn, FFFILE_CREATENEW | FFFILE_READWRITE);
-	x(fd2 == FFFILE_BAD);
+	x(fd2 == FFFILE_NULL);
 	xieq(FFERR_FILEEXISTS, fferr_last());
 
 	// create - open
 	fd2 = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd2 != FFFILE_BAD);
+	x_sys(fd2 != FFFILE_NULL);
 	fffile_close(fd2);
 
 	// open
 	fd2 = fffile_open(fn, FFFILE_READWRITE);
-	x_sys(fd2 != FFFILE_BAD);
+	x_sys(fd2 != FFFILE_NULL);
 	fffile_close(fd2);
 
 	x_sys(0 == fffile_close(fd));
@@ -157,7 +129,7 @@ void test_file_create()
 
 	// create - create
 	fd2 = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x(fd2 != FFFILE_BAD);
+	x(fd2 != FFFILE_NULL);
 	fffile_close(fd2);
 
 	x_sys(0 == fffile_remove(fn));
@@ -174,26 +146,26 @@ void test_file_create_trunc()
 
 	// create new
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_TRUNCATE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "123", 3));
 	fffile_close(fd);
 
 	// open - truncate
 	fd = fffile_open(fn, FFFILE_READWRITE | FFFILE_TRUNCATE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(0 == fffile_read(fd, buf, 3));
 	fffile_close(fd);
 
 	// create, truncate
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "123", 3));
 	x_sys(0 == fffile_trunc(fd, 2));
 	fffile_close(fd);
 
 	// open, read
 	fd = fffile_open(fn, FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(2 == fffile_read(fd, buf, sizeof(buf)));
 	x(!ffs_cmpz(buf, 2, "12"));
 	fffile_close(fd);
@@ -212,27 +184,38 @@ void test_file_append()
 
 	// create new
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_APPEND);
-	x_sys(fd != FFFILE_BAD);
-	xieq_sys(3, fffile_write(fd, "123", 3));
+	x_sys(fd != FFFILE_NULL);
+	xint_sys(3, fffile_write(fd, "123", 3));
 	fffile_close(fd);
 
 	// create
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FFFILE_APPEND);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "456", 3));
 	fffile_close(fd);
 
 	// open
 	fd = fffile_open(fn, FFFILE_READWRITE | FFFILE_APPEND);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "789", 3));
 	x_sys(1 == fffile_seek(fd, 1, FFFILE_SEEK_BEGIN));
 	x_sys(1 == fffile_write(fd, "0", 1));
 
+	// open #2
+	fffd fd2 = fffile_open(fn, FFFILE_READWRITE | FFFILE_APPEND);
+	x_sys(fd2 != FFFILE_NULL);
+	x_sys(3 == fffile_write(fd, "abc", 3));
+
 	// check
-	xieq_sys(10, fffile_readat(fd, buf, sizeof(buf), 0));
-	x(!ffs_cmpz(buf, 10, "1234567890"));
+	xint_sys(13, fffile_readat(fd, buf, sizeof(buf), 0));
+	x(!ffs_cmpz(buf, 13, "1234567890abc"));
+
+	// check #2
+	xint_sys(13, fffile_readat(fd2, buf, sizeof(buf), 0));
+	x(!ffs_cmpz(buf, 13, "1234567890abc"));
+
 	fffile_close(fd);
+	fffile_close(fd2);
 
 	x_sys(0 == fffile_remove(fn));
 	ffmem_free(fn);
@@ -246,11 +229,11 @@ void test_file_io()
 
 	// create
 	fffd fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 
 	// duplicate
 	fffd fd2 = fffile_dup(fd);
-	x_sys(fd2 != FFFILE_BAD);
+	x_sys(fd2 != FFFILE_NULL);
 	fffile_close(fd);
 	fd = fd2;
 
@@ -282,7 +265,7 @@ void test_file_info()
 
 	// create
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "123", 3));
 
 	// get info
@@ -331,10 +314,10 @@ void test_file_temp()
 
 	fffd fd;
 	fd = fffile_createtemp(fn, FFFILE_READWRITE);
-	x_sys(fd != FF_BADFD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(0 == fffile_close(fd));
 
-	x(FF_BADFD == fffile_open(fn, FFFILE_READWRITE));
+	x(FFFILE_NULL == fffile_open(fn, FFFILE_READWRITE));
 	xieq(FFERR_FILENOTFOUND, fferr_last());
 
 	ffmem_free(fn);
@@ -349,7 +332,7 @@ void test_file_winattr()
 
 	// create
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE | FILE_ATTRIBUTE_READONLY);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "123", 3));
 	fffile_close(fd);
 
@@ -373,7 +356,7 @@ void test_file_dosname()
 
 	// create
 	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	x_sys(3 == fffile_write(fd, "123", 3));
 	fffile_close(fd);
 
@@ -381,12 +364,12 @@ void test_file_dosname()
 
 	// open
 	fd = fffile_open(fn_dos, FFFILE_READWRITE);
-	x_sys(fd != FFFILE_BAD);
+	x_sys(fd != FFFILE_NULL);
 	fffile_close(fd);
 
 	// open - fail
 	fd = fffile_open(fn_dos, FFFILE_READWRITE | FFFILE_NODOSNAME);
-	x(fd == FFFILE_BAD);
+	x(fd == FFFILE_NULL);
 	fffile_close(fd);
 
 	x_sys(0 == fffile_remove(fn));
@@ -395,12 +378,11 @@ void test_file_dosname()
 #endif
 }
 
-int test_file()
+void test_file()
 {
-	FFTEST_FUNC;
-
 	test_file_create();
 	test_file_create_trunc();
+	test_file_diropen();
 	test_file_append();
 	test_file_io();
 	test_file_info();
@@ -409,129 +391,4 @@ int test_file()
 	test_file_dosname();
 	test_file_link();
 	test_file_rename();
-	test_diropen();
-	test_std();
-	test_pipe();
-	return 0;
-}
-
-
-struct aio_test {
-	char *buf;
-	size_t len;
-	uint64 bsize;
-	uint ok;
-	fffd kq;
-	ffkqu_time kqtm;
-};
-
-static struct aio_test faio;
-
-static void test_onwrite(void *udata)
-{
-	ffaio_filetask *ft = udata;
-	ssize_t r;
-
-	FFTEST_TIMECALL(r = ffaio_fwrite(ft, faio.buf, faio.len, 0, &test_onwrite));
-
-	if (r == -1 && fferr_again(fferr_last())) {
-		ffkqu_entry ent;
-		fffile_writecz(ffstdout, "ffkqu_wait...");
-		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, &faio.kqtm)));
-		ffkev_call(&ent);
-		return;
-	}
-
-	if (r == -1) {
-		x(0);
-		return;
-	}
-
-	x(r == faio.len);
-	faio.ok++;
-}
-
-static void test_onread(void *udata)
-{
-	ffaio_filetask *ft = udata;
-	ssize_t r;
-
-	FFTEST_TIMECALL(r = ffaio_fread(ft, faio.buf, faio.len, faio.bsize, &test_onread));
-
-	if (r == -1 && fferr_again(fferr_last())) {
-		ffkqu_entry ent;
-		fffile_writecz(ffstdout, "ffkqu_wait...");
-		FFTEST_TIMECALL(x(1 == ffkqu_wait(faio.kq, &ent, 1, &faio.kqtm)));
-		ffkev_call(&ent);
-		return;
-	}
-
-	if (r == -1) {
-		x(0);
-		return;
-	}
-
-	x(r == faio.len - faio.bsize - 1);
-	x(faio.buf[0] == '!' && faio.buf[r - 1] == '!');
-	faio.ok++;
-}
-
-int test_fileaio(void)
-{
-	fffd f;
-	ffaio_filetask tfil;
-	const char *fn = "./ff-aiofile";
-	FFTEST_FUNC;
-
-	{
-	ffpathinfo fsst;
-	x(0 == ffpath_infoinit(".", &fsst));
-	faio.bsize = ffpath_info(&fsst, FFPATH_BSIZE);
-	}
-
-	uint flags = 0;
-	flags |= FFO_DIRECT;
-	x(FF_BADFD != (f = fffile_open(fn, O_CREAT | O_RDWR | flags)));
-	x(FF_BADFD != (faio.kq = ffkqu_create()));
-	ffkqu_settm(&faio.kqtm, -1);
-
-	x(0 == ffaio_fctxinit());
-
-	faio.len = 2 * faio.bsize;
-	x(NULL != (faio.buf = ffmem_align(faio.len, faio.bsize)));
-	memset(faio.buf, '!', faio.len);
-	x(0 == fffile_trunc(f, faio.len));
-
-	ffaio_finit(&tfil, f, &tfil);
-	x(0 == ffaio_fattach(&tfil, faio.kq, !!(flags & FFO_DIRECT)));
-
-//write
-	fffile_writecz(ffstdout, "ffaio_fwrite...");
-	test_onwrite(&tfil);
-	x(faio.ok == 1);
-
-//overwrite
-	fffile_writecz(ffstdout, "ffaio_fwrite...");
-	test_onwrite(&tfil);
-	x(faio.ok == 2);
-
-//read
-	fffd f2;
-	x(FF_BADFD != (f2 = fffile_open(fn, O_RDWR)));
-	x(0 == fffile_trunc(f2, faio.len - 1));
-	fffile_close(f2);
-
-	memset(faio.buf, '\0', faio.len);
-
-	fffile_writecz(ffstdout, "ffaio_fread...");
-	test_onread(&tfil);
-	x(faio.ok == 3);
-
-	ffaio_fctxclose();
-	ffmem_alignfree(faio.buf);
-	fffile_close(f);
-	ffkqu_close(faio.kq);
-	fffile_remove(fn);
-
-	return 0;
 }

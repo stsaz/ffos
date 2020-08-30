@@ -5,7 +5,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/types.h>
 #include <FFOS/test.h>
 
-#define x FFTEST_BOOL
 
 struct struct1 {
 	int n1;

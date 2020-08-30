@@ -8,7 +8,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/mem.h>
 #include <FFOS/test.h>
 
-#define x FFTEST_BOOL
 
 enum {
 	NDATA = 1 * 1024 * 1024
@@ -96,6 +95,7 @@ static void do_accept(void *udata)
 			} else if (fferr_fdlim(fferr_last())) {
 				break;
 			}
+			x_sys(0);
 		}
 
 		if (sk != FF_BADSKT) {
@@ -109,6 +109,7 @@ static void do_accept(void *udata)
 
 static void client_sendfile(void *udata)
 {
+	(void)udata;
 #ifdef FF_UNIX
 	conn_t *conn = udata;
 	char buf[64 * 1024];
@@ -167,6 +168,7 @@ static void client_send(void *udata)
 
 static void connect_onsig(void *udata)
 {
+	fflog("connect_onsig");
 	conn_t *conn = udata;
 	if (conn->task.wpending)
 		x(0 == ffaio_connect(&conn->task, NULL, NULL, 0));
@@ -177,6 +179,7 @@ static void connect_onsig(void *udata)
 
 static void connect_oncancel(void *udata)
 {
+	fflog("connect_oncancel");
 	conn_t *conn = udata;
 	if (conn->task.wpending)
 		x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
@@ -194,6 +197,7 @@ static void connect_oncancel(void *udata)
 
 static void connect_onerr(void *udata)
 {
+	fflog("connect_onerr");
 	conn_t *conn = udata;
 	if (conn->task.wpending)
 		x(FFAIO_ERROR == ffaio_connect(&conn->task, NULL, NULL, 0));
@@ -256,24 +260,26 @@ static void test_kqu_post(void)
 	kq = ffkqu_create();
 	ffkqu_settm(&t, 0);
 
-	x(0 == ffkqu_post_attach(&post, kq));
+	x_sys(0 == ffkqu_post_attach(&post, kq));
 
-	x(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+	x_sys(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
 
 	ffkev_init(&kev1);
 	ffkev_init(&kev2);
 	kev1.handler = kev2.handler = &on_post;
 	kev1.udata = &kev1;
 	kev2.udata = &kev2;
-	x(0 == ffkqu_post(&post, ffkev_ptr(&kev1)));
-	x(0 == ffkqu_post(&post, ffkev_ptr(&kev2)));
+	x_sys(0 == ffkqu_post(&post, ffkev_ptr(&kev1)));
+	x_sys(0 == ffkqu_post(&post, ffkev_ptr(&kev2)));
 
 	for (;;) {
+		fflog("waiting for events...");
 		n = ffkqu_wait(kq, ents, FFCNT(ents), &t);
+		fflog("ffkqu_wait: %d", n);
 
 		if ((int)n < 0) {
 			if (fferr_last() != EINTR) {
-				x(0);
+				x_sys(0);
 				break;
 			}
 			continue;
@@ -294,7 +300,7 @@ static void test_kqu_post(void)
 		x(kev2.udata == &kev2);
 #endif
 
-		x(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+		x_sys(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
 		break;
 	}
 
@@ -317,7 +323,7 @@ int test_kqu()
 
 	kq = ffkqu_create();
 	x(kq != FF_BADFD);
-	ffkqu_settm(&tt, -1);
+	ffkqu_settm(&tt, 2000);
 
 	x(0 == ffskt_init(FFSKT_WSA | FFSKT_WSAFUNCS));
 
@@ -339,12 +345,16 @@ int test_kqu()
 	start_conn(&conn, &adr, 8081, &connect_oncancel);
 	if (ffaio_active(&conn.task)) {
 #if !defined FF_WIN || FF_WIN >= 0x0600
+		fflog("cancel connect to 8081");
 		ffaio_cancelasync(&conn.task, FFAIO_CONNECT, &connect_oncancel);
 #endif
 	}
 
 	for (;;) {
+		fflog("waiting for events...");
 		nevents = ffkqu_wait(kq, ents, FFCNT(ents), &tt);
+		x(nevents != 0);
+		fflog("ffkqu_wait: %d", nevents);
 
 		for (n = 0;  n < nevents;  n++) {
 			ffkev_call(&ents[n]);

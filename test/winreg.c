@@ -5,10 +5,7 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/win/reg.h>
 #include <FFOS/test.h>
 
-#define x FFTEST_BOOL
-
-
-int test_wreg(void)
+void test_winreg()
 {
 	ffwreg k;
 	ffwreg_val val;
@@ -42,10 +39,11 @@ int test_wreg(void)
 	x(*(uint*)val.data == n);
 	ffmem_free(val.data);
 
-	x(0 == ffwreg_del(k, "", "NameStr"));
-	x(0 == ffwreg_del(k, "", "NameInt"));
-	x(0 == ffwreg_del(k, "", NULL));
+#if FF_WIN >= 0x0600
+	x_sys(0 == ffwreg_del(k, "", "NameStr"));
+	x_sys(0 == ffwreg_del(k, "", "NameInt"));
+	x_sys(0 == ffwreg_del(k, "", NULL));
+#endif
 
 	ffwreg_close(k);
-	return 0;
 }

@@ -2,7 +2,6 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include "all.h"
 #include <FFOS/mem.h>
 #include <FFOS/string.h>
 #include <FFOS/dir.h>
@@ -11,10 +10,17 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/test.h>
 #include <ffbase/stringz.h>
 
-#define x FFTEST_BOOL
+
+
+#ifdef FF_UNIX
+#define TMP_PATH "/tmp"
+#else
+#define TMP_PATH "."
+#endif
 
 static int test_path(const char *dirname)
 {
+	(void)dirname;
 	FFTEST_FUNC;
 
 	x(ffpath_abs(FFSTR("/absolute/path")));
@@ -56,7 +62,7 @@ static int test_dirwalk(char *path, size_t pathcap)
 			break;
 		}
 
-		name = ffdir_entryname(&ent);
+		name = ffdir_entry_name(&ent);
 		x(name != NULL);
 
 		fi = ffdir_entryinfo(&ent);
