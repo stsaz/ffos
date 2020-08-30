@@ -476,56 +476,6 @@ ffps ffps_createself_bg(const char *arg)
 }
 
 
-static byte _ffdl_noflags; //OS doesn't support flags to LoadLibraryEx()
-
-int ffdl_init(const char *path)
-{
-	int rc = 0;
-	ffsyschar *w = NULL, ws[FF_MAXFN];
-	ffdl dl;
-	if (NULL == (dl = ffdl_openq(L"kernel32.dll", 0)))
-		return -1;
-	if (NULL != ffdl_addr(dl, "AddDllDirectory"))
-		goto end;
-
-	rc = -1;
-	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
-		goto end;
-	if (!SetDllDirectory(w))
-		goto end;
-
-	_ffdl_noflags = 1;
-	rc = 0;
-
-end:
-	if (w != ws)
-		ffmem_free(w);
-	ffdl_close(dl);
-	return rc;
-}
-
-ffdl ffdl_openq(const ffsyschar *filename, uint flags)
-{
-	flags = (flags != 0 && !_ffdl_noflags) ? (flags) : LOAD_WITH_ALTERED_SEARCH_PATH;
-	return LoadLibraryEx(filename, NULL, flags);
-}
-
-ffdl ffdl_open(const char *filename, int flags)
-{
-	fffd f;
-	ffsyschar *w, ws[FF_MAXFN];
-	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, filename, -1)))
-		return FF_BADFD;
-
-	f = ffdl_openq(w, flags);
-	if (w != ws)
-		ffmem_free(w);
-	return f;
-}
-
-
 #if FF_WIN < 0x0600
 typedef BOOL __stdcall (*GetQueuedCompletionStatusEx_t)(HANDLE, void*, long, void*, long, long);
 static GetQueuedCompletionStatusEx_t _ffGetQueuedCompletionStatusEx;

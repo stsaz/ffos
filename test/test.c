@@ -230,37 +230,6 @@ static int test_semaphore(void)
 	return 0;
 }
 
-static int _test_dl(const char *fn, const char *func)
-{
-	ffdl h;
-	ffdl_proc p;
-
-	h = ffdl_open(fn, 0);
-	x(h != NULL);
-	p = ffdl_addr(h, func);
-	x(p != NULL);
-	x(0 == ffdl_close(h));
-	return 0;
-}
-
-static int test_dl(void)
-{
-	FFTEST_FUNC;
-#ifdef FF_LINUX
-	_test_dl("/lib64/libc.so.6", "open");
-
-#elif defined FF_BSD
-	_test_dl("/lib/libc.so.7", "open");
-
-#elif defined FF_APPLE
-	_test_dl("/usr/lib/libSystem.B.dylib", "open");
-
-#else
-	_test_dl("kernel32.dll", "CreateFileW");
-#endif
-	return 0;
-}
-
 int test_sconf()
 {
 	ffsysconf sc;
