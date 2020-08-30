@@ -11,6 +11,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/atomic.h>
 #include <FFOS/process.h>
 #include <FFOS/sig.h>
+#include <FFOS/std.h>
 #include <ffbase/string.h>
 #include <assert.h>
 

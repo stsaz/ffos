@@ -5,6 +5,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/time.h>
 #include <FFOS/error.h>
 #include <FFOS/string.h>
+#include <FFOS/std.h>
 
 enum {
 	FF_MAXPATH = 4096
@@ -24,42 +25,6 @@ disk: volume GUI name: "\\?\Volume{GUID}\"
  NULL: delete mount point
 mount: mount point (an existing empty directory) */
 FF_EXTN int fffile_mount(const char *disk, const char *mount);
-
-
-#define ffstdin  GetStdHandle(STD_INPUT_HANDLE)
-#define ffstdout  GetStdHandle(STD_OUTPUT_HANDLE)
-#define ffstderr  GetStdHandle(STD_ERROR_HANDLE)
-
-static FFINL ssize_t ffstd_read(fffd h, ffsyschar * s, size_t len) {
-	DWORD r;
-	if (0 != ReadConsole(h, s, (uint)len, &r, NULL))
-		return r;
-	return 0;
-}
-
-#define ffstd_fread(fd, d, len)  ffpipe_read(fd, d, len)
-
-static FFINL ssize_t ffstd_writeq(fffd h, const ffsyschar *s, size_t len) {
-	DWORD wr;
-	if (0 != WriteConsole(h, s, FF_TOINT(len), &wr, NULL))
-		return wr;
-	return 0;
-}
-
-/** Write UTF-8 data into standard output/error handle. */
-FF_EXTN ssize_t ffstd_write(fffd h, const char *s, size_t len);
-
-typedef struct ffstd_ev {
-	uint state;
-	INPUT_RECORD rec[8];
-	uint irec;
-	uint nrec;
-
-	char *data;
-	size_t datalen;
-} ffstd_ev;
-
-FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
 
 #define ffterm_detach()  FreeConsole()
 

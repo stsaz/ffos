@@ -22,31 +22,6 @@ enum {
 
 typedef ino_t fffileid;
 
-
-enum FFSTD {
-	ffstdin = STDIN_FILENO
-	, ffstdout = STDOUT_FILENO
-	, ffstderr = STDERR_FILENO
-};
-
-/** Read console input. */
-#define ffstd_read  fffile_read
-#define ffstd_fread(fd, buf, cap)  fffile_read(fd, buf, cap)
-
-/** Print to console. */
-#define ffstd_write  fffile_write
-
-typedef struct ffstd_ev {
-	char buf[8];
-
-	char *data;
-	size_t datalen;
-} ffstd_ev;
-
-/** Read keyboard event from terminal.
-Return 1 on success;  0 if queue is empty;  -1 on error. */
-FF_EXTN int ffstd_event(fffd fd, ffstd_ev *ev);
-
 #define ffterm_detach()
 
 
