@@ -16,71 +16,10 @@ Copyright (c) 2013 Simon Zolin
 #include <assert.h>
 
 
-#ifdef FF_UNIX
-void fftimespec_addms(struct timespec *ts, uint64 ms)
-{
-	ts->tv_sec += ms / 1000;
-	ts->tv_nsec += (ms % 1000) * 1000 * 1000;
-	if (ts->tv_nsec >= 1000 * 1000 * 1000) {
-		ts->tv_sec++;
-		ts->tv_nsec -= 1000 * 1000 * 1000;
-	}
-}
-#endif
-
-static void _fftime_add(fftime *t, const fftime *t2)
-{
-	t->sec += t2->sec;
-	t->nsec += t2->nsec;
-	if (t->nsec >= 1000000000) {
-		t->nsec -= 1000000000;
-		t->sec++;
-	}
-}
-
-static void _fftime_sub(fftime *t, const fftime *t2)
-{
-	t->sec -= t2->sec;
-	t->nsec -= t2->nsec;
-	if ((int)t->nsec < 0) {
-		t->nsec += 1000000000;
-		t->sec--;
-	}
-}
-
 #if !defined FF_WIN || FF_WIN >= 0x0600
 void fftime_init(void)
 {}
 #endif
-
-
-void ffps_perf_diff(const struct ffps_perf *start, struct ffps_perf *stop)
-{
-	_fftime_sub(&stop->realtime, &start->realtime);
-	_fftime_sub(&stop->cputime, &start->cputime);
-	_fftime_sub(&stop->usertime, &start->usertime);
-	_fftime_sub(&stop->systime, &start->systime);
-	stop->pagefaults -= start->pagefaults;
-	stop->maxrss -= start->maxrss;
-	stop->inblock -= start->inblock;
-	stop->outblock -= start->outblock;
-	stop->vctxsw -= start->vctxsw;
-	stop->ivctxsw -= start->ivctxsw;
-}
-
-void ffps_perf_add(struct ffps_perf *dst, const struct ffps_perf *src)
-{
-	_fftime_add(&dst->realtime, &src->realtime);
-	_fftime_add(&dst->cputime, &src->cputime);
-	_fftime_add(&dst->usertime, &src->usertime);
-	_fftime_add(&dst->systime, &src->systime);
-	dst->pagefaults += src->pagefaults;
-	dst->maxrss += src->maxrss;
-	dst->inblock += src->inblock;
-	dst->outblock += src->outblock;
-	dst->vctxsw += src->vctxsw;
-	dst->ivctxsw += src->ivctxsw;
-}
 
 
 void ffsig_raise(uint sig)

@@ -169,59 +169,6 @@ const char* _ffpath_real(char *name, size_t cap, const char *argv0)
 	return name;
 }
 
-static int _ffps_perf(int who, struct ffps_perf *p, uint flags)
-{
-	int rc = 0, r;
-
-	if (flags & FFPS_PERF_REALTIME)
-		ffclk_get(&p->realtime);
-
-	if (flags & FFPS_PERF_RUSAGE) {
-		struct rusage u;
-		if (0 == (r = getrusage(who, &u))) {
-			fftime_fromtimeval(&p->usertime, &u.ru_utime);
-			fftime_fromtimeval(&p->systime, &u.ru_stime);
-			p->pagefaults = u.ru_minflt + u.ru_majflt;
-			p->maxrss = u.ru_maxrss;
-			p->inblock = u.ru_inblock;
-			p->outblock = u.ru_oublock;
-			p->vctxsw = u.ru_nvcsw;
-			p->ivctxsw = u.ru_nivcsw;
-		}
-		rc |= r;
-	}
-
-	if (flags & FFPS_PERF_CPUTIME) {
-		uint c = (who == RUSAGE_SELF) ? CLOCK_PROCESS_CPUTIME_ID : CLOCK_THREAD_CPUTIME_ID;
-		struct timespec ts;
-		if (0 == (r = clock_gettime(c, &ts)))
-			fftime_fromtimespec(&p->cputime, &ts);
-		rc |= r;
-	}
-
-	return rc;
-}
-
-int ffps_perf(struct ffps_perf *p, uint flags)
-{
-	return _ffps_perf(RUSAGE_SELF, p, flags);
-}
-
-#if defined FF_APPLE
-int ffthd_perf(struct ffps_perf *p, uint flags)
-{
-	int r = _ffps_perf(RUSAGE_SELF + 1, p, flags);
-	if (flags & FFPS_PERF_RUSAGE)
-		r = -1;
-	return r;
-}
-#else
-int ffthd_perf(struct ffps_perf *p, uint flags)
-{
-	return _ffps_perf(RUSAGE_THREAD, p, flags);
-}
-#endif
-
 
 /** User's signal handler. */
 static ffsig_handler _ffsig_userhandler;
