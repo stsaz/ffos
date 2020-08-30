@@ -33,23 +33,6 @@ void fftime_local(fftime_zone *tz)
 	tz->have_dst = 0;
 }
 
-
-int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
-{
-	struct kevent kev;
-	int f = 0;
-
-	if (period_ms < 0) {
-		period_ms = -period_ms;
-		f = EV_ONESHOT;
-	}
-
-	EV_SET(&kev, tmr, EVFILT_TIMER
-		, EV_ADD | EV_ENABLE | f //EV_CLEAR is set internally
-		, 0, period_ms, udata);
-	return kevent(kq, &kev, 1, NULL, 0, NULL);
-}
-
 int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
 	size_t i;

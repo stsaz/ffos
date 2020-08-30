@@ -6,7 +6,6 @@ Copyright (c) 2013 Simon Zolin
 #pragma once
 
 #include <FFOS/types.h>
-
 #include <time.h>
 
 typedef struct fftime {
@@ -18,6 +17,28 @@ typedef struct fftime {
 	int64 sec;
 	uint nsec;
 } fftime;
+
+/** Add time value */
+static inline void fftime_add(fftime *t, const fftime *add)
+{
+	t->sec += add->sec;
+	t->nsec += add->nsec;
+	if (t->nsec >= 1000000000) {
+		t->nsec -= 1000000000;
+		t->sec++;
+	}
+}
+
+/** Subtract time value */
+static inline void fftime_sub(fftime *t, const fftime *sub)
+{
+	t->sec -= sub->sec;
+	t->nsec -= sub->nsec;
+	if ((int)t->nsec < 0) {
+		t->nsec += 1000000000;
+		t->sec--;
+	}
+}
 
 #define fftime_empty(t)  ((t)->sec == 0 && (t)->nsec == 0)
 

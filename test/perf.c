@@ -3,10 +3,28 @@
 */
 
 #include <FFOS/perf.h>
+#include <FFOS/timer-compat.h>
+#include <FFOS/thread.h>
 #include <test/test.h>
+
+void test_clock()
+{
+	fftime start
+		, stop;
+
+	FFTEST_FUNC;
+
+	x(0 == ffclk_get(&start));
+	ffthread_sleep(150);
+	x(0 == ffclk_get(&stop));
+	ffclk_diff(&start, &stop);
+	x(fftime_sec(&stop) == 0 && fftime_usec(&stop) >= (150 - 25) * 1000);
+}
 
 void test_perf()
 {
+	test_clock();
+
 	for (int i = 0;  i != 2;  i++) {
 
 		struct ffps_perf p = {};

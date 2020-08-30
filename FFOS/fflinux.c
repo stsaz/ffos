@@ -40,33 +40,6 @@ void fftime_local(fftime_zone *tz)
 
 
 #if defined FF_LINUX_MAINLINE
-int fftmr_start(fftmr tmr, fffd kq, void *udata, int period_ms)
-{
-	struct itimerspec its;
-	struct epoll_event e;
-	unsigned neg = 0;
-
-	e.events = EPOLLIN | EPOLLET;
-	e.data.ptr = udata;
-	if (0 != epoll_ctl(kq, EPOLL_CTL_ADD, tmr, &e)
-		&& errno != EEXIST)
-		return -1;
-
-	if (period_ms < 0) {
-		neg = 1;
-		period_ms = -period_ms;
-		its.it_interval.tv_sec = its.it_interval.tv_nsec = 0;
-	}
-
-	its.it_value.tv_sec = period_ms / 1000;
-	its.it_value.tv_nsec = (period_ms % 1000) * 1000 * 1000;
-	if (!neg)
-		its.it_interval = its.it_value;
-
-	return timerfd_settime(tmr, 0, &its, NULL);
-}
-
-
 ffskt ffskt_create(uint domain, uint type, uint protocol)
 {
 	return socket(domain, type, protocol);

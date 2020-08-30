@@ -1,36 +1,12 @@
-/**
-Copyright (c) 2013 Simon Zolin
+/** ffos: timer.h tester
+2020, Simon Zolin
 */
 
-#include <FFOS/test.h>
 #include <FFOS/timer.h>
-#include <FFOS/thread.h>
-#include <FFOS/queue.h>
-#include <FFOS/error.h>
-#include <test/all.h>
+#include <FFOS/test.h>
 
-#define x FFTEST_BOOL
-
-int test_clock()
+void test_time()
 {
-	fftime start
-		, stop;
-
-	FFTEST_FUNC;
-
-	x(0 == ffclk_get(&start));
-	ffthd_sleep(150);
-	x(0 == ffclk_get(&stop));
-	ffclk_diff(&start, &stop);
-	x(fftime_sec(&stop) == 0 && fftime_usec(&stop) >= (150 - 25) * 1000);
-
-	return 0;
-}
-
-int test_time(void)
-{
-	FFTEST_FUNC;
-
 	fftime_zone tz;
 	fftime_local(&tz);
 	printf("zone: %d, have_dst: %u\n", tz.off, tz.have_dst);
@@ -38,72 +14,56 @@ int test_time(void)
 	fftime t;
 	fftime_now(&t);
 	x(fftime_sec(&t) != 0);
-
-	return 0;
 }
 
-static int tval;
-static fftmr tmr1, tmr2;
-
-static void tmr_func1() {
-	tval -= 1;
-	fftmr_read(tmr1);
-}
-
-static void tmr_func2() {
-	tval += 2;
-	fftmr_read(tmr2);
-}
-
-int test_timer()
+void test_timer()
 {
-	fffd kq;
-	ffkqu_time tt;
-	ffkqu_entry ent;
-	int nevents;
-	void (*func_ptr)();
-	enum { tmrResol = 100 };
+	ffkq kq = ffkq_create();
+	x_sys(kq != FFKQ_NULL);
 
-	FFTEST_FUNC;
+	fftimer tmr = fftimer_create(0);
+	x_sys(tmr != FFTIMER_NULL);
 
-	test_clock();
+	const int val = 200;
 
-	kq = ffkqu_create();
-	x(kq != FF_BADFD);
-	ffkqu_settm(&tt, -1);
 
-	tmr1 = fftmr_create(0);
-	x(tmr1 != FF_BADTMR);
-	tmr2 = fftmr_create(0);
-	x(tmr2 != FF_BADTMR);
+	// create periodic timer
+	x_sys(0 == fftimer_start(tmr, kq, (void*)0x12345678, val));
+	fflog("fftimer_start...");
 
-	x(0 == fftmr_start(tmr1, kq, &tmr_func1, -50));
-	x(0 == fftmr_start(tmr2, kq, &tmr_func2, 100));
+	ffkq_event ev;
+	ffkq_time tm;
+	ffkq_time_set(&tm, val*2);
+	xint_sys(1, ffkq_wait(kq, &ev, 1, tm));
+	xieq(0x12345678, (ffsize)ffkq_event_data(&ev));
+	fftimer_consume(tmr);
+	fflog("timer signal");
 
-	for (;;) {
-		nevents = ffkqu_wait(kq, &ent, 1, &tt);
+	xint_sys(1, ffkq_wait(kq, &ev, 1, tm));
+	xieq(0x12345678, (ffsize)ffkq_event_data(&ev));
+	fftimer_consume(tmr);
+	fflog("timer signal");
 
-		if (nevents > 0) {
-			x(nevents == 1);
-			func_ptr = ffkqu_data(&ent);
-			func_ptr();
-			if (tval == 2 * 2 - 1)
-				break;
-		}
+	x_sys(0 == fftimer_stop(tmr, kq));
 
-		if (nevents == -1 && fferr_last() != EINTR) {
-			x(0);
-			break;
-		}
-	}
+	fflog("waiting after timer stop...");
+	xint_sys(0, ffkq_wait(kq, &ev, 1, tm));
 
-	(void)fftmr_stop(tmr1, kq);
-	x(0 == fftmr_stop(tmr2, kq));
-	x(0 == fftmr_start(tmr2, kq, &tmr_func2, 100));
-	x(0 == fftmr_close(tmr1, kq));
-	x(0 == fftmr_close(tmr2, kq));
 
-	x(0 == ffkqu_close(kq));
+	// create one-shot timer
+	x_sys(0 == fftimer_start(tmr, kq, (void*)0x12345678, -val));
+	fflog("fftimer_start one-shot...");
 
-	return 0;
+	xint_sys(1, ffkq_wait(kq, &ev, 1, tm));
+	xieq(0x12345678, (ffsize)ffkq_event_data(&ev));
+	fftimer_consume(tmr);
+	fflog("timer signal");
+
+	fflog("waiting after one-shot timer...");
+	ffkq_time_set(&tm, val*2);
+	xint_sys(0, ffkq_wait(kq, &ev, 1, tm));
+
+
+	fftimer_close(tmr, kq);
+	ffkq_close(kq);
 }
