@@ -39,135 +39,6 @@ int test_thd()
 	return 0;
 }
 
-static int test_ps(void)
-{
-	ffps h;
-	int cod;
-	const char *args[6];
-	const char *env[4];
-
-	FFTEST_FUNC;
-
-	char fn[FF_MAXPATH];
-	printf("ffps_filename(): %s\n", ffps_filename(fn, sizeof(fn), "/path/argv0"));
-
-	x(ffps_curid() == ffps_id(ffps_curhdl()));
-	if (0) {
-		ffps_exit(1);
-		(void)ffps_kill(ffps_curhdl());
-	}
-
-	uint i = 0;
-#ifdef FF_UNIX
-	args[i++] = "/bin/echo";
-
-#else
-	args[i++] = "c:\\windows\\system32\\cmd.exe";
-	args[i++] = "/c";
-	args[i++] = "echo";
-#endif
-	args[i++] = "very good";
-	args[i++] = "day";
-	args[i++] = NULL;
-	env[0] = NULL;
-
-	fffd pr, pw;
-	x(0 == ffpipe_create(&pr, &pw));
-	char buf[32];
-	ffps_execinfo info;
-	info.argv = args;
-	info.env = env;
-	info.in = FF_BADFD;
-	info.out = pw;
-	info.err = pw;
-	h = ffps_exec2(args[0], &info);
-	x(h != FFPS_INV);
-	printf("\ncreated process: %d\n", (int)ffps_id(h));
-	x(0 == ffps_wait(h, -1, &cod));
-	printf("process exited with code %d\n", (int)cod);
-#ifdef FF_UNIX
-	x(14 == ffpipe_read(pr, buf, sizeof(buf)));
-	buf[14] = '\0';
-	x(!strcmp(buf, "very good day\n"));
-#else
-	x(17 == ffpipe_read(pr, buf, sizeof(buf)));
-	buf[17] = '\0';
-	x(!strcmp(buf, "\"very good\" day\r\n"));
-#endif
-	ffpipe_close(pr);
-	ffpipe_close(pw);
-
-
-#ifdef FF_UNIX
-	args[0] = "/bin/sh";
-	args[1] = NULL;
-#else
-	args[0] = "c:\\windows\\system32\\cmd.exe";
-	args[1] = NULL;
-#endif
-
-	x(FFPS_INV != (h = ffps_exec(args[0], args, env)));
-	x(0 != ffps_wait(h, 0, &cod) && fferr_last() == ETIMEDOUT);
-	(void)ffps_kill(h);
-	x(0 == ffps_wait(h, -1, &cod));
-	printf("process exited with code %d\n", (int)cod);
-
-	for (uint i = 0;  i != 2;  i++) {
-		struct ffps_perf p = {};
-		if (i == 0)
-			x(0 == ffps_perf(&p, FFPS_PERF_CPUTIME | FFPS_PERF_RUSAGE));
-		else
-			x(0 == ffthd_perf(&p, FFPS_PERF_CPUTIME | FFPS_PERF_RUSAGE));
-		printf("PID:%u TID:%u  cputime:%u.%09u  usertime:%u.%09u  systime:%u.%09u"
-			"  maxrss:%u  inblock:%u  outblock:%u  vctxsw:%u  ivctxsw:%u\n"
-			, (int)ffps_curid(), (int)ffthd_curid()
-			, (int)fftime_sec(&p.cputime), (int)fftime_nsec(&p.cputime)
-			, (int)fftime_sec(&p.usertime), (int)fftime_nsec(&p.usertime)
-			, (int)fftime_sec(&p.systime), (int)fftime_nsec(&p.systime)
-			, p.maxrss, p.inblock, p.outblock, p.vctxsw, p.ivctxsw);
-	}
-
-	return 0;
-}
-
-int test_env()
-{
-	char *p, buf[256];
-	ffstr s;
-
-#ifdef FF_UNIX
-	char **ee = environ;
-	char *e_s[] = { "KEY1=VAL1", "KEY=VAL", NULL };
-	environ = e_s;
-
-	p = ffenv_expand(NULL, NULL, 0, "asdf $KEY$KEY2 1234");
-	ffstr_setz(&s, p);
-	xseq(&s, "asdf VAL 1234");
-	ffmem_free(p);
-
-	p = ffenv_expand(NULL, buf, sizeof(buf), "asdf $KEY$KEY1 1234");
-	x(p == buf);
-	ffstr_setz(&s, p);
-	xseq(&s, "asdf VALVAL1 1234");
-
-	environ = ee;
-
-#else
-	p = ffenv_expand(NULL, buf, sizeof(buf), "asdf %WINDIR%%WINDIR1% 1234");
-	x(p == buf);
-	ffstr_setz(&s, p);
-	xseq(&s, "asdf C:\\WINDOWS%WINDIR1% 1234");
-
-	p = ffenv_expand(NULL, NULL, 0, "asdf %WINDIR%%WINDIR1% 1234");
-	ffstr_setz(&s, p);
-	xseq(&s, "asdf C:\\WINDOWS%WINDIR1% 1234");
-	ffmem_free(p);
-#endif
-
-	x(0 != fflang_info(FFLANG_FLANG));
-	return 0;
-}
-
 int test_netconf()
 {
 	ffnetconf nc = {};
@@ -230,13 +101,12 @@ static int test_semaphore(void)
 	return 0;
 }
 
-int test_sconf()
+void test_sconf()
 {
 	ffsysconf sc;
-	ffsc_init(&sc);
-	x(0 != ffsc_get(&sc, _SC_PAGESIZE));
-	x(0 != ffsc_get(&sc, _SC_NPROCESSORS_ONLN));
-	return 0;
+	ffsysconf_init(&sc);
+	x(0 != ffsysconf_get(&sc, FFSYSCONF_PAGESIZE));
+	x(0 != ffsysconf_get(&sc, FFSYSCONF_NPROCESSORS_ONLN));
 }
 
 static int test_rnd()

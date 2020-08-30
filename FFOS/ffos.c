@@ -193,7 +193,7 @@ void fflk_setup(void)
 	if (_ffsc_ncpu != 0)
 		return;
 	ffsc_init(&sc);
-	_ffsc_ncpu = ffsc_get(&sc, _SC_NPROCESSORS_ONLN);
+	_ffsc_ncpu = ffsc_get(&sc, FFSYSCONF_NPROCESSORS_ONLN);
 }
 
 enum { FFLK_SPIN = 2048 };

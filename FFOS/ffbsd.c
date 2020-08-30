@@ -23,34 +23,6 @@ int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 }
 
 
-#ifdef KERN_PROC_PATHNAME
-static const int sysctl_pathname[] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, /*PID=*/ -1 };
-#endif
-
-const char* ffps_filename(char *name, size_t cap, const char *argv0)
-{
-#ifdef KERN_PROC_PATHNAME
-	size_t namelen = cap;
-	if (0 == sysctl(sysctl_pathname, FFCNT(sysctl_pathname), name, &namelen, NULL, 0))
-		return name;
-#endif
-
-	int n = readlink("/proc/curproc/file", name, cap);
-	if (n >= 0) {
-		name[n] = '\0';
-		return name;
-	}
-
-	n = readlink("/proc/curproc/exe", name, cap);
-	if (n >= 0) {
-		name[n] = '\0';
-		return name;
-	}
-
-	return _ffpath_real(name, cap, argv0);
-}
-
-
 enum {
 	KQ_EVUSER_ID = 1,
 };

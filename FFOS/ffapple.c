@@ -29,17 +29,6 @@ int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 }
 
 
-const char* ffps_filename(char *name, size_t cap, const char *argv0)
-{
-	char fn[4096];
-	uint n = sizeof(fn);
-	if (0 == _NSGetExecutablePath(fn, &n))
-		return _ffpath_real(name, cap, fn);
-
-	return _ffpath_real(name, cap, argv0);
-}
-
-
 enum {
 	KQ_EVUSER_ID = 1,
 };

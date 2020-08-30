@@ -31,18 +31,6 @@ int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 }
 
 
-const char* ffps_filename(char *name, size_t cap, const char *argv0)
-{
-	int n = readlink("/proc/self/exe", name, cap);
-	if (n >= 0) {
-		name[n] = '\0';
-		return name;
-	}
-
-	return _ffpath_real(name, cap, argv0);
-}
-
-
 void fftime_local(fftime_zone *tz)
 {
 	tzset();
