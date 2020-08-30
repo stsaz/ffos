@@ -28,3 +28,6 @@ _ff_GetProcessMemoryInfo_t _ff_GetProcessMemoryInfo;
 char **_ff_environ;
 
 #endif
+
+#include <FFOS/sig.h>
+ffsig_handler _ffsig_userhandler;

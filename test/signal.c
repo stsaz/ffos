@@ -2,9 +2,12 @@
 2020, Simon Zolin
 */
 
-#include <FFOS/signal.h>
-#include <test/test.h>
+#include <FFOS/sig.h>
+#include <FFOS/thread.h>
+#include <FFOS/test.h>
 
+#ifdef FF_UNIX
+#include <FFOS/signal.h>
 void test_unixsignal()
 {
 	ffkq kq = ffkq_create();
@@ -68,4 +71,47 @@ void test_unixsignal()
 
 	ffkqsig_detach(sig, kq);
 	ffkq_close(kq);
+}
+#endif
+
+static void sig_handler(struct ffsig_info *inf)
+{
+	fflog("Signal:%xu  Address:0x%p  Flags:%xu"
+		, inf->sig, inf->addr, inf->flags);
+}
+
+int FFTHREAD_PROCCALL sig_thdfunc(void *param)
+{
+	ffuint sig = (ffsize)param;
+	if (sig == FFSIG_STACK) {
+		const ffuint sigs_fault[] = { FFSIG_STACK };
+		ffsig_subscribe(&sig_handler, sigs_fault, FF_COUNT(sigs_fault));
+	}
+	ffsig_raise(sig);
+	return 0;
+}
+
+void test_sig(int sig)
+{
+	static const ffuint sigs_fault[] = { FFSIG_ABORT, FFSIG_SEGV, FFSIG_STACK, FFSIG_ILL, FFSIG_FPE };
+	ffsig_subscribe(&sig_handler, sigs_fault, FF_COUNT(sigs_fault));
+	ffthread th = ffthread_create(sig_thdfunc, (void*)(ffsize)sig, 0);
+	ffthread_join(th, -1, NULL);
+}
+
+void test_sig_abort()
+{
+	test_sig(FFSIG_ABORT);
+}
+void test_sig_segv()
+{
+	test_sig(FFSIG_SEGV);
+}
+void test_sig_stack()
+{
+	test_sig(FFSIG_STACK);
+}
+void test_sig_fpe()
+{
+	test_sig(FFSIG_FPE);
 }

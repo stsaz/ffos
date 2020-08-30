@@ -304,38 +304,6 @@ void ffclk_totime(fftime *t)
 }
 
 
-/** User's signal handler. */
-static ffsig_handler _ffsig_userhandler;
-
-/** Called by OS on a program exception.
-We reset to the default exception handler on entry. */
-static LONG WINAPI _ffsigfunc(struct _EXCEPTION_POINTERS *inf)
-{
-	SetUnhandledExceptionFilter(NULL);
-
-	struct ffsig_info i = {};
-	i.sig = inf->ExceptionRecord->ExceptionCode; //EXCEPTION_*
-	i.si = inf;
-	switch (inf->ExceptionRecord->ExceptionCode) {
-	case EXCEPTION_ACCESS_VIOLATION:
-		i.flags = inf->ExceptionRecord->ExceptionInformation[0];
-		i.addr = (void*)inf->ExceptionRecord->ExceptionInformation[1];
-		break;
-	}
-	_ffsig_userhandler(&i);
-	return EXCEPTION_CONTINUE_SEARCH;
-}
-
-int ffsig_subscribe(ffsig_handler handler, const uint *sigs, uint nsigs)
-{
-	if (handler != NULL)
-		_ffsig_userhandler = handler;
-
-	SetUnhandledExceptionFilter(&_ffsigfunc);
-	return 0;
-}
-
-
 static void pipename(ffsyschar *dst, size_t cap, int pid)
 {
 	char s[64];
@@ -406,6 +374,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 
 int ffsig_read(ffsignal *t, ffsiginfo *si)
 {
+	(void)si;
 	ssize_t r;
 	byte b;
 

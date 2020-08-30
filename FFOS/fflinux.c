@@ -96,40 +96,6 @@ end:
 	*_sent = sent;
 	return res;
 }
-
-int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
-{
-	sigset_t mask;
-	size_t i;
-	fffd sigfd;
-
-	if (handler == NULL) {
-		if (t->fd != FF_BADFD) {
-			close(t->fd);
-		}
-		ffkev_fin(t);
-		return 0;
-	}
-
-	sigemptyset(&mask);
-	for (i = 0;  i < nsigs;  i++) {
-		sigaddset(&mask, sigs[i]);
-	}
-
-	sigfd = signalfd(FF_BADFD, &mask, SFD_NONBLOCK);
-	if (sigfd == FF_BADFD)
-		return -1;
-
-	t->handler = handler;
-	t->oneshot = 0;
-	if (0 != ffkqu_attach(kq, sigfd, ffkev_ptr(t), FFKQU_ADD | FFKQU_READ)) {
-		close(sigfd);
-		return -1;
-	}
-
-	t->fd = sigfd;
-	return 0;
-}
 #endif
 
 

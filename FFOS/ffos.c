@@ -23,34 +23,6 @@ void fftime_init(void)
 #endif
 
 
-void ffsig_raise(uint sig)
-{
-	FFDBG_PRINTLN(0, "%u", sig);
-
-	switch (sig) {
-	case FFSIG_ABORT:
-		assert(0);
-		break;
-
-	case FFSIG_STACK:
-		ffsig_raise(sig);
-		break;
-
-	case FFSIG_SEGV: {
-		void *addr = (void*)0x16;
-		*(int*)addr = -1;
-		break;
-	}
-
-	case FFSIG_FPE: {
-		int i = 0;
-		i = 10 / i;
-		break;
-	}
-	}
-}
-
-
 size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len)
 {
 	size_t i;

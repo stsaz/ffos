@@ -33,38 +33,6 @@ void fftime_local(fftime_zone *tz)
 	tz->have_dst = 0;
 }
 
-int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
-{
-	size_t i;
-	struct kevent *evs;
-	int r = 0;
-	void *udata;
-	int f = EV_ADD | EV_ENABLE;
-
-	if (handler == NULL) {
-		f = EV_DELETE;
-	}
-
-	evs = ffmem_allocT(nsigs, struct kevent);
-	if (evs == NULL)
-		return -1;
-
-	t->rhandler = handler;
-	t->oneshot = 0;
-	udata = ffaio_kqudata(t);
-	for (i = 0;  i < nsigs;  i++) {
-		EV_SET(&evs[i], sigs[i], EVFILT_SIGNAL, f, 0, 0, udata);
-	}
-	if (0 != kevent(kq, evs, nsigs, NULL, 0, NULL))
-		r = -1;
-
-	ffmem_free(evs);
-
-	if (handler == NULL)
-		ffaio_fin(t);
-	return r;
-}
-
 
 /* sendfile() sends the whole file if 'file size' argument is 0.
 We don't want this behaviour. */
