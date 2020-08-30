@@ -2,71 +2,143 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+/*
+ffmem_alloc ffmem_calloc ffmem_realloc ffmem_free
+ffmem_align ffmem_alignfree
+*/
+
 #pragma once
 
 #include <FFOS/types.h>
-
-#ifdef FF_WIN
-#include <FFOS/win/mem.h>
-#else
-#include <FFOS/unix/mem.h>
-#endif
-
 #include <string.h>
 
-/** Allocate N objects of type T. */
-#define ffmem_allocT(N, T)  ((T*)ffmem_alloc((N) * sizeof(T)))
+#ifdef FF_WIN
 
-/** Allocate N objects of type T.  Zero the buffer. */
-#define ffmem_callocT(N, T)  ((T*)ffmem_calloc(N, sizeof(T)))
-
-/** Allocate an object of type T. */
-#define ffmem_tcalloc1(T)  ((T*)ffmem_calloc(1, sizeof(T)))
-#define ffmem_new(T)  ((T*)ffmem_calloc(1, sizeof(T)))
-
-#define ffmem_zalloc(size)  ffmem_calloc(1, size)
-
-/** Zero the object. */
-#define ffmem_tzero(p)  memset(p, 0, sizeof(*(p)))
-
-
-#ifdef FFMEM_DBG
-FF_EXTN void* ffmem_alloc(size_t size);
-FF_EXTN void* ffmem_calloc(size_t n, size_t size);
-FF_EXTN void* ffmem_realloc(void *ptr, size_t newsize);
-FF_EXTN void ffmem_free(void *ptr);
-
-FF_EXTN void* ffmem_align(size_t size, size_t align);
-FF_EXTN void ffmem_alignfree(void *ptr);
-
-#else
-#define ffmem_alloc _ffmem_alloc
-#define ffmem_calloc _ffmem_calloc
-#define ffmem_realloc _ffmem_realloc
-#define ffmem_free _ffmem_free
-
-#define ffmem_align _ffmem_align
-#define ffmem_alignfree _ffmem_alignfree
-#endif
-
-/** Safely reallocate memory buffer.
-Return NULL on error and free the original buffer. */
-static FFINL void* ffmem_saferealloc(void *ptr, size_t newsize)
+static inline void* ffmem_alloc(ffsize size)
 {
-	void *p = ffmem_realloc(ptr, newsize);
-	if (p == NULL) {
-		ffmem_free(ptr);
-		return NULL;
-	}
-	return p;
+	return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
-#define ffmem_safefree(p)  ffmem_free(p)
+static inline void* ffmem_calloc(ffsize n, ffsize elsize)
+{
+	return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, n * elsize);
+}
 
-#define ffmem_safefree0(p)  FF_SAFECLOSE(p, NULL, ffmem_free)
+static inline void* ffmem_realloc(void *ptr, ffsize new_size)
+{
+	if (ptr == NULL)
+		return HeapAlloc(GetProcessHeap(), 0, new_size);
+	return HeapReAlloc(GetProcessHeap(), 0, ptr, new_size);
+}
 
-#define ffmem_free0(p) \
-do { \
-	ffmem_free(p); \
-	p = NULL; \
-} while (0)
+static inline void ffmem_free(void *ptr)
+{
+	HeapFree(GetProcessHeap(), 0, ptr);
+}
+
+/* (allocated-start) (free space) (pointer to allocated-start) (aligned) ... (allocated-end) */
+static inline void* ffmem_align(ffsize size, ffsize align)
+{
+	if ((align % sizeof(void*)) != 0) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return NULL;
+	}
+
+	void *buf;
+	if (NULL == (buf = ffmem_alloc(size + align + sizeof(void*))))
+		return NULL;
+
+	void *al = (void*)(ffsize)ff_align_ceil2((ffsize)buf + sizeof(void*), align);
+	*((void**)al - 1) = buf; // remember the original pointer
+	return al;
+}
+
+static inline void ffmem_alignfree(void *ptr)
+{
+	if (ptr == NULL)
+		return;
+
+	void *buf = *((void**)ptr - 1);
+	ffmem_free(buf);
+}
+
+#else // UNIX:
+
+#include <stdlib.h>
+#include <errno.h>
+
+static inline void* ffmem_alloc(ffsize size)
+{
+	return malloc(size);
+}
+
+static inline void* ffmem_calloc(ffsize n, ffsize elsize)
+{
+	return calloc(n, elsize);
+}
+
+static inline void* ffmem_realloc(void *ptr, ffsize new_size)
+{
+	return realloc(ptr, new_size);
+}
+
+static inline void ffmem_free(void *ptr)
+{
+	free(ptr);
+}
+
+static inline void* ffmem_align(ffsize size, ffsize align)
+{
+#ifdef FF_ANDROID
+	return NULL;
+
+#else
+	void *buf;
+	int e = posix_memalign(&buf, align, size);
+	if (e != 0) {
+		errno = e;
+		return NULL;
+	}
+	return buf;
+#endif
+}
+
+static inline void ffmem_alignfree(void *ptr)
+{
+	free(ptr);
+}
+
+#endif
+
+
+/** Allocate heap memory region
+Return NULL on error */
+static void* ffmem_alloc(ffsize size);
+
+/** Allocate heap memory zero-filled region
+Return NULL on error */
+static void* ffmem_calloc(ffsize n, ffsize elsize);
+
+/** Reallocate heap memory region
+Return NULL on error */
+static void* ffmem_realloc(void *ptr, ffsize new_size);
+
+/** Allocate an object of type T */
+#define ffmem_new(T)  ((T*)ffmem_calloc(1, sizeof(T)))
+
+/** Deallocate heap memory region */
+static void ffmem_free(void *ptr);
+
+
+/** Allocate aligned memory
+Android: not implemented
+align:
+  Windows: must be a multiple of sizeof(void*)
+Return NULL on error */
+static void* ffmem_align(ffsize size, ffsize align);
+
+/** Deallocate aligned memory */
+static void ffmem_alignfree(void *ptr);
+
+
+#include <FFOS/mem-compat.h>
