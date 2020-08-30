@@ -243,46 +243,6 @@ static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
 }
 
 
-#if FF_WIN < 0x0600
-typedef BOOL __stdcall (*GetQueuedCompletionStatusEx_t)(HANDLE, void*, long, void*, long, long);
-static GetQueuedCompletionStatusEx_t _ffGetQueuedCompletionStatusEx;
-
-void ffkqu_init(void)
-{
-	ffdl k;
-	void *a;
-	if (NULL == (k = ffdl_openq(L"kernel32.dll", 0)))
-		return;
-	if (NULL == (a = ffdl_addr(k, "GetQueuedCompletionStatusEx")))
-		goto done;
-	_ffGetQueuedCompletionStatusEx = a;
-done:
-	ffdl_close(k);
-}
-
-/* Use GetQueuedCompletionStatusEx() if available. */
-int ffkqu_wait(fffd kq, ffkqu_entry *events, size_t eventsSize, const ffkqu_time *tmoutMs)
-{
-	if (_ffGetQueuedCompletionStatusEx != NULL) {
-		ULONG num = 0;
-		BOOL b = _ffGetQueuedCompletionStatusEx(kq, events, FF_TOINT(eventsSize), &num, *tmoutMs, 0);
-		if (!b)
-			return (fferr_last() == WAIT_TIMEOUT) ? 0 : -1;
-		return (int)num;
-	}
-
-	BOOL b = GetQueuedCompletionStatus(kq, &events->dwNumberOfBytesTransferred
-		, &events->lpCompletionKey, &events->lpOverlapped, *tmoutMs);
-	if (!b) {
-		if (fferr_last() == WAIT_TIMEOUT)
-			return 0;
-		return (events->lpOverlapped == NULL) ? -1 : 1;
-	}
-	return 1;
-}
-#endif
-
-
 int _ffaio_events(ffaio_task *t, const ffkqu_entry *e)
 {
 	int ev = 0;

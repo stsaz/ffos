@@ -29,38 +29,6 @@ int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 }
 
 
-enum {
-	KQ_EVUSER_ID = 1,
-};
-
-int ffkqu_post_attach(ffkevpost *p, fffd kq)
-{
-	struct kevent ev;
-
-	ffkev_init(p);
-	EV_SET(&ev, KQ_EVUSER_ID, EVFILT_USER, EV_ADD | EV_ENABLE | EV_ONESHOT | EV_CLEAR, 0, 0, NULL);
-	if (0 != kevent(kq, &ev, 1, NULL, 0, NULL))
-		return -1;
-	p->fd = kq;
-	return 0;
-}
-
-void ffkqu_post_detach(ffkevpost *p, fffd kq)
-{
-	struct kevent ev;
-	EV_SET(&ev, KQ_EVUSER_ID, EVFILT_USER, EV_DELETE, 0, 0, NULL);
-	kevent(kq, &ev, 1, NULL, 0, NULL);
-}
-
-int ffkqu_post(ffkevpost *p, void *data)
-{
-	fffd kq = p->fd;
-	struct kevent ev;
-	EV_SET(&ev, KQ_EVUSER_ID, EVFILT_USER, 0, NOTE_TRIGGER, 0, data);
-	return kevent(kq, &ev, 1, NULL, 0, NULL);
-}
-
-
 void fftime_local(fftime_zone *tz)
 {
 	tzset();

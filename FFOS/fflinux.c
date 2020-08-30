@@ -170,51 +170,6 @@ ffskt ffskt_create(uint domain, uint type, uint protocol)
 #endif
 
 
-static void _ffev_handler(void *udata)
-{
-	ffkevpost *p = udata;
-	uint64 val;
-	if (sizeof(uint64) != fffile_read(p->fd, &val, sizeof(uint64))) {
-		FFDBG_PRINTLN(0, "fffile_read() error.  evfd: %d", p->fd);
-		return;
-	}
-}
-
-int ffkqu_post_attach(ffkevpost *p, fffd kq)
-{
-	ffkev_init(p);
-	if (FF_BADFD == (p->fd = eventfd(0, EFD_NONBLOCK)))
-		goto fail;
-
-	p->handler = &_ffev_handler;
-	p->udata = p;
-
-	if (0 != ffkev_attach(p, kq, FFKQU_READ)) {
-		fffile_close(p->fd);
-		p->fd = FF_BADFD;
-		goto fail;
-	}
-
-	return 0;
-
-fail:
-	return -1;
-}
-
-void ffkqu_post_detach(ffkevpost *p, fffd kq)
-{
-	fffile_close(p->fd);
-	ffkev_fin(p);
-}
-
-int ffkqu_post(ffkevpost *p, void *data)
-{
-	uint64 val = 1;
-	if (sizeof(uint64) != fffile_write(p->fd, &val, sizeof(uint64)))
-		return -1;
-	return 0;
-}
-
 int _ffaio_result(ffaio_task *t)
 {
 	int r = -1;
