@@ -59,7 +59,7 @@ enum FFFILE_WIN_FILEATTR {
 
 #include <FFOS/string.h>
 
-#define FFFILE_BAD  INVALID_HANDLE_VALUE
+#define FFFILE_NULL  INVALID_HANDLE_VALUE
 #define FFERR_FILENOTFOUND  ERROR_FILE_NOT_FOUND
 #define FFERR_FILEEXISTS  ERROR_FILE_EXISTS
 
@@ -274,9 +274,9 @@ static inline fffd fffile_open(const char *name, ffuint flags)
 	wchar_t ws[256], *w;
 	wchar_t longname[256], *wlong = longname;
 	if (NULL == (w = ffsz_alloc_buf_utow(ws, FF_COUNT(ws), name)))
-		return FFFILE_BAD;
+		return FFFILE_NULL;
 
-	fffd fd = FFFILE_BAD;
+	fffd fd = FFFILE_NULL;
 	if (flags & FFFILE_NODOSNAME) {
 		ffuint n = GetLongPathNameW(w, NULL, 0);
 		if (n > FF_COUNT(longname))
@@ -294,7 +294,7 @@ static inline fffd fffile_open(const char *name, ffuint flags)
 
 	fd = CreateFileW(w, access, share, NULL, creation, f, NULL);
 
-	if (fd == FFFILE_BAD && GetLastError() == ERROR_FILE_NOT_FOUND
+	if (fd == FFFILE_NULL && GetLastError() == ERROR_FILE_NOT_FOUND
 		&& (flags & (FFFILE_TRUNCATE | 0xf0)) == (FFFILE_TRUNCATE | FFFILE_CREATE))
 		fd = CreateFileW(w, access, share, NULL, CREATE_NEW, f, NULL);
 
@@ -404,7 +404,7 @@ static inline int fffile_trunc(fffd fd, ffuint64 len)
 static inline int fffile_set_mtime_path(const char *name, const fftime *last_write)
 {
 	fffd fd;
-	if (FFFILE_BAD == (fd = fffile_open(name, FFFILE_WRITEONLY)))
+	if (FFFILE_NULL == (fd = fffile_open(name, FFFILE_WRITEONLY)))
 		return -1;
 	int r = fffile_set_mtime(fd, last_write);
 	fffile_close(fd);
@@ -418,7 +418,7 @@ static inline int fffile_set_mtime_path(const char *name, const fftime *last_wri
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#define FFFILE_BAD  (-1)
+#define FFFILE_NULL  (-1)
 #define FFERR_FILENOTFOUND  ENOENT
 #define FFERR_FILEEXISTS  EEXIST
 
@@ -587,7 +587,7 @@ static inline fffd fffile_open(const char *name, ffuint flags)
 	flags |= O_LARGEFILE;
 	fffd fd = open(name, flags, mode);
 
-	if (fd == FFFILE_BAD && errno == EPERM
+	if (fd == FFFILE_NULL && errno == EPERM
 		&& (flags & O_NOATIME)) {
 		flags &= ~O_NOATIME;
 		fd = open(name, flags, mode);
@@ -603,7 +603,7 @@ static inline fffd fffile_open(const char *name, ffuint flags)
 static inline fffd fffile_createtemp(const char *name, ffuint flags)
 {
 	fffd fd = fffile_open(name, FFFILE_CREATENEW | flags);
-	if (fd != FFFILE_BAD)
+	if (fd != FFFILE_NULL)
 		unlink(name);
 	return fd;
 }
@@ -783,18 +783,18 @@ flags:
     Any OS-specific flag:
       UNIX: O_...
       Windows: FILE_FLAG_... | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM
-Return FFFILE_BAD on error
+Return FFFILE_NULL on error
   Linux: may fail with errno=EINVAL with O_DIRECT flag */
 static fffd fffile_open(const char *name, ffuint flags);
 
 /** Create temporary file
 Fail if file exists
 Close with fffile_close()
-Return FFFILE_BAD on error */
+Return FFFILE_NULL on error */
 static fffd fffile_createtemp(const char *name, ffuint flags);
 
 /** Duplicate a file descriptor
-Return FFFILE_BAD on error */
+Return FFFILE_NULL on error */
 static fffd fffile_dup(fffd fd);
 
 /** Close a file descriptor

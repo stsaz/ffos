@@ -96,7 +96,7 @@ int test_dir()
 	x(0 == ffdir_make(path));
 
 	f = fffile_open(fn, FFO_CREATE | FFO_TRUNC | FFO_WRONLY);
-	x(f != FF_BADFD);
+	x(f != FFFILE_NULL);
 	x(1 == fffile_write(f, FFSTR("1")));
 	x(0 == fffile_close(f));
 
