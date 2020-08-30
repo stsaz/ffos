@@ -13,7 +13,7 @@ int test_wreg(void)
 	ffwreg k;
 	ffwreg_val val;
 
-	x(FFWREG_BADKEY != (k = ffwreg_open(HKEY_CURRENT_USER, "Software\\firmdev.ffostest", O_CREAT | O_RDWR)));
+	x_sys(FFWINREG_NULL != (k = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffostest", FFWINREG_CREATE | FFWINREG_READWRITE)));
 
 	// String
 	val.type = REG_SZ;

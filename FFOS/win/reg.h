@@ -4,17 +4,38 @@ Copyright (c) 2016 Simon Zolin
 
 #include <FFOS/file.h>
 
+typedef HKEY ffwinreg;
+#define FFWINREG_NULL  ((HKEY)-1)
 
-typedef HKEY ffwreg;
-#define FFWREG_BADKEY  ((HKEY)-1)
+#define ffwreg  ffwinreg
+#define FFWREG_BADKEY  FFWINREG_NULL
+#define ffwreg_close  ffwinreg_close
 
-/** Open or create registry key.
-@hk: HKEY_*
-@flags: (O_CREAT | FFO_CREATENEW) + (O_RDONLY | O_WRONLY | O_RDWR)
-*/
-FF_EXTN ffwreg ffwreg_open(HKEY hk, const char *path, uint flags);
+/* Mask:
+.......f  Creation
+......f0  Access */
+enum FFWINREG_OPEN {
+	// Creation:
+	FFWINREG_CREATE = 1,
+	FFWINREG_CREATENEW = 2,
 
-#define ffwreg_close(k)  RegCloseKey(k)
+	// Access:
+	FFWINREG_READONLY = GENERIC_READ >> 24,
+	FFWINREG_WRITEONLY = GENERIC_WRITE >> 24,
+	FFWINREG_READWRITE = (GENERIC_READ | GENERIC_WRITE) >> 24,
+};
+
+/** Open or create registry key
+hk: HKEY_CLASSES_ROOT || HKEY_CURRENT_USER || HKEY_LOCAL_MACHINE || HKEY_USERS
+flags: enum FFWINREG_OPEN
+Return FFWINREG_NULL on error */
+FF_EXTN ffwinreg ffwinreg_open(HKEY hk, const char *path, ffuint flags);
+
+/** Close key */
+static inline void ffwinreg_close(ffwinreg k)
+{
+	RegCloseKey(k);
+}
 
 struct ffwreg_info {
 	DWORD subkeys;

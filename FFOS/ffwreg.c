@@ -8,7 +8,7 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/error.h>
 
 
-ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
+ffwreg ffwinreg_open(HKEY hk, const char *path, ffuint flags)
 {
 	int r;
 	ffsyschar ws[255], *w;
@@ -19,20 +19,20 @@ ffwreg ffwreg_open(HKEY hk, const char *path, uint flags)
 	if (NULL == (w = ffs_utow(ws, &n, path, -1)))
 		return FFWREG_BADKEY;
 
-	if ((flags & O_RDWR) == O_RDWR)
+	if ((flags & FFWINREG_READWRITE) == FFWINREG_READWRITE)
 		opts = KEY_ALL_ACCESS;
-	else if (flags & O_WRONLY)
+	else if (flags & FFWINREG_WRITEONLY)
 		opts = KEY_WRITE;
 	else
 		opts = KEY_READ;
 
-	if (mode == O_CREAT || mode == FFO_CREATENEW) {
+	if (mode == FFWINREG_CREATE || mode == FFWINREG_CREATENEW) {
 		DWORD res;
 		if (0 != (r = RegCreateKeyExW(hk, w, 0, NULL, 0, opts, NULL, &kk, &res))) {
 			fferr_set(r);
 			goto end;
 		}
-		if (mode == FFO_CREATENEW && res != REG_CREATED_NEW_KEY) {
+		if (mode == FFWINREG_CREATENEW && res != REG_CREATED_NEW_KEY) {
 			fferr_set(ERROR_ALREADY_EXISTS);
 			goto end;
 		}
