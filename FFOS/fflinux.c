@@ -31,29 +31,6 @@ int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
 }
 
 
-#ifdef FF_LINUX_MAINLINE
-int fferr_str(int code, char *dst, size_t dst_cap) {
-	char *dst2;
-	if (0 == dst_cap)
-		return 0;
-	dst2 = strerror_r(code, dst, dst_cap);
-	if (dst2 != dst) {
-		ssize_t len = ffmin(dst_cap - 1, strlen(dst2));
-		memcpy(dst, dst2, len);
-		dst[len] = '\0';
-		return 0;
-	}
-	return 0;
-}
-#else
-int fferr_str(int code, char *dst, size_t dst_cap)
-{
-	FF_ASSERT(0);
-	return 0;
-}
-#endif
-
-
 const char* ffps_filename(char *name, size_t cap, const char *argv0)
 {
 	int n = readlink("/proc/self/exe", name, cap);

@@ -1,108 +1,191 @@
-/**
-System error.
-Copyright (c) 2013 Simon Zolin
+/** ffos: system error
+2020, Simon Zolin
+*/
+
+/*
+fferr_last
+fferr_set
+Checks:
+	fferr_again
+	fferr_exist
+	fferr_notexist
+	fferr_fdlimit
+fferr_str fferr_strptr
 */
 
 #pragma once
 
 #include <FFOS/types.h>
 
-#ifdef FF_UNIX
-#include <FFOS/unix/error.h>
-#elif defined FF_WIN
-#include <FFOS/win/error.h>
+#ifdef FF_WIN
+
+#include <FFOS/string.h>
+#include <ffbase/stringz.h>
+
+static inline int fferr_last()
+{
+	return GetLastError();
+}
+
+static inline void fferr_set(int code)
+{
+	SetLastError(code);
+}
+
+static inline int fferr_again(int code)
+{
+	return code == WSAEWOULDBLOCK;
+}
+
+static inline int fferr_exist(int code)
+{
+	return code == ERROR_FILE_EXISTS || code == ERROR_ALREADY_EXISTS;
+}
+
+static inline int fferr_notexist(int code)
+{
+	return code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND
+		|| code == ERROR_NOT_READY || code == ERROR_INVALID_NAME;
+}
+
+static inline int fferr_fdlimit(int code)
+{
+	(void)code;
+	return 0;
+}
+
+static inline int fferr_str(int code, char *buffer, ffsize cap)
+{
+	if (cap == 0)
+		return -1;
+
+	wchar_t ws[256];
+	const int f = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK;
+	int n = FormatMessageW(f, 0, code, 0, ws, sizeof(ws), 0);
+	if (n == 0) {
+		ffsz_copyz(buffer, cap, "unknown error");
+		return 0;
+	}
+
+	// cut the trailing ". "
+	if (n > 2 && ws[n - 2] == '.' && ws[n - 1] == ' ') {
+		n -= 2;
+		ws[n] = '\0';
+	}
+
+	int r = ffs_wtou(buffer, cap, ws, n + 1);
+	if (r <= 0) {
+		r = ffs_wtou(NULL, 0, ws, n + 1);
+		if ((ffuint)r > cap)
+			buffer[cap - 1] = '\0';
+		return -1;
+	}
+
+	return 0;
+}
+
+FF_EXTN char _fferr_buffer[1024];
+
+static inline const char* fferr_strptr(int code)
+{
+	fferr_str(code, _fferr_buffer, sizeof(_fferr_buffer));
+	return _fferr_buffer;
+}
+
+#else // UNIX:
+
+#include <FFOS/mem.h>
+static int fferr_str(int code, char *buffer, ffsize cap);
+#include <ffbase/stringz.h>
+#include <errno.h>
+
+static inline int fferr_last()
+{
+	return errno;
+}
+
+static inline void fferr_set(int code)
+{
+	errno = code;
+}
+
+static inline int fferr_again(int code)
+{
+	return code == EAGAIN || code == EWOULDBLOCK;
+}
+
+static inline int fferr_exist(int code)
+{
+	return code == EEXIST;
+}
+
+static inline int fferr_notexist(int code)
+{
+	return code == ENOENT;
+}
+
+static inline int fferr_fdlimit(int code)
+{
+	return code == EMFILE || code == ENFILE;
+}
+
+static inline int fferr_str(int code, char *buffer, ffsize cap)
+{
+	if (cap == 0)
+		return -1;
+
+#ifdef FF_LINUX
+
+	const char *r = strerror_r(code, buffer, cap);
+	if (r != buffer) {
+		if (cap == ffsz_copyz(buffer, cap, r))
+			return -1;
+	}
+	return 0;
+
+#else // not Linux:
+
+	if (ERANGE == strerror_r(code, buffer, cap))
+		return -1;
+	return 0;
+
+#endif
+}
+
+static inline const char* fferr_strptr(int code)
+{
+	return strerror(code);
+}
+
 #endif
 
-enum FFERR {
-	FFERR_OK = 0
-	, FFERR_INTERNAL
 
-//general
-	, FFERR_READ
-	, FFERR_WRITE
+/** Get last system error code */
+static int fferr_last();
 
-//memory
-	, FFERR_BUFALOC
-	, FFERR_BUFGROW
+/** Set last system error code */
+static void fferr_set(int code);
 
-//file
-	, FFERR_FOPEN
-	, FFERR_FSEEK
-	, FFERR_FMAP
-	, FFERR_FDEL
-	, FFERR_FCLOSE
-	, FFERR_FRENAME
+/** Return TRUE if operation would block */
+static inline int fferr_again(int code);
 
-	, FFERR_DIROPEN
-	, FFERR_DIRMAKE
+/** Return TRUE if file exists */
+static inline int fferr_exist(int code);
 
-//sys
-	, FFERR_TMRINIT
-	, FFERR_KQUCREAT
-	, FFERR_KQUATT
-	, FFERR_KQUWAIT
-	, FFERR_THDCREAT
-	, FFERR_NBLOCK
-	, FFERR_PSFORK
+/** Return TRUE if file doesn't exist */
+static inline int fferr_notexist(int code);
 
-	, FFERR_DLOPEN
-	, FFERR_DLADDR
+/** Return TRUE if reached system limit of opened file descriptors */
+static inline int fferr_fdlimit(int code);
 
-//socket
-	, FFERR_SKTCREAT
-	, FFERR_SKTBIND
-	, FFERR_SKTOPT
-	, FFERR_SKTSHUT
-	, FFERR_SKTLISTEN
-	, FFERR_SKTCONN
-	, FFERR_RESOLVE
+/** Get error message
+buffer: buffer for output NULL-terminated string
+Return 0 on success
+  !=0 on error */
+static int fferr_str(int code, char *buffer, ffsize cap);
 
-	, FFERR_SYSTEM
-};
+/** Get pointer to a system error message */
+static const char* fferr_strptr(int code);
 
-FF_EXTN const char * fferr_opstr(enum FFERR e);
 
-#define ffmem_alloc_S  "memory alloc"
-#define ffmem_realloc_S  "memory realloc"
-
-#define fffile_open_S  "file open"
-#define fffile_seek_S  "file seek"
-#define fffile_map_S  "file map"
-#define fffile_rm_S  "file remove"
-#define fffile_close_S  "file close"
-#define fffile_rename_S  "file rename"
-#define fffile_info_S  "get file info"
-#define fffile_settime_S  "set file time"
-#define fffile_read_S  "read"
-#define fffile_write_S  "write"
-#define fffile_nblock_S  "set non-blocking mode"
-
-#define ffdir_open_S  "directory open"
-#define ffdir_make_S  "directory make"
-#define ffdir_rm_S  "directory remove"
-
-#define ffpipe_create_S  "pipe create"
-#define ffpipe_open_S  "pipe open"
-
-#define ffkqu_create_S  "kqueue create"
-#define ffkqu_attach_S  "kqueue attach"
-#define ffkqu_wait_S  "kqueue wait"
-
-#define ffskt_create_S  "socket create"
-#define ffskt_bind_S  "socket bind"
-#define ffskt_setopt_S  "socket option"
-#define ffskt_nblock_S  "set non-blocking mode"
-#define ffskt_shut_S  "socket shutdown"
-#define ffskt_connect_S  "socket connect"
-#define ffskt_listen_S  "socket listen"
-#define ffskt_send_S  "socket send"
-#define ffskt_recv_S  "socket recv"
-
-#define ffdl_open_S  "library open"
-#define ffdl_addr_S  "get library symbol"
-
-#define fftmr_create_S  "timer create"
-#define fftmr_start_S  "timer start"
-#define ffthd_create_S  "thread create"
-#define ffps_fork_S  "process fork"
-#define ffaddr_info_S  "address resolve"
+#include <FFOS/error-compat.h>
