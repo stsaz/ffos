@@ -378,6 +378,23 @@ void test_file_dosname()
 #endif
 }
 
+void test_file_mount()
+{
+#ifdef FF_WIN
+	fffd hvol;
+	wchar_t buf[512];
+	x_sys(FFFILE_NULL != (hvol = FindFirstVolumeW((void*)buf, sizeof(buf))));
+	char *volname = ffsz_alloc_wtou(buf);
+	const char *dirname = "ffos-mountdir";
+	(void) ffdir_make(dirname);
+	x_sys(0 == fffile_mount(volname, dirname));
+	x_sys(0 == fffile_mount(NULL, dirname));
+	(void) ffdir_remove(dirname);
+	ffmem_free(volname);
+	FindVolumeClose(hvol);
+#endif
+}
+
 void test_file()
 {
 	test_file_create();
@@ -391,4 +408,5 @@ void test_file()
 	test_file_dosname();
 	test_file_link();
 	test_file_rename();
+	test_file_mount();
 }
