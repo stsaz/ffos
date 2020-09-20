@@ -23,6 +23,7 @@ The resulting code is almost completely inlined by a compiler: the code is nativ
 I/O:
 * standard I/O - `FFOS/std.h`
 * files - `FFOS/file.h`
+* file mapping - `FFOS/filemap.h`
 * unnamed and named pipes - `FFOS/pipe.h`
 * asynchronous I/O - `FFOS/asyncio.h`
 * kernel queue - `FFOS/queue.h`

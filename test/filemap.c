@@ -1,9 +1,10 @@
-/** File mapping tests.
-Copyright (c) 2020 Simon Zolin
+/** ffos: filemap.h tester
+2020, Simon Zolin
 */
 
-#include <FFOS/string.h>
+#include <FFOS/filemap.h>
 #include <FFOS/file.h>
+#include <FFOS/string.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 
@@ -24,31 +25,29 @@ static int test_mapwr(const char *fn)
 	void *mapd;
 	size_t mapsz;
 
-	FFTEST_FUNC;
-
-	fd = fffile_open(fn, FFO_CREATE | FFO_RDWR);
+	fd = fffile_open(fn, FFFILE_CREATE | FFFILE_READWRITE);
 	x(fd != FFFILE_NULL);
 
-	mapsz = 64*1024 + FFSLEN(FOOBAR);
+	mapsz = 64*1024 + FFS_LEN(FOOBAR);
 	x(0 == fffile_trunc(fd, mapsz));
-	fmap = ffmap_create(fd, mapsz, FFMAP_PAGERW);
+	fmap = ffmmap_create(fd, mapsz, FFMMAP_READWRITE);
 	x(fmap != 0);
 
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
+	mapd = ffmmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
 	x(mapd != NULL);
 	x(!memcmp(mapd, FFSTR("\x00\x00")));
 	x(!memcmp(mapd + 64*1024, FFSTR("\x00\x00")));
-	memcpy((char*)mapd, HELLO, FFSLEN(HELLO));
-	memcpy((char*)mapd + 64*1024, FOOBAR, FFSLEN(FOOBAR));
-	x(0 == ffmap_unmap(mapd, mapsz));
+	memcpy((char*)mapd, HELLO, FFS_LEN(HELLO));
+	memcpy((char*)mapd + 64*1024, FOOBAR, FFS_LEN(FOOBAR));
+	x(0 == ffmmap_unmap(mapd, mapsz));
 
-	mapsz = FFSLEN(FOOBAR);
-	mapd = ffmap_open(fmap, 64*1024, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
+	mapsz = FFS_LEN(FOOBAR);
+	mapd = ffmmap_open(fmap, 64*1024, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED);
 	x(mapd != NULL);
-	x(mapsz == FFSLEN(FOOBAR) && !memcmp(mapd, FFSTR(FOOBAR)));
-	x(0 == ffmap_unmap(mapd, mapsz));
+	x(mapsz == FFS_LEN(FOOBAR) && !memcmp(mapd, FFSTR(FOOBAR)));
+	x(0 == ffmmap_unmap(mapd, mapsz));
 
-	ffmap_close(fmap);
+	ffmmap_close(fmap);
 	x(0 == fffile_close(fd));
 	return 0;
 }
@@ -61,24 +60,22 @@ static int test_mapro(const char *fn)
 	void *mapd;
 	size_t mapsz;
 
-	FFTEST_FUNC;
-
-	fd = fffile_open(fn, O_RDONLY);
+	fd = fffile_open(fn, FFFILE_READONLY);
 	x(fd != FFFILE_NULL);
 	fsiz = fffile_size(fd);
-	fmap = ffmap_create(fd, fsiz, FFMAP_PAGEREAD);
+	fmap = ffmmap_create(fd, fsiz, FFMMAP_READ);
 	x(fmap != 0);
 
 	mapsz = (size_t)fsiz;
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ, MAP_SHARED);
+	mapd = ffmmap_open(fmap, 0, mapsz, PROT_READ, MAP_SHARED);
 	x(mapd != NULL);
 
-	x(mapsz == 64*1024 + FFSLEN(FOOBAR));
+	x(mapsz == 64*1024 + FFS_LEN(FOOBAR));
 	x(!memcmp(mapd, FFSTR(HELLO)));
 	x(!memcmp(mapd + 64*1024, FFSTR(FOOBAR)));
 
-	x(0 == ffmap_unmap(mapd, mapsz));
-	ffmap_close(fmap);
+	x(0 == ffmmap_unmap(mapd, mapsz));
+	ffmmap_close(fmap);
 
 	x(0 == fffile_close(fd));
 	return 0;
@@ -90,18 +87,16 @@ static int test_mapanon()
 	void *mapd;
 	size_t mapsz = 64*1024;
 
-	FFTEST_FUNC;
-
-	fmap = ffmap_create(FFFILE_NULL, mapsz, FFMAP_PAGERW);
+	fmap = ffmmap_create(FFFILE_NULL, mapsz, FFMMAP_READWRITE);
 	x(fmap != 0);
-	mapd = ffmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS);
+	mapd = ffmmap_open(fmap, 0, mapsz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS);
 	x(mapd != NULL);
 
-	memcpy(mapd, HELLO, FFSLEN(HELLO));
+	memcpy(mapd, HELLO, FFS_LEN(HELLO));
 	x(!memcmp(mapd, FFSTR(HELLO)));
 
-	x(0 == ffmap_unmap(mapd, mapsz));
-	ffmap_close(fmap);
+	x(0 == ffmmap_unmap(mapd, mapsz));
+	ffmmap_close(fmap);
 
 	return 0;
 }
@@ -110,15 +105,15 @@ int test_filemap()
 {
 	FFTEST_FUNC;
 
-	char fn[FF_MAXPATH];
+	char fn[256];
 	strcpy(fn, TMP_PATH);
 	strcat(fn, "/tmpfile");
 
-	fffile_rm(fn);
+	fffile_remove(fn);
 	test_mapwr(fn);
 	test_mapro(fn);
 	test_mapanon();
 
-	fffile_rm(fn);
+	fffile_remove(fn);
 	return 0;
 }
