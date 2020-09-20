@@ -141,6 +141,7 @@ void test_time();
 void test_timer();
 void test_types();
 
+void test_sig_ctrlc();
 void test_sig_abort();
 void test_sig_segv();
 void test_sig_stack();
@@ -185,6 +186,7 @@ static const struct test_s atests[] = {
 	F(types),
 };
 static const struct test_s natests[] = {
+	F(sig_ctrlc),
 	F(sig_abort),
 	F(sig_fpe),
 	F(sig_segv),

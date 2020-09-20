@@ -29,5 +29,5 @@ char **_ff_environ;
 
 #endif
 
-#include <FFOS/sig.h>
+#include <FFOS/signal.h>
 ffsig_handler _ffsig_userhandler;

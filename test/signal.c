@@ -2,12 +2,11 @@
 2020, Simon Zolin
 */
 
-#include <FFOS/sig.h>
+#include <FFOS/signal.h>
 #include <FFOS/thread.h>
 #include <FFOS/test.h>
 
 #ifdef FF_UNIX
-#include <FFOS/signal.h>
 void test_unixsignal()
 {
 	ffkq kq = ffkq_create();
@@ -74,10 +73,13 @@ void test_unixsignal()
 }
 #endif
 
+static ffuint sig_number;
+
 static void sig_handler(struct ffsig_info *inf)
 {
 	fflog("Signal:%xu  Address:0x%p  Flags:%xu"
 		, inf->sig, inf->addr, inf->flags);
+	sig_number = inf->sig;
 }
 
 int FFTHREAD_PROCCALL sig_thdfunc(void *param)
@@ -97,6 +99,18 @@ void test_sig(int sig)
 	ffsig_subscribe(&sig_handler, sigs_fault, FF_COUNT(sigs_fault));
 	ffthread th = ffthread_create(sig_thdfunc, (void*)(ffsize)sig, 0);
 	ffthread_join(th, -1, NULL);
+}
+
+void test_sig_ctrlc()
+{
+	fflog("Please press CTRL+C");
+	static const ffuint sigs[] = { FFSIG_INT };
+	ffsig_subscribe(sig_handler, sigs, FF_COUNT(sigs));
+
+	while (sig_number == 0) {
+		ffthd_sleep(500);
+	}
+	xieq((ffuint)FFSIG_INT, sig_number);
 }
 
 void test_sig_abort()
