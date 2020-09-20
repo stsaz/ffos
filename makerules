@@ -15,12 +15,10 @@ FFOS_SRC := $(FFOS)/FFOS/ffos.c \
 
 ifeq ($(OS),win)
 FFOS_SKT := $(FFOS_OBJ_DIR)/ffwin-skt.o
-FFOS_WREG := $(FFOS_OBJ_DIR)/ffwreg.o
 
 else
 FFOS_SRC += $(FFOS)/FFOS/ffunix.c
 FFOS_SKT :=
-FFOS_WREG :=
 endif
 
 FFOS_HDR := $(wildcard $(FFOS)/FFOS/*.h) \
