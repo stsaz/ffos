@@ -215,10 +215,10 @@ static inline void* _ff_wsa_getfunc(ffsock sk, const GUID *guid)
 	return func;
 }
 
-FF_EXTN LPFN_DISCONNECTEX _ff_DisconnectEx;
-FF_EXTN LPFN_CONNECTEX _ff_ConnectEx;
-FF_EXTN LPFN_ACCEPTEX _ff_AcceptEx;
-FF_EXTN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
+FF_EXTERN LPFN_DISCONNECTEX _ff_DisconnectEx;
+FF_EXTERN LPFN_CONNECTEX _ff_ConnectEx;
+FF_EXTERN LPFN_ACCEPTEX _ff_AcceptEx;
+FF_EXTERN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
 
 static inline int _ff_wsa_getfuncs()
 {
@@ -602,4 +602,6 @@ Return number of shifted bytes */
 static ffsize ffiovec_shift(ffiovec *iov, ffsize n);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/socket-compat.h>
+#endif

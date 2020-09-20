@@ -11,7 +11,7 @@ ffdl_errstr
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 
@@ -69,7 +69,7 @@ end:
 	return rc;
 }
 
-FF_EXTN signed char _ffdl_open_supports_flags;
+FF_EXTERN signed char _ffdl_open_supports_flags;
 
 static inline ffdl ffdl_open(const char *filename, ffuint flags)
 {

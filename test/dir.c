@@ -4,11 +4,11 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/string.h>
 #include <FFOS/dir.h>
+#include <FFOS/path.h>
 #include <FFOS/file.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>
 #include <ffbase/stringz.h>
-
 
 
 #ifdef FF_UNIX
@@ -20,7 +20,6 @@ Copyright (c) 2013 Simon Zolin
 static int test_path(const char *dirname)
 {
 	(void)dirname;
-	FFTEST_FUNC;
 
 	x(ffpath_abs(FFSTR("/absolute/path")));
 	x(!ffpath_abs(FFSTR("./relative/path")));
@@ -31,8 +30,8 @@ static int test_path(const char *dirname)
 
 #ifdef FF_WIN
 	{
-		ffsyschar wname[FF_MAXPATH];
-		if (0 == ff_utow(wname, FFCNT(wname), dirname, -1, 0))
+		wchar_t wname[256];
+		if (0 >= ffsz_utow(wname, FF_COUNT(wname), dirname))
 			return -1;
 		x(ffpath_islong(wname));
 	}
@@ -45,13 +44,11 @@ static int test_path(const char *dirname)
 	return 0;
 }
 
-static int test_dirwalk(char *path, size_t pathcap)
+static int test_dirwalk(char *path, ffsize pathcap)
 {
 	ffdir d;
 	ffdirentry ent;
 	int nfiles = 0;
-
-	FFTEST_FUNC;
 
 	d = ffdir_open(path, pathcap, &ent);
 	x(d != NULL);
@@ -68,16 +65,16 @@ static int test_dirwalk(char *path, size_t pathcap)
 		name = ffdir_entry_name(&ent);
 		x(name != NULL);
 
-		fi = ffdir_entryinfo(&ent);
+		fi = ffdir_entry_info(&ent);
 		x(fi != NULL);
 
 		if (!ffsz_cmp(name, ".")) {
-			x(fffile_isdir(fffile_infoattr(fi)));
+			x(fffile_isdir(fffileinfo_attr(fi)));
 			nfiles++;
 		}
 		else if (!ffsz_cmp(name, "tmpfile")) {
-			x(!fffile_isdir(fffile_infoattr(fi)));
-			x(1 == fffile_infosize(fi));
+			x(!fffile_isdir(fffileinfo_attr(fi)));
+			x(1 == fffileinfo_size(fi));
 			nfiles++;
 		}
 	}
@@ -87,14 +84,12 @@ static int test_dirwalk(char *path, size_t pathcap)
 	return 0;
 }
 
-int test_dir()
+void test_dir()
 {
 	fffd f;
-	char path[FF_MAXPATH];
-	char fn[FF_MAXPATH];
-	size_t pathcap = FFCNT(path);
-
-	FFTEST_FUNC;
+	char path[256];
+	char fn[256];
+	ffsize pathcap = FF_COUNT(path);
 
 	strcpy(path, TMP_PATH);
 	strcat(path, "/tmpdir");
@@ -104,7 +99,7 @@ int test_dir()
 
 	x(0 == ffdir_make(path));
 
-	f = fffile_open(fn, FFO_CREATE | FFO_TRUNC | FFO_WRONLY);
+	f = fffile_open(fn, FFFILE_CREATE | FFFILE_TRUNCATE | FFFILE_WRITEONLY);
 	x(f != FFFILE_NULL);
 	x(1 == fffile_write(f, FFSTR("1")));
 	x(0 == fffile_close(f));
@@ -112,16 +107,14 @@ int test_dir()
 	test_dirwalk(path, pathcap);
 	test_path(path);
 
-	x(0 == fffile_rm(fn));
-	x(0 == ffdir_rm(path));
+	x(0 == fffile_remove(fn));
+	x(0 == ffdir_remove(path));
 
 
 	strcpy(path, TMP_PATH);
 	strcat(path, "/tmpdir/tmpdir2");
-	x(0 == ffdir_rmake(path, strlen(TMP_PATH)));
-	x(0 == ffdir_rm(path));
-	path[strlen(path) - FFSLEN("/tmpdir2")] = '\0';
-	x(0 == ffdir_rm(path));
-
-	return 0;
+	x(0 == ffdir_make_all(path, strlen(TMP_PATH)));
+	x(0 == ffdir_remove(path));
+	path[strlen(path) - FFS_LEN("/tmpdir2")] = '\0';
+	x(0 == ffdir_remove(path));
 }

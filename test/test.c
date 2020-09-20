@@ -4,10 +4,19 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/process.h>
 #include <FFOS/random.h>
-#include <FFOS/atomic.h>
 #include <FFOS/netconf.h>
+#include <FFOS/sysconf.h>
 #include <FFOS/test.h>
+#include <FFOS/time.h>
+#include <FFOS/ffos-extern.h>
 #include <ffbase/stringz.h>
+
+// void test_types()
+// {
+	// int v = 1;
+	// x(FF_CMPSET(&v, 1, 2) && v == 2);
+	// x(!FF_CMPSET(&v, 1, 0) && v == 2);
+// }
 
 void test_netconf()
 {
@@ -19,7 +28,7 @@ void test_netconf()
 	ffnetconf_destroy(&nc);
 }
 
-void test_sconf()
+void test_sysconf()
 {
 	ffsysconf sc;
 	ffsysconf_init(&sc);
@@ -46,6 +55,7 @@ void test_rand()
 
 }
 
+#if 0
 void test_atomic()
 {
 	ffatomic a;
@@ -100,17 +110,7 @@ void test_atomic()
 #endif
 
 }
-
-void test_lock()
-{
-	fflock lk;
-	FFTEST_FUNC;
-
-	fflk_init(&lk);
-	x(0 != fflk_trylock(&lk));
-	x(0 == fflk_trylock(&lk));
-	fflk_unlock(&lk);
-}
+#endif
 
 void test_atomic();
 void test_backtrace();
@@ -124,14 +124,13 @@ void test_fileaio();
 void test_filemap();
 void test_kqu();
 void test_kqueue();
-void test_lock();
 void test_mem();
 void test_netconf();
 void test_perf();
 void test_pipe();
 void test_process();
 void test_rand();
-void test_sconf();
+void test_sysconf();
 void test_semaphore();
 void test_socket();
 void test_std();
@@ -139,7 +138,6 @@ void test_std_event();
 void test_thread();
 void test_time();
 void test_timer();
-void test_types();
 
 void test_sig_ctrlc();
 void test_sig_abort();
@@ -156,7 +154,6 @@ struct test_s {
 
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s atests[] = {
-	F(atomic),
 	F(backtrace),
 	F(cpu),
 	F(dir),
@@ -164,18 +161,15 @@ static const struct test_s atests[] = {
 	F(env),
 	F(error),
 	F(file),
-	F(fileaio),
 	F(filemap),
-	F(kqu),
 	F(kqueue),
-	F(lock),
 	F(mem),
 	F(netconf),
 	F(perf),
 	F(pipe),
 	F(process),
 	F(rand),
-	F(sconf),
+	F(sysconf),
 	F(semaphore),
 	F(socket),
 	F(std),
@@ -183,7 +177,14 @@ static const struct test_s atests[] = {
 	F(thread),
 	F(time),
 	F(timer),
-	F(types),
+#ifdef FF_WIN
+	F(winreg),
+#else
+	F(unixsignal),
+#endif
+	// F(atomic),
+	// F(fileaio),
+	// F(kqu),
 };
 static const struct test_s natests[] = {
 	F(sig_ctrlc),
@@ -191,11 +192,6 @@ static const struct test_s natests[] = {
 	F(sig_fpe),
 	F(sig_segv),
 	F(sig_stack),
-#ifdef FF_WIN
-	F(winreg),
-#else
-	F(unixsignal),
-#endif
 };
 #undef F
 
@@ -211,7 +207,7 @@ int main(int argc, const char **argv)
 		FFARRAY_FOREACH(atests, t) {
 			ffstdout_fmt("%s ", t->name);
 		}
-		ffstdout_fmt("\n");
+		ffstdout_fmt("\nManual: ");
 		FFARRAY_FOREACH(natests, t) {
 			ffstdout_fmt("%s ", t->name);
 		}

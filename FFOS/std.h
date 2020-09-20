@@ -57,7 +57,7 @@ static inline ffssize ffstdin_read(void *buf, ffsize cap)
 			wcap = cap;
 		}
 
-		BOOL b = ReadConsole(h, w, wcap, &read, NULL);
+		BOOL b = ReadConsoleW(h, w, wcap, &read, NULL);
 
 		ffssize r;
 		if (b) {
@@ -84,7 +84,7 @@ static inline ffssize _ffstd_write(HANDLE h, const void *data, ffsize len)
 		ffsize r = FF_COUNT(ws);
 		w = ffs_alloc_buf_utow(ws, &r, (char*)data, len);
 
-		BOOL b = WriteConsole(h, w, r, &written, NULL);
+		BOOL b = WriteConsoleW(h, w, r, &written, NULL);
 
 		if (w != ws)
 			ffmem_free(w);

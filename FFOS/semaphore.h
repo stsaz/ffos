@@ -10,7 +10,7 @@ ffsem_unlink
 ffsem_post
 */
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 
@@ -35,20 +35,20 @@ static inline ffsem ffsem_open(const char *name, ffuint flags, ffuint value)
 
 	ffsem s = FFSEM_NULL;
 	if (flags == FFSEM_CREATENEW) {
-		s = OpenSemaphore(SEMAPHORE_ALL_ACCESS, 0, wname);
+		s = OpenSemaphoreW(SEMAPHORE_ALL_ACCESS, 0, wname);
 		if (s != FFSEM_NULL) {
 			CloseHandle(s);
 			SetLastError(ERROR_ALREADY_EXISTS);
 			s = FFSEM_NULL;
 		} else {
-			s = CreateSemaphore(NULL, value, 0xffff, wname);
+			s = CreateSemaphoreW(NULL, value, 0xffff, wname);
 		}
 
 	} else if (flags == FFSEM_CREATE) {
-		s = CreateSemaphore(NULL, value, 0xffff, wname);
+		s = CreateSemaphoreW(NULL, value, 0xffff, wname);
 
 	} else if (flags == 0) {
-		s = OpenSemaphore(SEMAPHORE_ALL_ACCESS, 0, wname);
+		s = OpenSemaphoreW(SEMAPHORE_ALL_ACCESS, 0, wname);
 
 	} else {
 		SetLastError(ERROR_INVALID_PARAMETER);

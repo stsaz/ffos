@@ -3,6 +3,7 @@
 */
 
 #include <FFOS/process.h>
+#include <FFOS/pipe.h>
 #include <FFOS/file.h>
 #include <FFOS/test.h>
 
@@ -26,7 +27,7 @@ void test_process()
 		(void)ffps_kill(ffps_curhdl());
 	}
 
-	uint i = 0;
+	ffuint i = 0;
 #ifdef FF_UNIX
 	args[i++] = "/bin/echo";
 
@@ -76,7 +77,7 @@ void test_process()
 #endif
 
 	x_sys(FFPS_NULL != (h = ffps_exec(args[0], args, env)));
-	x_sys(0 != ffps_wait(h, 0, &cod) && fferr_last() == ETIMEDOUT);
+	x_sys(0 != ffps_wait(h, 0, &cod) && fferr_last() == FFERR_TIMEOUT);
 	(void)ffps_kill(h);
 	x_sys(0 == ffps_wait(h, -1, &cod));
 	fflog("process exited with code %d", (int)cod);

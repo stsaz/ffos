@@ -24,13 +24,13 @@ int ffaddr_info(ffaddrinfo **a, const char *host, const char *svc, int flags)
 	const ffsyschar *phost = NULL, *psvc = NULL;
 
 	if (host != NULL) {
-		if (0 == ff_utow(whost, FFCNT(whost), host, -1, 0))
+		if (0 >= ffsz_utow(whost, FF_COUNT(whost), host))
 			return -1;
 		phost = whost;
 	}
 
 	if (svc != NULL) {
-		if (0 == ff_utow(wsvc, FFCNT(wsvc), svc, -1, 0))
+		if (0 >= ffsz_utow(wsvc, FF_COUNT(wsvc), svc))
 			return -1;
 		psvc = wsvc;
 	}
@@ -44,8 +44,8 @@ int ffaddr_name(struct sockaddr *a, size_t addrlen, char *host, size_t hostcap, 
 	ffsyschar whost[NI_MAXHOST], wsvc[NI_MAXSERV];
 	if (0 != (r = ffaddr_nameq(a, addrlen, whost, FF_TOINT(hostcap), wsvc, FF_TOINT(svccap), flags)))
 		return r;
-	ff_wtou(host, hostcap, whost, (size_t)-1, 0);
-	ff_wtou(svc, svccap, wsvc, (size_t)-1, 0);
+	ffsz_wtou(host, hostcap, whost);
+	ffsz_wtou(svc, svccap, wsvc);
 	return 0;
 }
 

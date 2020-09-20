@@ -17,7 +17,7 @@
 void test_file_diropen()
 {
 	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "ff.tmp");
-	ffdir_rm(fn);
+	ffdir_remove(fn);
 
 	x(0 == ffdir_make(fn));
 
@@ -25,10 +25,10 @@ void test_file_diropen()
 	x_sys(d != FFFILE_NULL);
 	fffileinfo fi = {};
 	x_sys(0 == fffile_info(d, &fi));
-	x(fffile_isdir(fffile_infoattr(&fi)));
+	x(fffile_isdir(fffileinfo_attr(&fi)));
 	x_sys(0 == fffile_close(d));
 
-	x_sys(0 == ffdir_rm(fn));
+	x_sys(0 == ffdir_remove(fn));
 	ffmem_free(fn);
 }
 
@@ -277,7 +277,8 @@ void test_file_info()
 
 	x(!fffile_isdir(fffileinfo_attr(&fi)));
 #ifdef FF_WIN
-	xieq(FILE_ATTRIBUTE_ARCHIVE, fffileinfo_attr(&fi));
+	x(fffileinfo_attr(&fi) == FILE_ATTRIBUTE_NORMAL
+		|| fffileinfo_attr(&fi) == FILE_ATTRIBUTE_ARCHIVE);
 #else
 	xieq(FFFILE_UNIX_REG, fffileinfo_attr(&fi) & FFFILE_UNIX_TYPEMASK);
 	x(0 != fffileinfo_owner(&fi));

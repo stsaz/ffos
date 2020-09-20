@@ -8,9 +8,9 @@
 void test_backtrace()
 {
 	ffthread_bt bt = {};
-	uint n = ffthread_backtrace(&bt);
+	ffuint n = ffthread_backtrace(&bt);
 	x(n != 0);
-	for (uint i = 0;  i != n;  i++) {
+	for (ffuint i = 0;  i != n;  i++) {
 
 		const ffsyschar *name = ffthread_backtrace_modname(&bt, i);
 		fflog("#%u: 0x%p %q [0x%p]"

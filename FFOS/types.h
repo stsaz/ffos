@@ -3,29 +3,12 @@ Target architecture, OS;  base types;  base macros.
 Copyright (c) 2013 Simon Zolin
 */
 
-#ifndef FF_VER
-
-#define FF_VER  0x010d0000
-
-#include <FFOS/detect-os.h>
-
-#if defined FF_LINUX
-	#ifndef __cplusplus
-		#define _GNU_SOURCE
-	#endif
-
-	#ifndef _LARGEFILE64_SOURCE
-		#define _LARGEFILE64_SOURCE 1
-	#endif
-
-	#if defined FF_OLDLIBC && defined FF_64
-		__asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); //override GLIBC_2.14
-	#endif
-
-	#if defined FF_GLIBCVER && FF_GLIBCVER < 229
-		__asm__(".symver pow,pow@GLIBC_2.2.5"); //override GLIBC_2.29
-	#endif
+#ifndef _FFOS_BASE_H
+#include <FFOS/base.h>
 #endif
+
+#ifndef FF_VER
+#define FF_VER
 
 #if defined FF_UNIX
 	#include <stdlib.h>
@@ -36,7 +19,6 @@ Copyright (c) 2013 Simon Zolin
 		FF_BADFD = -1
 	};
 
-	typedef char ffsyschar;
 	typedef int fffd;
 	typedef unsigned char byte;
 	typedef unsigned short ushort;
@@ -48,25 +30,7 @@ Copyright (c) 2013 Simon Zolin
 	#define FF_MSVC
 #endif
 
-#ifndef UNICODE
-	#define UNICODE
-#endif
-
-#ifndef _UNICODE
-	#define _UNICODE
-#endif
-
-#define _WIN32_WINNT FF_WIN_APIVER
-#define NOMINMAX
-#define _CRT_SECURE_NO_WARNINGS
-#define OEMRESOURCE //gui
-#include <winsock2.h>
-
-#define FF_LITTLE_ENDIAN
-
 #define FF_BADFD  INVALID_HANDLE_VALUE
-
-typedef WCHAR ffsyschar;
 
 typedef HANDLE fffd;
 
@@ -103,16 +67,6 @@ BOOL DllMain(HMODULE p1, DWORD reason, void *p3) \
 #endif
 
 #endif
-
-#define ffmem_alloc // ffbase won't define memory allocation functions
-#include <ffbase/base.h>
-#undef ffmem_alloc
-
-#include <FFOS/detect-compiler.h>
-#include <FFOS/compiler-gcc.h>
-
-typedef signed char ffint8;
-typedef int ffbool;
 
 #ifdef __cplusplus
 	#define FF_EXTN extern "C"
@@ -164,7 +118,5 @@ do { \
 #define FFDBG_PRINTLN(...)
 #endif
 
-
-#include <FFOS/number.h>
-
-#endif //FF_VER
+#include <FFOS/number-compat.h>
+#endif

@@ -107,6 +107,7 @@ enum FFSIG {
 
 #include <sys/signalfd.h>
 #include <sys/epoll.h>
+#include <signal.h>
 
 typedef int ffkqsig;
 #define FFKQSIG_NULL  (-1)

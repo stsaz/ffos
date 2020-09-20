@@ -57,9 +57,7 @@ TEST_OBJ := \
 	$(TEST_OUT_DIR)/environ.o \
 	$(TEST_OUT_DIR)/error.o \
 	$(TEST_OUT_DIR)/file.o \
-	$(TEST_OUT_DIR)/fileaio.o \
 	$(TEST_OUT_DIR)/filemap.o \
-	$(TEST_OUT_DIR)/kqu.o \
 	$(TEST_OUT_DIR)/kqueue.o \
 	$(TEST_OUT_DIR)/mem.o \
 	$(TEST_OUT_DIR)/perf.o \
@@ -71,20 +69,21 @@ TEST_OBJ := \
 	$(TEST_OUT_DIR)/std.o \
 	$(TEST_OUT_DIR)/test.o \
 	$(TEST_OUT_DIR)/thread.o \
-	$(TEST_OUT_DIR)/timer.o \
-	$(TEST_OUT_DIR)/types.o
-TEST_OBJ += $(TEST_OUT_DIR)/ffos.o
+	$(TEST_OUT_DIR)/timer.o
+# 	$(TEST_OUT_DIR)/fileaio.o
+# 	$(TEST_OUT_DIR)/kqu.o
+# TEST_OBJ += $(TEST_OUT_DIR)/ffos.o
 ifeq ($(OS),win)
-	TEST_OBJ += $(TEST_OUT_DIR)/ffwin.o $(TEST_OUT_DIR)/ffwin-skt.o $(TEST_OUT_DIR)/ffwreg.o
+# 	TEST_OBJ += $(TEST_OUT_DIR)/ffwin.o $(TEST_OUT_DIR)/ffwin-skt.o
 	TEST_OBJ += $(TEST_OUT_DIR)/winreg.o
 else
-	TEST_OBJ += $(TEST_OUT_DIR)/ffunix.o
+# 	TEST_OBJ += $(TEST_OUT_DIR)/ffunix.o
 	ifeq ($(OS),linux)
-		TEST_OBJ += $(TEST_OUT_DIR)/fflinux.o
+# 		TEST_OBJ += $(TEST_OUT_DIR)/fflinux.o
 	else ifeq ($(OS),freebsd)
-		TEST_OBJ += $(TEST_OUT_DIR)/ffbsd.o
+# 		TEST_OBJ += $(TEST_OUT_DIR)/ffbsd.o
 	else ifeq ($(OS),apple)
-		TEST_OBJ += $(TEST_OUT_DIR)/ffapple.o
+# 		TEST_OBJ += $(TEST_OUT_DIR)/ffapple.o
 	endif
 endif
 
@@ -94,7 +93,7 @@ clean:
 	$(RM) $(TEST_EXE) $(TEST_OBJ)
 
 TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) -Wall -Wextra -Werror -fvisibility=hidden
-TEST_CFLAGS += -DFF_DEBUG -O0 -g
+TEST_CFLAGS += -DFF_DEBUG -O0 -g -DFFOS_NO_COMPAT
 TEST_CXXFLAGS := $(TEST_CFLAGS)
 TEST_CFLAGS += -std=gnu99
 # TEST_CFLAGS += -fsanitize=address

@@ -2,6 +2,7 @@
 2020, Simon Zolin
 */
 
+#include <FFOS/time.h>
 #include <FFOS/timer.h>
 #include <FFOS/test.h>
 

@@ -32,7 +32,7 @@ Process, thread, IPC:
 * process - `FFOS/process.h`
 * process environment - `FFOS/process.h`
 * threads - `FFOS/thread.h`
-* UNIX signals - `FFOS/signal.h`, `FFOS/sig.h`
+* UNIX signals, execution exceptions - `FFOS/signal.h`
 * semaphores - `FFOS/semaphore.h`
 * process/thread performance counters `ffps_perf` - `FFOS/perf.h`
 * dynamically loaded libraries - `FFOS/dylib.h`
@@ -44,16 +44,14 @@ Network:
 * network configuration `ffnetconf` - `FFOS/netconf.h`
 
 Misc:
-* system types - `FFOS/types.h`
+* detect CPU, OS and compiler; base types; heap memory functions - `FFOS/base.h`
 * preprocessor detection of OS, CPU, compiler - `FFOS/detect-*.h`
 * directories - `FFOS/dir.h`
-* native file-system paths - `FFOS/dir.h`
+* native file-system paths - `FFOS/path.h`
 * timer, clock - `FFOS/timer.h`
-* heap memory - `FFOS/mem.h`
 * native system string - `FFOS/string.h`
 * date and time - `FFOS/time.h`
 * system error codes - `FFOS/error.h`
-* atomic integer functions - `FFOS/atomic.h`
 * CPUID - `FFOS/cpuid.h`
 * random number generator - `FFOS/random.h`
 

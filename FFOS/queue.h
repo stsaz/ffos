@@ -19,7 +19,7 @@ User event:
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 
@@ -405,4 +405,6 @@ static int ffkq_post(ffkq_postevent post, void *data);
 static void ffkq_post_consume(ffkq_postevent post);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/queue-compat.h>
+#endif

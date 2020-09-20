@@ -10,7 +10,7 @@ void test_semaphore_unnamed()
 	ffsem s;
 	x_sys(FFSEM_NULL != (s = ffsem_open(NULL, 0, 0)));
 	x(0 != ffsem_wait(s, 0));
-	x(fferr_last() == ETIMEDOUT);
+	x(fferr_last() == FFERR_TIMEOUT);
 
 	x_sys(0 == ffsem_post(s));
 	x_sys(0 == ffsem_post(s));
@@ -39,8 +39,8 @@ void test_semaphore_named()
 	x_sys(0 == ffsem_wait(s, 0));
 	x_sys(0 == ffsem_wait(s2, 0));
 	// cnt=0
-	x(0 != ffsem_wait(s, 0) && fferr_last() == ETIMEDOUT);
-	x(0 != ffsem_wait(s2, 0) && fferr_last() == ETIMEDOUT);
+	x(0 != ffsem_wait(s, 0) && fferr_last() == FFERR_TIMEOUT);
+	x(0 != ffsem_wait(s2, 0) && fferr_last() == FFERR_TIMEOUT);
 
 	x_sys(0 == ffsem_post(s));
 	x_sys(0 == ffsem_post(s2));

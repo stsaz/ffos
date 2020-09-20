@@ -15,12 +15,14 @@ fferr_str fferr_strptr
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 
 #include <FFOS/string.h>
 #include <ffbase/stringz.h>
+
+#define FFERR_TIMEOUT  WSAETIMEDOUT
 
 static inline int fferr_last()
 {
@@ -84,7 +86,7 @@ static inline int fferr_str(int code, char *buffer, ffsize cap)
 	return 0;
 }
 
-FF_EXTN char _fferr_buffer[1024];
+FF_EXTERN char _fferr_buffer[1024];
 
 static inline const char* fferr_strptr(int code)
 {
@@ -97,6 +99,8 @@ static inline const char* fferr_strptr(int code)
 static int fferr_str(int code, char *buffer, ffsize cap);
 #include <ffbase/stringz.h>
 #include <errno.h>
+
+#define FFERR_TIMEOUT  ETIMEDOUT
 
 static inline int fferr_last()
 {
@@ -187,4 +191,6 @@ static int fferr_str(int code, char *buffer, ffsize cap);
 static const char* fferr_strptr(int code);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/error-compat.h>
+#endif

@@ -45,7 +45,7 @@ static inline void* ffthread_backtrace_modbase(ffthread_bt *bt, ffuint i)
 		HMODULE mod;
 		ffuint f = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
 			| GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-		if (!GetModuleHandleEx(f, (wchar_t*)bt->frames[i], &mod))
+		if (!GetModuleHandleExW(f, (wchar_t*)bt->frames[i], &mod))
 			return NULL;
 		bt->base = mod;
 		bt->i_mod = i;
@@ -63,7 +63,7 @@ static inline const wchar_t* ffthread_backtrace_modname(ffthread_bt *bt, ffuint 
 		HMODULE mod;
 		ffuint f = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
 			| GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-		if (!GetModuleHandleEx(f, (wchar_t*)bt->frames[i], &mod))
+		if (!GetModuleHandleExW(f, (wchar_t*)bt->frames[i], &mod))
 			return NULL;
 		bt->base = mod;
 		bt->i_mod = i;

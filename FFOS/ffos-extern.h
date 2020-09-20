@@ -1,7 +1,7 @@
-/** ffos
+/** ffos: define external symbols
 */
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 

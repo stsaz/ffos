@@ -10,7 +10,7 @@ ffenv_locale
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 
@@ -113,7 +113,7 @@ static inline ffstr _ffsvar_next(ffstr *s)
 	return out;
 }
 
-FF_EXTN char **_ff_environ;
+FF_EXTERN char **_ff_environ;
 
 static inline int ffenv_init(void *unused, char **env)
 {

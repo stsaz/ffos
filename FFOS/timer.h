@@ -122,7 +122,7 @@ static int __stdcall _fftimer_tread(void *param)
 /** Send command to a timer thread and get the result */
 static int _fftimer_cmd(fftimer tmr, ffuint cmd)
 {
-	FF_WRITEONCE(tmr->ctl, cmd);
+	FFINT_WRITEONCE(tmr->ctl, cmd);
 	ffcpu_fence_release();
 	if (!SetEvent(tmr->evt)) // wake up timer thread
 		return -1;
@@ -340,4 +340,6 @@ static int fftimer_stop(fftimer tmr, ffkq kq);
 static void fftimer_consume(fftimer tmr);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/timer-compat.h>
+#endif

@@ -96,7 +96,7 @@ static wchar_t* _ffargv_to_cmdln(const char **argv)
 /** Start a new process with the specified command line */
 static ffps _ffps_exec_cmdln(const wchar_t *filename, wchar_t *cmdln, ffps_execinfo *i)
 {
-	STARTUPINFO si = {};
+	STARTUPINFOW si = {};
 	si.cb = sizeof(STARTUPINFO);
 
 	if (i->in != INVALID_HANDLE_VALUE) {
@@ -409,7 +409,11 @@ static inline ffps ffps_exec(const char *filename, const char **argv, const char
 	ffps_execinfo info = {};
 	info.argv = argv;
 	info.env = env;
-	info.in = info.out = info.err = FF_BADFD;
+#ifdef FF_WIN
+	info.in = info.out = info.err = INVALID_HANDLE_VALUE;
+#else
+	info.in = info.out = info.err = -1;
+#endif
 	return ffps_exec_info(filename, &info);
 }
 
@@ -446,4 +450,6 @@ Return NULL on error */
 static const char* ffps_filename(char *name, ffsize cap, const char *argv0);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/process-compat.h>
+#endif

@@ -5,7 +5,7 @@ Copyright (c) 2013 Simon Zolin
 
 #pragma once
 
-#include <FFOS/mem.h>
+#include <FFOS/base.h>
 static int fferr_str(int code, char *buffer, ffsize cap);
 #include <ffbase/string.h>
 
@@ -23,9 +23,7 @@ is translated into "select * from table". */
 
 #define FFSLEN(s)  (FFCNT(s) - 1)
 
-#define FFSTR(s)  (char*)(s), FFSLEN(s)
-
-#define FFSTRQ(s)  (ffsyschar*)TEXT(s), FFSLEN(s)
+#define FFSTR(s)  (char*)(s), FFS_LEN(s)
 
 #define FFCRLF "\r\n"
 
@@ -34,9 +32,7 @@ is translated into "select * from table". */
 #include <string.h>
 #include <wchar.h>
 
-#if !defined TEXT
-	#define TEXT(s)  s
-#endif
+#define FFSTRQ(s)  s, FFS_LEN(s)
 
 #define FF_NEWLN  "\n"
 
@@ -52,6 +48,7 @@ is translated into "select * from table". */
 #include <ffbase/unicode.h>
 
 #define FF_NEWLN  "\r\n"
+#define FFSTRQ(s)  L##s, FFS_LEN(s)
 
 #if defined FF_MSVC || defined FF_MINGW
 	#define strncasecmp  _strnicmp
@@ -66,27 +63,62 @@ is translated into "select * from table". */
 #define ffq_cpy2  wcscpy
 #define ffq_cat2  wcscat
 
+/** Convert UTF-8 to wide string.
+len: if -1 then 'src' is treated as null-terminated and 'dst' will also be null-terminated. */
+static inline ffsize ff_utow(wchar_t *dst, ffsize cap_wchars, const char *src, ffsize len, int flags)
+{
+	FF_ASSERT(flags == 0);
+	ffssize r;
+	if (len == (ffsize)-1)
+		r = ffsz_utow(dst, cap_wchars, src);
+	else {
+		r = ffutf8_to_utf16((char*)dst, cap_wchars * sizeof(wchar_t), src, len, FFUNICODE_UTF16LE);
+		r /= 2;
+	}
+	return (r >= 0) ? r : 0;
+}
+
+static inline ffssize _ffs_utow(wchar_t *dst, ffsize cap_wchars, const char *src, ffsize len)
+{
+	ffssize r;
+	r = ffutf8_to_utf16((char*)dst, cap_wchars * sizeof(wchar_t), src, len, FFUNICODE_UTF16LE);
+	if (r <= 0)
+		return r;
+	return r / 2;
+}
+
 /** Convert UTF-8 to wide string.  Allocate memory, if needed.
 dst: optional
 dstlen: capacity of 'dst'.
 len: if -1 then 's' is treated as null-terminated and 'dst' will also be null-terminated.
 Return wide-string.  If not equal to 'dst' then free with ffmem_free().
   'dstlen' is set to the number of written characters. */
-FF_EXTN WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len);
-
-/** Convert UTF-8 to wide string.
-len: if -1 then 'src' is treated as null-terminated and 'dst' will also be null-terminated. */
-static inline ffsize ff_utow(wchar_t *dst, ffsize cap, const char *src, ffsize len, int flags)
+static inline wchar_t* ffs_utow(wchar_t *dst, size_t *dstlen, const char *s, size_t len)
 {
-	FF_ASSERT(flags == 0);
-	ffssize r;
-	if (len == (ffsize)-1)
-		r = ffsz_utow(dst, cap, src);
-	else {
-		r = ffutf8_to_utf16((char*)dst, cap * sizeof(wchar_t), src, len, FFUNICODE_UTF16LE);
-		r /= 2;
+	size_t wlen;
+
+	if (dst != NULL) {
+		wlen = ff_utow(dst, *dstlen, s, len, 0);
+		if (wlen != 0 || len == 0)
+			goto done;
 	}
-	return (r >= 0) ? r : 0;
+
+	//not enough space in the provided buffer.  Allocate a new one.
+	wlen = (len == (size_t)-1) ? strlen(s) + 1 : len + 1;
+	dst = ffmem_allocT(wlen, wchar_t);
+	if (dst == NULL)
+		return NULL;
+
+	wlen = ff_utow(dst, wlen, s, len, 0);
+	if (wlen == 0) {
+		ffmem_free(dst);
+		return NULL;
+	}
+
+done:
+	if (dstlen != NULL)
+		*dstlen = wlen;
+	return dst;
 }
 
 /** Convert wide string to UTF-8. */

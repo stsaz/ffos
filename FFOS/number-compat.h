@@ -2,18 +2,14 @@
 Copyright (c) 2016 Simon Zolin
 */
 
-#pragma once
-
-
-/** Get offset of a member in structure. */
-#define FFOFF(struct_T, member) \
-	(((size_t)&((struct_T *)0)->member))
+#define FFCNT  FF_COUNT
+#define FFOFF  FF_OFF
+#define FF_GETPTR  FF_STRUCTPTR
+#define FF_WRITEONCE  FFINT_WRITEONCE
+#define FF_READONCE  FFINT_READONCE
 
 #define FF_SIZEOF(struct_name, member)  sizeof(((struct_name*)0)->member)
 
-/** Get structure object by its member. */
-#define FF_GETPTR(struct_T, member_name, member_ptr) \
-	((struct_T*)((char*)member_ptr - FFOFF(struct_T, member_name)))
 
 /** Set new value and return old value. */
 #define FF_SWAP(obj, newval) \
@@ -35,13 +31,6 @@ do { \
 #define FF_CMPSET(obj, old, newval) \
 	((*(obj) == (old)) ? *(obj) = (newval), 1 : 0)
 
-#define FF_WRITEONCE(obj, val)  (*(volatile __typeof__(obj)*)&(obj) = (val))
-
-#define FF_READONCE(obj)  (*(volatile __typeof__(obj)*)&(obj))
-
-/** Get the number of elements in array. */
-#define FFCNT(ar)  (sizeof(ar) / sizeof(*(ar)))
-
 
 #define FF_BIT32(bit)  (1U << (bit))
 #define FF_BIT64(bit)  (1ULL << (bit))
@@ -49,11 +38,6 @@ do { \
 #define FF_LO32(i64)  ((uint)((i64) & 0xffffffff))
 #define FF_HI32(i64)  ((uint)(((i64) >> 32) & 0xffffffff))
 
-
-static FFINL uint64 ffmin64(uint64 a, uint64 b)
-{
-	return (a < b) ? a : b;
-}
 
 /** Get the maximum signed integer number. */
 static inline int64 ffmaxi(int64 a, int64 b)
@@ -86,27 +70,12 @@ do { \
 #define ffhton64(i)  ffint_be_cpu64(i)
 #define ffhton32(i)  ffint_be_cpu32(i)
 #define ffhton16(i)  ffint_be_cpu16(i)
-
-
-#define ff_ispow2(n)  ((((n) - 1) & (n)) == 0)
-
-/** Align number to lower/upper boundary. */
-
-/** @align: must be a power of 2. */
-#define ff_align_floor2(n, align)  ((n) & ~(uint64)((align) - 1))
-#define ff_align_ceil2(n, align)  ff_align_floor2((n) + (align) - 1, align)
-
-#define ff_align_floor(n, align)  ((n) / (align) * (align))
-#define ff_align_ceil(n, align)  ff_align_floor((n) + (align) - 1, align)
-
-/** Align number to the next power of 2.
-Note: values n=0 and n>2^63 aren't supported. */
-static FFINL uint64 ff_align_power2(uint64 n)
-{
-	uint one = ffbit_find64((n - 1) | 1);
-	FF_ASSERT(one > 1);
-	return FF_BIT64(64 - one + 1);
-}
+#define ff_ispow2  ffint_ispower2
+#define ff_align_power2  ffint_align_power2
+#define ff_align_floor2  ffint_align_floor2
+#define ff_align_ceil2  ffint_align_ceil2
+#define ff_align_floor  ffint_align_floor
+#define ff_align_ceil  ffint_align_ceil
 
 
 #ifndef FF_64

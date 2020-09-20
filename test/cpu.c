@@ -2,12 +2,11 @@
 Copyright (c) 2017 Simon Zolin
 */
 
-#include <FFOS/cpu.h>
-#include <FFOS/atomic.h>
+#include <FFOS/cpuid.h>
 #include <FFOS/test.h>
 
 
-int test_cpu(void)
+void test_cpu()
 {
 	ffcpuid c = {};
 	x(0 == ff_cpuid(&c, FFCPUID_VENDOR | FFCPUID_FEATURES | FFCPUID_BRAND));
@@ -24,15 +23,10 @@ int test_cpu(void)
 		, ff_cpuid_feat(&c, FFCPUID_POPCNT)
 		);
 
-#ifdef FF_WIN
-	x(0 != ffcpu_rdtsc());
-#else
-	printf("TSC:%llx\n"
-		, ffcpu_rdtsc());
-#endif
+#if 0
+	fflog("TSC:%xU", ffcpu_rdtsc());
 
 	x(0xffffffff == ffint_addcarry32(0xfffffffe, 1));
 	x(0xfffffffe + 1 == ffint_addcarry32(0xffffffff, 0xffffffff));
-
-	return 0;
+#endif
 }

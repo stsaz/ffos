@@ -261,7 +261,7 @@ static void test_kqu_post(void)
 
 	x_sys(0 == ffkqu_post_attach(&post, kq));
 
-	x_sys(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+	x_sys(0 == ffkqu_wait(kq, ents, FF_COUNT(ents), &t));
 
 	ffkev_init(&kev1);
 	ffkev_init(&kev2);
@@ -273,7 +273,7 @@ static void test_kqu_post(void)
 
 	for (;;) {
 		fflog("waiting for events...");
-		n = ffkqu_wait(kq, ents, FFCNT(ents), &t);
+		n = ffkqu_wait(kq, ents, FF_COUNT(ents), &t);
 		fflog("ffkqu_wait: %d", n);
 
 		if ((int)n < 0) {
@@ -299,7 +299,7 @@ static void test_kqu_post(void)
 		x(kev2.udata == &kev2);
 #endif
 
-		x_sys(0 == ffkqu_wait(kq, ents, FFCNT(ents), &t));
+		x_sys(0 == ffkqu_wait(kq, ents, FF_COUNT(ents), &t));
 		break;
 	}
 
@@ -351,7 +351,7 @@ int test_kqu()
 
 	for (;;) {
 		fflog("waiting for events...");
-		nevents = ffkqu_wait(kq, ents, FFCNT(ents), &tt);
+		nevents = ffkqu_wait(kq, ents, FF_COUNT(ents), &tt);
 		x(nevents != 0);
 		fflog("ffkqu_wait: %d", nevents);
 

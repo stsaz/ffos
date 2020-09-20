@@ -41,12 +41,12 @@ struct ffps_perf {
 #include <ntstatus.h>
 
 typedef NTSTATUS WINAPI (*_ff_NtQuerySystemInformation_t)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG, PULONG);
-FF_EXTN _ff_NtQuerySystemInformation_t _ff_NtQuerySystemInformation;
+FF_EXTERN _ff_NtQuerySystemInformation_t _ff_NtQuerySystemInformation;
 
 typedef BOOL WINAPI (*_ff_GetProcessMemoryInfo_t)(HANDLE, PROCESS_MEMORY_COUNTERS*, DWORD);
-FF_EXTN _ff_GetProcessMemoryInfo_t _ff_GetProcessMemoryInfo;
+FF_EXTERN _ff_GetProcessMemoryInfo_t _ff_GetProcessMemoryInfo;
 
-FF_EXTN LARGE_INTEGER _fftime_perffreq;
+FF_EXTERN LARGE_INTEGER _fftime_perffreq;
 
 typedef struct _FF_SYSTEM_THREAD_INFORMATION {
 	LARGE_INTEGER Reserved1[3];
@@ -94,7 +94,7 @@ static inline void* _ffps_info_get(void)
 
 		ffmem_free(data);
 		data = NULL;
-		cap = ff_align_ceil2(n, 4096);
+		cap = ffint_align_ceil2(n, 4096);
 	}
 
 	if (r != 0 || n < sizeof(SYSTEM_PROCESS_INFORMATION)) {

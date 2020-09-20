@@ -9,7 +9,7 @@ ffsysconf_get
 
 #pragma once
 
-#include <FFOS/types.h>
+#include <FFOS/base.h>
 
 #ifdef FF_WIN
 

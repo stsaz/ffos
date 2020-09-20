@@ -13,6 +13,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/semaphore.h>
 #include <FFOS/dylib.h>
 #include <FFOS/pipe.h>
+#include <FFOS/file.h>
 
 #include <psapi.h>
 #include <time.h>

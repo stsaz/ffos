@@ -36,6 +36,7 @@ void test_thread()
 
 #else
 	x(0 != ffthread_join(th, 0, &code));
+	xint_sys(FFERR_TIMEOUT, fferr_last());
 #endif
 
 	fflog("waiting for thread...");

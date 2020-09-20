@@ -73,7 +73,7 @@ static inline int fffile_info_path(const char *name, fffileinfo *fi)
 
 	WIN32_FILE_ATTRIBUTE_DATA fad;
 	int r;
-	if (0 != (r = !GetFileAttributesEx(w, GetFileExInfoStandard, &fad)))
+	if (0 != (r = !GetFileAttributesExW(w, GetFileExInfoStandard, &fad)))
 		goto end;
 
 	fi->dwFileAttributes = fad.dwFileAttributes;
@@ -131,9 +131,8 @@ static inline ffuint64 fffileinfo_id(const fffileinfo *fi)
 
 static inline int fffile_set_mtime(fffd fd, const fftime *last_write)
 {
-	FILETIME ft;
-	fftime_to_winftime(last_write, (fftime_winftime*)&ft);
-	return !SetFileTime(fd, NULL, NULL, &ft);
+	fftime_winftime ft = fftime_to_winftime(last_write);
+	return !SetFileTime(fd, NULL, NULL, (FILETIME*)&ft);
 }
 
 static inline int fffile_set_attr_path(const char *name, ffuint attr)
@@ -534,14 +533,14 @@ static inline int fffile_set_mtime_path(const char *name, const fftime *last_wri
 {
 #ifdef FF_LINUX
 	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
+	ts[0] = fftime_to_timespec(last_write);
+	ts[1] = fftime_to_timespec(last_write);
 	return utimensat(AT_FDCWD, name, ts, 0);
 
 #else
 	struct timeval tv[2];
-	fftime_to_timeval(last_write, &tv[0]);
-	fftime_to_timeval(last_write, &tv[1]);
+	tv[0] = fftime_to_timeval(last_write);
+	tv[1] = fftime_to_timeval(last_write);
 	return utimes(name, tv);
 #endif
 }
@@ -550,14 +549,14 @@ static inline int fffile_set_mtime(fffd fd, const fftime *last_write)
 {
 #if defined FF_LINUX && !defined FF_ANDROID
 	struct timespec ts[2];
-	fftime_to_timespec(last_write, &ts[0]);
-	fftime_to_timespec(last_write, &ts[1]);
+	ts[0] = fftime_to_timespec(last_write);
+	ts[1] = fftime_to_timespec(last_write);
 	return futimens(fd, ts);
 
 #else
 	struct timeval tv[2];
-	fftime_to_timeval(last_write, &tv[0]);
-	fftime_to_timeval(last_write, &tv[1]);
+	tv[0] = fftime_to_timeval(last_write);
+	tv[1] = fftime_to_timeval(last_write);
 	return futimes(fd, tv);
 #endif
 }
@@ -763,6 +762,28 @@ static ffuint64 fffileinfo_size(const fffileinfo *fi);
 /** Get last-write time from fileinfo */
 static fftime fffileinfo_mtime(const fffileinfo *fi);
 
+enum FFFILEATTR_WIN {
+	FFFILEATTR_WIN_READONLY = 1,
+	FFFILEATTR_WIN_HIDDEN = 2,
+	FFFILEATTR_WIN_SYSTEM = 4,
+	FFFILEATTR_WIN_DIR = 0x10,
+	FFFILEATTR_WIN_ARCHIVE = 0x20,
+	FFFILEATTR_WIN_DEVICE = 0x40,
+	FFFILEATTR_WIN_NORMAL = 0x80,
+};
+
+/** UNIX file mode: TTTT SSS RWXRWXRWX */
+enum FFFILEATTR_UNIX {
+	FFFILEATTR_UNIX_TYPEMASK = 0170000,
+	FFFILEATTR_UNIX_FIFO = 0010000,
+	FFFILEATTR_UNIX_CHAR = 0020000,
+	FFFILEATTR_UNIX_DIR = 0040000,
+	FFFILEATTR_UNIX_BLOCK = 0060000,
+	FFFILEATTR_UNIX_REG = 0100000,
+	FFFILEATTR_UNIX_LINK = 0120000,
+	FFFILEATTR_UNIX_SOCKET = 0140000,
+};
+
 /** Get file attributes from fffileinfo
 Return OS-specific value */
 static ffuint fffileinfo_attr(const fffileinfo *fi);
@@ -909,4 +930,6 @@ Windows: un-aligned truncate on a file with FFFILE_DIRECT fails with ERROR_INVAL
 static int fffile_trunc(fffd fd, ffuint64 len);
 
 
+#ifndef FFOS_NO_COMPAT
 #include <FFOS/file-compat.h>
+#endif
