@@ -12,17 +12,6 @@ Copyright (c) 2017 Simon Zolin
 #include <mach-o/dyld.h>
 
 
-void fftime_local(fftime_zone *tz)
-{
-	tzset();
-	struct tm tm;
-	time_t t = time(NULL);
-	localtime_r(&t, &tm);
-	tz->off = tm.tm_gmtoff;
-	tz->have_dst = 0;
-}
-
-
 /* sendfile() sends the whole file if 'file size' argument is 0.
 We don't want this behaviour. */
 int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)

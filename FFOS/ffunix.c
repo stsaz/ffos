@@ -24,14 +24,6 @@ Copyright (c) 2013 Simon Zolin
 #include <string.h>
 
 
-void fftime_now(fftime *t)
-{
-	struct timespec ts = {};
-	(void)clock_gettime(CLOCK_REALTIME, &ts);
-	fftime_fromtimespec(t, &ts);
-}
-
-
 #if !((defined FF_LINUX_MAINLINE || defined FF_BSD) && !defined FF_OLDLIBC)
 ffskt ffskt_accept(ffskt listenSk, struct sockaddr *a, socklen_t *addrSize, int flags)
 {

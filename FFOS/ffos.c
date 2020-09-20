@@ -17,11 +17,6 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/ffos-extern.h>
 
-#if !defined FF_WIN || FF_WIN >= 0x0600
-void fftime_init(void)
-{}
-#endif
-
 
 size_t ffiov_shiftv(ffiovec *iovs, size_t nels, uint64 *len)
 {

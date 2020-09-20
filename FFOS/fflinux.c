@@ -20,14 +20,6 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/eventfd.h>
 
 
-void fftime_local(fftime_zone *tz)
-{
-	tzset();
-	tz->off = -timezone;
-	tz->have_dst = daylight;
-}
-
-
 #if defined FF_LINUX_MAINLINE
 
 int ffskt_sendfile(ffskt sk, fffd fd, uint64 offs, uint64 sz, sf_hdtr *hdtr, uint64 *_sent, int flags)

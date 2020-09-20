@@ -85,37 +85,6 @@ ffbool ffpath_abs(const char *path, size_t len)
 }
 
 
-#if FF_WIN < 0x0600
-static VOID WINAPI (*_GetSystemTimePreciseAsFileTime)(LPFILETIME);
-void fftime_init(void)
-{
-	_GetSystemTimePreciseAsFileTime = (VOID WINAPI (*)(LPFILETIME))ffdl_addr(GetModuleHandle(L"kernel32.dll"), "GetSystemTimePreciseAsFileTime");
-}
-#endif
-
-
-void fftime_now(fftime *t)
-{
-	FILETIME ft;
-#if FF_WIN >= 0x0600
-	GetSystemTimePreciseAsFileTime(&ft);
-#else
-	if (_GetSystemTimePreciseAsFileTime != NULL)
-		_GetSystemTimePreciseAsFileTime(&ft);
-	else
-		GetSystemTimeAsFileTime(&ft);
-#endif
-	*t = fftime_from_winftime((void*)&ft);
-}
-
-void fftime_local(fftime_zone *tz)
-{
-	tzset();
-	tz->off = -timezone;
-	tz->have_dst = daylight;
-}
-
-
 WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 {
 	size_t wlen;

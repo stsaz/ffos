@@ -272,7 +272,7 @@ static inline int _ffps_perf(int who, struct ffps_perf *p, ffuint flags)
 
 	if (flags & FFPS_PERF_REALTIME) {
 		if (0 == (r = clock_gettime(CLOCK_MONOTONIC, &ts))) {
-			fftime_fromtimespec(&p->realtime, &ts);
+			p->realtime = fftime_from_timespec(&ts);
 		}
 		rc |= r;
 	}
@@ -280,8 +280,8 @@ static inline int _ffps_perf(int who, struct ffps_perf *p, ffuint flags)
 	if (flags & FFPS_PERF_RUSAGE) {
 		struct rusage u;
 		if (0 == (r = getrusage(who, &u))) {
-			fftime_fromtimeval(&p->usertime, &u.ru_utime);
-			fftime_fromtimeval(&p->systime, &u.ru_stime);
+			p->usertime = fftime_from_timeval(&u.ru_utime);
+			p->systime = fftime_from_timeval(&u.ru_stime);
 			p->pagefaults = u.ru_minflt + u.ru_majflt;
 			p->maxrss = u.ru_maxrss;
 			p->inblock = u.ru_inblock;
@@ -295,7 +295,7 @@ static inline int _ffps_perf(int who, struct ffps_perf *p, ffuint flags)
 	if (flags & FFPS_PERF_CPUTIME) {
 		clockid_t c = (who == RUSAGE_SELF) ? CLOCK_PROCESS_CPUTIME_ID : CLOCK_THREAD_CPUTIME_ID;
 		if (0 == (r = clock_gettime(c, &ts))) {
-			fftime_fromtimespec(&p->cputime, &ts);
+			p->cputime = fftime_from_timespec(&ts);
 		}
 		rc |= r;
 	}

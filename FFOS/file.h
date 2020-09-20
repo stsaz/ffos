@@ -455,10 +455,10 @@ static inline fftime fffileinfo_mtime(const fffileinfo *fi)
 	fftime t;
 
 #ifdef FF_APPLE
-	fftime_fromtimespec(&t, &fi->st_mtimespec);
+	t = fftime_from_timespec(&fi->st_mtimespec);
 
 #else
-	fftime_fromtimespec(&t, &fi->st_mtim);
+	t = fftime_from_timespec(&fi->st_mtim);
 #endif
 
 	return t;
