@@ -1,16 +1,10 @@
-/** CPUID.
-Copyright (c) 2018 Simon Zolin
+/** ffos: CPUID
+2018, Simon Zolin
 */
 
+#include <FFOS/base.h>
 
-#if defined FF_MSVC || defined FF_MINGW
-#include <intrin.h>
-#else
-#include <cpuid.h>
-#endif
-
-
-enum _FFCPUID_FEAT {
+enum FFCPUID_FEAT {
 	//ecx
 	FFCPUID_SSE3 = 0,
 	FFCPUID_SSSE3 = 9,
@@ -24,15 +18,17 @@ enum _FFCPUID_FEAT {
 };
 
 typedef struct ffcpuid {
-	uint maxid;
-	uint maxid_ex;
+	ffuint maxid;
+	ffuint maxid_ex;
 
 	char vendor[12 + 4];
-	uint features[2]; //enum _FFCPUID_FEAT
+	ffuint features[2]; // enum FFCPUID_FEAT
 	char brand[3 * 16 + 4];
 } ffcpuid;
 
 #if defined FF_MSVC || defined FF_MINGW
+
+#include <intrin.h>
 #define _ffcpuid(level, eax, ebx, ecx, edx) \
 do { \
 	int info[4]; \
@@ -44,29 +40,32 @@ do { \
 } while (0)
 
 #else
+
+#include <cpuid.h>
 #define _ffcpuid  __cpuid
+
 #endif
 
 enum FFCPUID_FLAGS {
-	FFCPUID_VENDOR = 1, //0
-	FFCPUID_FEATURES = 2, //1
-	FFCPUID_BRAND = 4, //0x80000002..0x80000004
-	_FFCPUID_EXT = FFCPUID_BRAND //0x8xxxxxxx
+	FFCPUID_VENDOR = 1, // 0
+	FFCPUID_FEATURES = 2, // 1
+	FFCPUID_BRAND = 4, // 0x80000002..0x80000004
+	_FFCPUID_EXT = FFCPUID_BRAND // 0x8xxxxxxx
 };
 
-/** Get CPU information.
-@flags: enum FFCPUID_FLAGS.
-Return 0 on success. */
-static FFINL int ff_cpuid(ffcpuid *c, uint flags)
+/** Get CPU information
+flags: enum FFCPUID_FLAGS
+Return 0 on success */
+static inline int ff_cpuid(ffcpuid *c, ffuint flags)
 {
 	int r = flags;
-	uint eax, ebx, ecx, edx;
+	ffuint eax, ebx, ecx, edx;
 
 	_ffcpuid(0, eax, ebx, ecx, edx);
 	c->maxid = eax;
 
 	if (flags & FFCPUID_VENDOR) {
-		uint *p = (uint*)c->vendor;
+		ffuint *p = (ffuint*)c->vendor;
 		*p++ = ebx;
 		*p++ = edx;
 		*p++ = ecx;
@@ -86,7 +85,7 @@ static FFINL int ff_cpuid(ffcpuid *c, uint flags)
 	}
 
 	if ((flags & FFCPUID_BRAND) && c->maxid_ex >= 0x80000004) {
-		uint *p = (uint*)c->brand;
+		ffuint *p = (ffuint*)c->brand;
 
 		_ffcpuid(0x80000002, eax, ebx, ecx, edx);
 		*p++ = eax;
@@ -113,10 +112,9 @@ static FFINL int ff_cpuid(ffcpuid *c, uint flags)
 }
 
 /**
-@val: enum _FFCPUID_FEAT.
-Return 1 if feature is supported.
-Note: the same as ffbit_testarr(). */
-static FFINL int ff_cpuid_feat(ffcpuid *c, uint val)
+val: enum FFCPUID_FEAT
+Return 1 if feature is supported */
+static inline int ff_cpuid_feat(ffcpuid *c, ffuint val)
 {
 	return !!(c->features[val / 32] & (1 << (val % 32)));
 }
