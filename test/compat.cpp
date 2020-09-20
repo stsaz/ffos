@@ -10,7 +10,6 @@
 #include <FFOS/dylib.h>
 #include <FFOS/error.h>
 #include <FFOS/file.h>
-#include <FFOS/mem.h>
 #include <FFOS/netconf.h>
 #include <FFOS/number.h>
 #include <FFOS/perf.h>

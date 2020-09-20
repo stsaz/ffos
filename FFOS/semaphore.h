@@ -87,7 +87,6 @@ static inline int ffsem_post(ffsem s)
 
 #elif defined FF_APPLE
 
-#include <FFOS/mem.h>
 #include <FFOS/error.h>
 #include <ffbase/string.h>
 #include <semaphore.h>
@@ -176,7 +175,6 @@ static inline int ffsem_post(ffsem sem)
 
 #else // Linux/BSD:
 
-#include <FFOS/mem.h>
 #include <FFOS/error.h>
 #include <semaphore.h>
 #include <fcntl.h>

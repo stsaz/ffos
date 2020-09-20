@@ -94,7 +94,6 @@ static inline const char* fferr_strptr(int code)
 
 #else // UNIX:
 
-#include <FFOS/mem.h>
 static int fferr_str(int code, char *buffer, ffsize cap);
 #include <ffbase/stringz.h>
 #include <errno.h>

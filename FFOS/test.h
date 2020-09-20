@@ -2,7 +2,6 @@
 2020, Simon Zolin
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/error.h>
 #include <FFOS/std.h>
 #include <FFOS/string.h>

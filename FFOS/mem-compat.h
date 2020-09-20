@@ -7,8 +7,6 @@
 /** Allocate an object of type T. */
 #define ffmem_tcalloc1(T)  ((T*)ffmem_calloc(1, sizeof(T)))
 
-#define ffmem_zalloc(size)  ffmem_calloc(1, size)
-
 /** Zero the object. */
 #define ffmem_tzero(p)  memset(p, 0, sizeof(*(p)))
 

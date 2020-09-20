@@ -5,7 +5,6 @@ Copyright (c) 2013 Simon Zolin
 #pragma once
 
 #include <FFOS/queue.h>
-#include <FFOS/mem.h>
 #include <FFOS/socket.h>
 
 

@@ -5,7 +5,6 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/string.h>
 #include <FFOS/socket.h>
 #include <FFOS/asyncio.h>
-#include <FFOS/mem.h>
 #include <FFOS/test.h>
 
 

@@ -2,7 +2,6 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/process.h>
 #include <FFOS/random.h>
 #include <FFOS/atomic.h>

@@ -2,7 +2,6 @@
 Copyright (c) 2017 Simon Zolin
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/win/reg.h>
 #include <FFOS/string.h>
 #include <FFOS/error.h>

@@ -26,7 +26,6 @@ timer thread:  SleepEx(alertable=1) etc. -> timer proc -> ffkq_post()
 main thread:   ffkq_wait() -> timer handler
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/thread.h>
 #include <FFOS/std.h>
 #include <FFOS/error.h>

@@ -14,7 +14,6 @@ ffenv_locale
 
 #ifdef FF_WIN
 
-#include <FFOS/mem.h>
 #include <FFOS/string.h>
 
 static inline int ffenv_update()

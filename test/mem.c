@@ -3,7 +3,6 @@ Copyright (c) 2013 Simon Zolin
 */
 
 #include <FFOS/cpu.h>
-#include <FFOS/mem.h>
 #include <FFOS/string.h>
 #include <FFOS/error.h>
 #include <FFOS/test.h>

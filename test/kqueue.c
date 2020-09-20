@@ -2,7 +2,6 @@
 2020, Simon Zolin
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/queue.h>
 #include <FFOS/socket.h>
 #include <FFOS/test.h>

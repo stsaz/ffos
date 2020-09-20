@@ -2,7 +2,6 @@
 Copyright (c) 2013 Simon Zolin
 */
 
-#include <FFOS/mem.h>
 #include <FFOS/string.h>
 #include <FFOS/dir.h>
 #include <FFOS/file.h>

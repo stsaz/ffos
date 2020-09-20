@@ -13,7 +13,6 @@ ffthread_backtrace_print
 #pragma once
 
 #include <FFOS/file.h>
-#include <FFOS/mem.h>
 #include <ffbase/string.h> // optional
 
 #ifdef FF_WIN

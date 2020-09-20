@@ -28,9 +28,9 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 #if defined FF_UNIX
+	#include <stdlib.h>
 	#include <unistd.h>
 	#include <string.h>
-	#include <stdint.h>
 
 	enum {
 		FF_BADFD = -1
