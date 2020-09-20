@@ -6,6 +6,7 @@
 ffps_perf
 ffthread_perf
 ffps_perf_diff ffps_perf_add
+fftime_monotonic
 */
 
 #pragma once
@@ -119,7 +120,7 @@ static inline void _fftime_from_filetime(fftime *t, const FILETIME *ft)
 	t->nsec = (n % (1000000 * 10)) * 100;
 }
 
-static inline fftime _fftime_perf()
+static inline fftime fftime_monotonic()
 {
 	if (_fftime_perffreq.QuadPart == 0)
 		QueryPerformanceFrequency(&_fftime_perffreq);
@@ -138,7 +139,7 @@ static inline int ffps_perf(struct ffps_perf *p, ffuint flags)
 	HANDLE ps = GetCurrentProcess();
 
 	if (flags & FFPS_PERF_REALTIME) {
-		p->realtime = _fftime_perf();
+		p->realtime = fftime_monotonic();
 	}
 
 	if (flags & (FFPS_PERF_SEPTIME | FFPS_PERF_CPUTIME)) {
@@ -212,7 +213,7 @@ static inline int ffthread_perf(struct ffps_perf *p, ffuint flags)
 	HANDLE th = GetCurrentThread();
 
 	if (flags & FFPS_PERF_REALTIME) {
-		p->realtime = _fftime_perf();
+		p->realtime = fftime_monotonic();
 	}
 
 	if (flags & (FFPS_PERF_SEPTIME | FFPS_PERF_CPUTIME)) {
@@ -264,6 +265,15 @@ static inline int ffthread_perf(struct ffps_perf *p, ffuint flags)
 #else // UNIX:
 
 #include <sys/resource.h>
+
+static inline fftime fftime_monotonic()
+{
+	fftime t = {};
+	struct timespec ts;
+	if (0 == clock_gettime(CLOCK_MONOTONIC, &ts))
+		t = fftime_from_timespec(&ts);
+	return t;
+}
 
 static inline int _ffps_perf(int who, struct ffps_perf *p, ffuint flags)
 {
@@ -367,3 +377,6 @@ static inline void ffps_perf_add(struct ffps_perf *dst, const struct ffps_perf *
 	dst->vctxsw += src->vctxsw;
 	dst->ivctxsw += src->ivctxsw;
 }
+
+/** Get monotonic time since some unspecified starting point */
+static fftime fftime_monotonic();
