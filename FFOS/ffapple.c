@@ -12,26 +12,6 @@ Copyright (c) 2017 Simon Zolin
 #include <mach-o/dyld.h>
 
 
-int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
-{
-	fffd fd[2];
-	if (0 != pipe(fd))
-		return -1;
-	*rd = fd[0];
-	*wr = fd[1];
-
-	if ((flags & FFO_NONBLOCK)
-		&& (0 != ffpipe_nblock(*rd, 1)
-			|| 0 != ffpipe_nblock(*wr, 1))) {
-		close(*rd);
-		close(*wr);
-		return -1;
-	}
-
-	return 0;
-}
-
-
 void fftime_local(fftime_zone *tz)
 {
 	tzset();

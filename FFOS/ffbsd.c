@@ -12,17 +12,6 @@ Copyright (c) 2013 Simon Zolin
 #include <sys/sysctl.h>
 
 
-int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
-{
-	fffd fd[2];
-	if (0 != pipe2(fd, flags))
-		return -1;
-	*rd = fd[0];
-	*wr = fd[1];
-	return 0;
-}
-
-
 void fftime_local(fftime_zone *tz)
 {
 	tzset();

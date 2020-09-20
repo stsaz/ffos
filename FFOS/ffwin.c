@@ -12,6 +12,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/atomic.h>
 #include <FFOS/semaphore.h>
 #include <FFOS/dylib.h>
+#include <FFOS/pipe.h>
 
 #include <psapi.h>
 #include <time.h>
@@ -62,50 +63,6 @@ end:
 	ffmem_free(wdisk);
 	ffmem_free(wmount);
 	return rc;
-}
-
-
-int ffpipe_create2(fffd *rd, fffd *wr, uint flags)
-{
-	if (0 != ffpipe_create(rd, wr))
-		return -1;
-
-	if ((flags & FFO_NONBLOCK)
-		&& (0 != ffpipe_nblock(*rd, 1)
-			|| 0 != ffpipe_nblock(*wr, 1))) {
-		ffpipe_close(*rd);
-		ffpipe_close(*wr);
-		return -1;
-	}
-
-	return 0;
-}
-
-fffd ffpipe_create_named(const char *name, uint flags)
-{
-	fffd f;
-	ffsyschar *w, ws[FF_MAXFN];
-	size_t n = FFCNT(ws);
-	if (NULL == (w = ffs_utow(ws, &n, name, -1)))
-		return FF_BADFD;
-
-	f = ffpipe_create_namedq(w, flags);
-	if (w != ws)
-		ffmem_free(w);
-	return f;
-}
-
-ssize_t ffpipe_read(fffd fd, void *buf, size_t cap)
-{
-	ssize_t r;
-	if (0 > (r = fffile_read(fd, buf, cap))) {
-		if (fferr_last() == ERROR_BROKEN_PIPE)
-			return 0;
-		else if (fferr_last() == ERROR_NO_DATA)
-			fferr_set(EAGAIN);
-		return -1;
-	}
-	return r;
 }
 
 
@@ -184,13 +141,6 @@ WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 done:
 	if (dstlen != NULL)
 		*dstlen = wlen;
-	return dst;
-}
-
-
-static FFINL ffsyschar * scopyz(ffsyschar *dst, const ffsyschar *sz) {
-	while (*sz != '\0')
-		*dst++ = *sz++;
 	return dst;
 }
 
@@ -304,17 +254,9 @@ void ffclk_totime(fftime *t)
 }
 
 
-static void pipename(ffsyschar *dst, size_t cap, int pid)
+static void pipename(char *dst, size_t cap, int pid)
 {
-	char s[64];
-#ifdef FF_MSVC
-	_ultoa_s(pid, s, FFCNT(s), 10);
-#else
-	sprintf(s, "%u", pid);
-#endif
-	dst = scopyz(dst, L"\\\\.\\pipe\\ffps-");
-	dst += ff_utow(dst, cap, s, strlen(s), 0);
-	*dst = L'\0';
+	ffs_format(dst, cap, FFPIPE_NAME_PREFIX "ffps-%u%Z", pid);
 }
 
 static BOOL __stdcall _ffsig_ctrlhandler(DWORD ctrl)
@@ -330,7 +272,7 @@ static BOOL __stdcall _ffsig_ctrlhandler(DWORD ctrl)
 
 int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler handler)
 {
-	ffsyschar name[64];
+	char name[64];
 	ffbool ctrl_c = 0;
 	size_t n;
 
@@ -353,7 +295,7 @@ int ffsig_ctl(ffsignal *t, fffd kq, const int *sigs, size_t nsigs, ffaio_handler
 	}
 
 	pipename(name, FFCNT(name), ffps_curid());
-	t->fd = ffpipe_create_namedq(name, 0);
+	t->fd = ffpipe_create_named(name, 0);
 	if (t->fd == FF_BADFD)
 		return 1;
 
@@ -394,24 +336,24 @@ int ffsig_read(ffsignal *t, ffsiginfo *si)
 
 int ffps_sig(int pid, int sig)
 {
-	ffsyschar name[64];
+	char name[64];
 	fffd p = FF_BADFD;
 	byte b;
 
 	pipename(name, FFCNT(name), pid);
 
 	const ffuint share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-	p = CreateFileW(name, GENERIC_WRITE, share, NULL, OPEN_EXISTING, 0, NULL);
+	p = CreateFileA(name, GENERIC_WRITE, share, NULL, OPEN_EXISTING, 0, NULL);
 	if (p == FF_BADFD)
 		return 1;
 
 	b = (byte)sig;
 	if (1 != fffile_write(p, &b, 1)) {
-		ffpipe_client_close(p);
+		ffpipe_close(p);
 		return 1;
 	}
 
-	ffpipe_client_close(p);
+	ffpipe_close(p);
 	return 0;
 }
 

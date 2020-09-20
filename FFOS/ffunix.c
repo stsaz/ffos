@@ -24,60 +24,6 @@ Copyright (c) 2013 Simon Zolin
 #include <string.h>
 
 
-fffd ffpipe_create_named(const char *name, uint flags)
-{
-	ffskt p;
-	struct sockaddr_un a = {};
-#if defined FF_BSD || defined FF_APPLE
-	a.sun_len = sizeof(struct sockaddr_un);
-#endif
-	a.sun_family = AF_UNIX;
-	size_t len = strlen(name);
-	if (len + 1 > sizeof(a.sun_path))
-		return FF_BADFD;
-	strcpy(a.sun_path, name);
-
-	if (FF_BADFD == (p = ffskt_create(AF_UNIX, SOCK_STREAM | (flags & SOCK_NONBLOCK), 0)))
-		return FF_BADFD;
-
-	if (0 != bind(p, (void*)&a, sizeof(struct sockaddr_un)))
-		goto err;
-
-	if (0 != ffskt_listen(p, 0))
-		goto err;
-
-	return p;
-
-err:
-	ffskt_close(p);
-	return FF_BADFD;
-}
-
-fffd ffpipe_connect(const char *name)
-{
-	ffskt p;
-	struct sockaddr_un a = {};
-#if defined FF_BSD || defined FF_APPLE
-	a.sun_len = sizeof(struct sockaddr_un);
-#endif
-	a.sun_family = AF_UNIX;
-	size_t len = strlen(name);
-	if (len + 1 > sizeof(a.sun_path))
-		return FF_BADFD;
-	strcpy(a.sun_path, name);
-
-	if (FF_BADSKT == (p = ffskt_create(AF_UNIX, SOCK_STREAM, 0)))
-		return FF_BADFD;
-
-	if (0 != ffskt_connect(p, (void*)&a, sizeof(struct sockaddr_un))) {
-		ffskt_close(p);
-		return FF_BADFD;
-	}
-
-	return p;
-}
-
-
 void fftime_now(fftime *t)
 {
 	struct timespec ts = {};

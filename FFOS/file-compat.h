@@ -1,15 +1,30 @@
 #include <FFOS/error.h>
 #include <FFOS/std.h>
+#include <FFOS/pipe.h>
+#include <FFOS/filemap.h>
+
 #ifdef FF_WIN
-#include <FFOS/win/file.h>
-#include <FFOS/win/fmap.h>
+#include <FFOS/string.h>
+#include <FFOS/time.h>
 #define ffstd_write  _ffstd_write
 #define ffstd_fread(fd, d, len)  ffpipe_read(fd, d, len)
+enum {
+	FF_MAXPATH = 4096
+	, FF_MAXFN = 256
+};
+typedef uint64 fffileid;
+#define ffterm_detach()  FreeConsole()
+
 #else
-#include <FFOS/unix/file.h>
-#include <FFOS/unix/fmap.h>
+
 #define ffstd_write  write
 #define ffstd_fread(fd, buf, cap)  fffile_read(fd, buf, cap)
+enum {
+	FF_MAXPATH = 4096
+	, FF_MAXFN = 256
+};
+typedef ino_t fffileid;
+#define ffterm_detach()
 #endif
 
 #ifdef FF_WIN
@@ -18,9 +33,11 @@
 #define O_WRONLY  FFFILE_WRITEONLY
 #define O_RDWR  FFFILE_READWRITE
 #define O_TRUNC  FFFILE_TRUNCATE
+#define FFO_NONBLOCK  FFPIPE_NONBLOCK
 #else
 #define FFO_NONBLOCK  FFFILE_NONBLOCK
 #endif
+
 #define FFO_CREATE  FFFILE_CREATE
 #define FFO_CREATENEW  FFFILE_CREATENEW
 #define FFO_APPEND  (FFFILE_CREATE | FFFILE_APPEND)
