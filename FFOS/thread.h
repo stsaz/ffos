@@ -126,7 +126,7 @@ static inline void _fftimespec_addms(struct timespec *ts, ffuint64 ms)
 static inline int ffthread_join(ffthread t, ffuint timeout_ms, int *exit_code)
 {
 	void *result;
-	int r = FFTHREAD_ETIMEDOUT;
+	int r;
 
 	if (timeout_ms == (ffuint)-1) {
 		r = pthread_join(t, &result);
@@ -151,6 +151,10 @@ static inline int ffthread_join(ffthread t, ffuint timeout_ms, int *exit_code)
 		r = pthread_timedjoin_np(t, &result, &ts);
 	}
 
+#else
+	else {
+		r = pthread_join(t, &result);
+	}
 #endif
 
 	if (r != 0) {
@@ -202,7 +206,7 @@ static ffthread ffthread_create(ffthread_proc proc, void *param, ffsize stack_si
 
 /** Join with the thread
 timeout_ms: -1: infinite
-  APPLE, ANDROID: values >=0 aren't supported
+  APPLE, ANDROID: values >=0 are treated as -1
 exit_code: optional
 Return
   0 if thread exited;

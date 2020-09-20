@@ -24,4 +24,21 @@ void test_thread()
 	xieq(1234, code);
 
 	ffthread_detach(th); // noop
+
+	x_sys(FFTHREAD_NULL != (th = ffthread_create(&thdfunc, (void*)0x12345, 0)));
+	fflog("waiting for thread...");
+
+#ifdef FF_APPLE
+	x(0 == ffthread_join(th, 0, &code));
+	xieq(1234, code);
+
+	x_sys(FFTHREAD_NULL != (th = ffthread_create(&thdfunc, (void*)0x12345, 0)));
+
+#else
+	x(0 != ffthread_join(th, 0, &code));
+#endif
+
+	fflog("waiting for thread...");
+	x(0 == ffthread_join(th, 2000, &code));
+	xieq(1234, code);
 }
