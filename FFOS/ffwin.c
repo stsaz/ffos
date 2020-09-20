@@ -66,25 +66,6 @@ end:
 }
 
 
-// [/\\] | \w:[\0/\\]
-ffbool ffpath_abs(const char *path, size_t len)
-{
-	char c;
-	if (len == 0)
-		return 0;
-
-	if (ffpath_slash(path[0]))
-		return 1;
-
-	c = path[0] | 0x20; //lower
-	return
-		(len >= FFSLEN("c:") && c >= 'a' && c <= 'z'
-		&& path[1] == ':'
-		&& (len == FFSLEN("c:") || ffpath_slash(path[2]))
-		);
-}
-
-
 WCHAR* ffs_utow(WCHAR *dst, size_t *dstlen, const char *s, size_t len)
 {
 	size_t wlen;
@@ -323,26 +304,5 @@ int ffps_sig(int pid, int sig)
 	}
 
 	ffpipe_close(p);
-	return 0;
-}
-
-
-int ffpath_infoinit(const char *path, ffpathinfo *st)
-{
-	DWORD spc, bps, fc, c;
-	BOOL b;
-	WCHAR wpath_s[256];
-	size_t wpath_len = FFCNT(wpath_s);
-	WCHAR *wpath = ffs_utow(wpath_s, &wpath_len, path, -1);
-	if (wpath == NULL)
-		return 1;
-
-	b = GetDiskFreeSpaceW(wpath, &spc, &bps, &fc, &c);
-	if (wpath != wpath_s)
-		ffmem_free(wpath);
-	if (!b)
-		return 1;
-
-	st->f_bsize = spc * bps;
 	return 0;
 }

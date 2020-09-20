@@ -38,6 +38,10 @@ static int test_path(const char *dirname)
 	}
 #endif
 
+	ffpathinfo st;
+	x_sys(0 == ffpath_infoinit(".", &st));
+	x_sys(0 != ffpath_info(&st, FFPATH_BLOCKSIZE));
+
 	return 0;
 }
 

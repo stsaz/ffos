@@ -169,8 +169,6 @@ static inline fffileinfo* ffdir_entry_info(ffdirentry *ent)
 	return &ent->info;
 }
 
-#include <FFOS/win/dir.h>
-
 #else // UNIX:
 
 #include <sys/stat.h>
@@ -279,8 +277,6 @@ static inline fffileinfo* ffdir_entry_info(ffdirentry *ent)
 	return (r == 0) ? &ent->info : NULL;
 }
 
-#include <FFOS/unix/dir.h>
-
 #endif
 
 
@@ -347,6 +343,7 @@ Return NULL on error */
 static fffileinfo* ffdir_entry_info(ffdirentry *ent);
 
 
+#ifndef FFOS_NO_COMPAT
 #define ffdir_rm  ffdir_remove
 #define ffdir_rmake  ffdir_make_all
 #define ffdir_entryinfo  ffdir_entry_info
@@ -354,4 +351,7 @@ static fffileinfo* ffdir_entry_info(ffdirentry *ent);
 #define ffdir_entryname(ent)  ((ent)->find_data.cFileName)
 #else
 #define ffdir_entryname  ffdir_entry_name
+#endif
+#define ENOMOREFILES  FFERR_NOMOREFILES
+#include <FFOS/path.h>
 #endif
