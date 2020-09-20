@@ -1,20 +1,46 @@
-/** Random number generator.
-Copyright (c) 2014 Simon Zolin
+/** ffos: random number generator
+2020, Simon Zolin
 */
 
 #pragma once
 
-#ifdef FF_UNIX
+#include <FFOS/base.h>
 
-/** Initialize random number generator. */
-#define ffrnd_seed  srandom
+#ifdef FF_WIN
 
-/** Get random number. */
-#define ffrnd_get  random
+static inline void ffrand_seed(ffuint seed)
+{
+	srand(seed);
+}
 
-#else //FF_WIN:
+static inline int ffrand_get()
+{
+	return rand();
+}
 
-#define ffrnd_seed  srand
-#define ffrnd_get  rand
+#else
 
+static inline void ffrand_seed(ffuint seed)
+{
+	srandom(seed);
+}
+
+static inline int ffrand_get()
+{
+	return random();
+}
+
+#endif
+
+
+/** Initialize random number generator */
+static void ffrand_seed(ffuint seed);
+
+/** Get random number */
+static int ffrand_get();
+
+
+#ifndef FFOS_NO_COMPAT
+#define ffrnd_seed  ffrand_seed
+#define ffrnd_get  ffrand_get
 #endif

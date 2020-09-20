@@ -28,7 +28,7 @@ void test_sconf()
 	x(0 != ffsysconf_get(&sc, FFSYSCONF_NPROCESSORS_ONLN));
 }
 
-void test_rnd()
+void test_rand()
 {
 	int n, n2;
 	fftime t;
@@ -36,13 +36,13 @@ void test_rnd()
 	FFTEST_FUNC;
 
 	fftime_now(&t);
-	ffrnd_seed(fftime_sec(&t));
-	n = ffrnd_get();
-	n2 = ffrnd_get();
+	ffrand_seed(fftime_sec(&t));
+	n = ffrand_get();
+	n2 = ffrand_get();
 	x(n != n2);
 
-	ffrnd_seed(fftime_sec(&t));
-	n2 = ffrnd_get();
+	ffrand_seed(fftime_sec(&t));
+	n2 = ffrand_get();
 	x(n == n2);
 
 }
@@ -131,7 +131,7 @@ void test_netconf();
 void test_perf();
 void test_pipe();
 void test_process();
-void test_rnd();
+void test_rand();
 void test_sconf();
 void test_semaphore();
 void test_socket();
@@ -174,7 +174,7 @@ static const struct test_s atests[] = {
 	F(perf),
 	F(pipe),
 	F(process),
-	F(rnd),
+	F(rand),
 	F(sconf),
 	F(semaphore),
 	F(socket),
