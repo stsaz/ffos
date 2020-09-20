@@ -42,6 +42,14 @@ static int test_str()
 		n = ff_wtou(s, FFCNT(s), L"asdf", 4, 0);
 		x(n == 4 && !memcmp(s, "asdf", 4));
 	}
+
+	ffsize n = 2;
+	wchar_t *ws = ffs_alloc_utow_addcap("asdf", 3, &n);
+	xieq(3, n);
+	ws[n++] = '/';
+	ws[n] = '\0';
+	x(!ffq_cmpz(ws, L"asd/"));
+	ffmem_free(ws);
 #endif
 
 	return 0;

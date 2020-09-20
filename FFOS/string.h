@@ -115,6 +115,24 @@ static inline wchar_t* ffsz_alloc_buf_utow(wchar_t *dst, ffsize cap_wchars, cons
 	return ffsz_alloc_utow(sz);
 }
 
+/**
+add_chars: N of additional characters to allocate the space for
+Return allocated buffer;  add_chars: N of characters written */
+static inline wchar_t* ffs_alloc_utow_addcap(const char *s, ffsize len, ffsize *add_chars)
+{
+	ffssize n;
+	if (0 > (n = _ffs_utow(NULL, 0, s, len)))
+		return NULL;
+	n += *add_chars;
+
+	wchar_t *w;
+	if (NULL == (w = (wchar_t*)ffmem_alloc(n * sizeof(wchar_t))))
+		return NULL;
+
+	*add_chars = _ffs_utow(w, n, s, len);
+	return w;
+}
+
 static inline wchar_t* ffs_alloc_buf_utow(wchar_t *dst, ffsize *cap_wchars, const char *s, ffsize len)
 {
 	ffssize r;
