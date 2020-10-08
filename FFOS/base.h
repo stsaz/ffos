@@ -63,12 +63,6 @@
 #include <FFOS/detect-compiler.h>
 #include <FFOS/compiler-gcc.h>
 
-#ifdef __cplusplus
-	#define FF_EXTERN extern "C"
-#else
-	#define FF_EXTERN extern
-#endif
-
 typedef signed char ffint8;
 typedef int ffbool;
 

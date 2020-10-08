@@ -387,6 +387,7 @@ end:
 #define ffwreg_val  ffwinreg_val
 #define ffwreg_info  ffwinreg_info
 #define FFWREG_BADKEY  FFWINREG_NULL
+#define ffwreg_open  ffwinreg_open
 #define ffwreg_close  ffwinreg_close
 #define ffwreg_isstr  ffwinreg_isstr
 #define ffwreg_write  ffwinreg_write
