@@ -218,6 +218,13 @@ static inline int fffile_hardlink(const char *oldpath, const char *newpath)
 	return r;
 }
 
+static inline int fffile_symlink(const char *target, const char *linkpath)
+{
+	(void)target;  (void)linkpath;
+	SetLastError(ERROR_NOT_SUPPORTED);
+	return -1;
+}
+
 
 /* Mask:
 ......0f  Windows file attributes
@@ -838,11 +845,9 @@ static int fffile_remove(const char *name);
 /** Create a hard link to the file */
 static int fffile_hardlink(const char *oldpath, const char *newpath);
 
-#ifndef FF_WIN
 /** Create a symbolic link to the file
 Windows: not implemented */
 static int fffile_symlink(const char *target, const char *linkpath);
-#endif
 
 
 /** Open or create a file
