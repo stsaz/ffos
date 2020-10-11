@@ -68,6 +68,7 @@ enum FFLANG {
 	FFLANG_ESP = LANG_SPANISH,
 	FFLANG_FRA = LANG_FRENCH,
 	FFLANG_GER = LANG_GERMAN,
+	FFLANG_IND = LANG_INDONESIAN,
 	FFLANG_RUS = LANG_RUSSIAN,
 };
 
@@ -190,6 +191,7 @@ enum FFLANG {
 	FFLANG_ENG,
 	FFLANG_ESP,
 	FFLANG_FRA,
+	FFLANG_IND,
 	FFLANG_RUS,
 };
 
@@ -221,6 +223,7 @@ static inline int ffenv_locale(ffuint flags)
 		{'e','n'}, // FFLANG_ENG
 		{'e','s'}, // FFLANG_ESP
 		{'f','r'}, // FFLANG_FRA
+		{'i','d'}, // FFLANG_IND
 		{'r','u'}, // FFLANG_RUS
 	};
 	int i = ffarr_binfind(langstr_sorted, FF_COUNT(langstr_sorted), val, 2, _fflang_cmp);
