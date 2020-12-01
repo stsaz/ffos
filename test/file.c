@@ -396,6 +396,16 @@ void test_file_mount()
 #endif
 }
 
+void test_file_rwwhole()
+{
+	char *fn = ffsz_allocfmt("%s/%s", TMP_PATH, "whole.tmp");
+	x(0 == fffile_writewhole(fn, "wholedata", 9, 0));
+	ffvec data = {};
+	x(0 == fffile_readwhole(fn, &data, -1));
+	xseq((ffstr*)&data, "wholedata");
+	ffmem_free(fn);
+}
+
 void test_file()
 {
 	test_file_create();
@@ -410,4 +420,5 @@ void test_file()
 	test_file_link();
 	test_file_rename();
 	test_file_mount();
+	test_file_rwwhole();
 }

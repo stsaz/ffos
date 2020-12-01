@@ -26,12 +26,14 @@ I/O:
 	fffile_readahead
 	fffile_write fffile_writeat
 	fffile_read fffile_readat
+	fffile_readwhole fffile_writewhole
 	fffile_trunc
 */
 
 #pragma once
 
 #include <FFOS/time.h>
+#include <ffbase/vector.h> // optional
 
 // TTTT SSS RWXRWXRWX
 enum FFFILE_UNIX_FILEATTR {
@@ -933,6 +935,71 @@ static ffssize fffile_readat(fffd fd, void *buf, ffsize size, ffuint64 off);
 Windows: un-aligned truncate on a file with FFFILE_DIRECT fails with ERROR_INVALID_PARAMETER
  due to un-aligned seeking request. */
 static int fffile_trunc(fffd fd, ffuint64 len);
+
+
+#ifdef _FFBASE_VECTOR_H
+
+/** Read the whole file into memory buffer
+limit: maximum allowed file size
+Return 0 on success */
+static inline int fffile_readwhole(const char *fn, ffvec *dst, ffuint64 limit)
+{
+	fffd f;
+	if (FFFILE_NULL == (f = fffile_open(fn, FFFILE_READONLY)))
+		return -1;
+
+	int r = -1;
+	ffuint64 sz = fffile_size(f);
+	if (sz > limit)
+		goto end; // user's limit is reached
+
+#ifndef FF_64
+	if (sz > 0xffffffff)
+		goto end; // too large file for 32-bit system
+#endif
+
+	if (NULL == ffvec_reallocT(dst, sz, char))
+		goto end;
+
+	if (sz != (ffsize)fffile_read(f, dst->ptr, sz))
+		goto end;
+
+	dst->len = sz;
+	r = 0;
+
+end:
+	fffile_close(f);
+	return r;
+}
+
+/** Create (overwrite) file from buffer.
+Delete file on I/O error.
+flags: flags for fffile_open(): enum FFFILE_OPEN
+  default: FFFILE_CREATE | FFFILE_TRUNCATE
+Return 0 on success */
+static inline int fffile_writewhole(const char *fn, const char *d, ffsize len, ffuint flags)
+{
+	if (flags == 0)
+		flags = FFFILE_CREATE | FFFILE_TRUNCATE;
+
+	int rc = -1;
+	fffd f;
+	if (FFFILE_NULL == (f = fffile_open(fn, flags | FFFILE_WRITEONLY)))
+		return -1;
+
+	if (len != (ffsize)fffile_write(f, d, len))
+		goto end;
+
+	rc = 0;
+
+end:
+	rc |= fffile_close(f);
+	if (rc != 0)
+		fffile_remove(fn);
+	return rc;
+}
+
+#endif
 
 
 #ifndef FFOS_NO_COMPAT
