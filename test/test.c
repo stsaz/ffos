@@ -139,6 +139,7 @@ void test_std_event();
 void test_thread();
 void test_time();
 void test_timer();
+void test_timerqueue();
 
 void test_sig_ctrlc();
 void test_sig_abort();
@@ -179,6 +180,7 @@ static const struct test_s atests[] = {
 	F(thread),
 	F(time),
 	F(timer),
+	F(timerqueue),
 #ifdef FF_WIN
 	F(winreg),
 #else

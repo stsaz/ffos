@@ -49,6 +49,7 @@ Misc:
 * directories - `FFOS/dir.h`
 * native file-system paths - `FFOS/path.h`
 * timer, clock - `FFOS/timer.h`
+* timer queue - `FFOS/timerqueue.h`
 * native system string - `FFOS/string.h`
 * date and time - `FFOS/time.h`
 * system error codes - `FFOS/error.h`

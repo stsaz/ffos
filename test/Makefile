@@ -70,7 +70,8 @@ TEST_OBJ := \
 	$(TEST_OUT_DIR)/std.o \
 	$(TEST_OUT_DIR)/test.o \
 	$(TEST_OUT_DIR)/thread.o \
-	$(TEST_OUT_DIR)/timer.o
+	$(TEST_OUT_DIR)/timer.o \
+	$(TEST_OUT_DIR)/timerqueue.o
 # 	$(TEST_OUT_DIR)/fileaio.o
 # 	$(TEST_OUT_DIR)/kqu.o
 # TEST_OBJ += $(TEST_OUT_DIR)/ffos.o
