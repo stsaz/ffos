@@ -60,6 +60,7 @@ TEST_OBJ := \
 	$(TEST_OUT_DIR)/filemap.o \
 	$(TEST_OUT_DIR)/kqueue.o \
 	$(TEST_OUT_DIR)/mem.o \
+	$(TEST_OUT_DIR)/path.o \
 	$(TEST_OUT_DIR)/perf.o \
 	$(TEST_OUT_DIR)/pipe.o \
 	$(TEST_OUT_DIR)/process.o \

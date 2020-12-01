@@ -17,7 +17,7 @@ Copyright (c) 2013 Simon Zolin
 #define TMP_PATH "."
 #endif
 
-static int test_path(const char *dirname)
+static int test_pathinfo(const char *dirname)
 {
 	(void)dirname;
 
@@ -97,7 +97,7 @@ void test_dir()
 	strcpy(fn, path);
 	strcat(fn, "/tmpfile");
 
-	x(0 == ffdir_make(path));
+	ffdir_make(path);
 
 	f = fffile_open(fn, FFFILE_CREATE | FFFILE_TRUNCATE | FFFILE_WRITEONLY);
 	x(f != FFFILE_NULL);
@@ -105,7 +105,7 @@ void test_dir()
 	x(0 == fffile_close(f));
 
 	test_dirwalk(path, pathcap);
-	test_path(path);
+	test_pathinfo(path);
 
 	x(0 == fffile_remove(fn));
 	x(0 == ffdir_remove(path));

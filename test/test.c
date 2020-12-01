@@ -126,6 +126,7 @@ void test_kqu();
 void test_kqueue();
 void test_mem();
 void test_netconf();
+void test_path();
 void test_perf();
 void test_pipe();
 void test_process();
@@ -165,6 +166,7 @@ static const struct test_s atests[] = {
 	F(kqueue),
 	F(mem),
 	F(netconf),
+	F(path),
 	F(perf),
 	F(pipe),
 	F(process),
