@@ -342,9 +342,10 @@ static inline ffssize ffstdout_fmt(const char *fmt, ...)
 	ffsize cap = 0;
 	ffsize r = ffstr_growfmtv(&s, &cap, fmt, args);
 	va_end(args);
-	if (r == 0)
-		return r;
-	return ffstdout_write(s.ptr, r);
+	if (r != 0)
+		r = ffstdout_write(s.ptr, r);
+	ffstr_free(&s);
+	return r;
 }
 
 /** %-formatted output to stderr
@@ -357,9 +358,10 @@ static inline ffssize ffstderr_fmt(const char *fmt, ...)
 	ffsize cap = 0;
 	ffsize r = ffstr_growfmtv(&s, &cap, fmt, args);
 	va_end(args);
-	if (r == 0)
-		return r;
-	return ffstderr_write(s.ptr, r);
+	if (r != 0)
+		r = ffstderr_write(s.ptr, r);
+	ffstr_free(&s);
+	return r;
 }
 
 #define fflog(fmt, ...)  (void) ffstdout_fmt(fmt "\n", ##__VA_ARGS__)
