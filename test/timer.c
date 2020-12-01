@@ -10,7 +10,8 @@ void test_time()
 {
 	fftime_zone tz;
 	fftime_local(&tz);
-	printf("zone: %d, have_dst: %u\n", tz.off, tz.have_dst);
+	printf("zone offset:%d, have_dst:%u, dst:%u, effective offset:%d\n"
+		, tz.off, tz.have_dst, tz.is_dst, tz.real_offset);
 
 	fftime t;
 	fftime_now(&t);

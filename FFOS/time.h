@@ -5,7 +5,6 @@
 /*
 fftime_now
 fftime_local
-fftime_add fftime_sub
 fftime_empty
 fftime_null
 Get time parts:
@@ -21,41 +20,16 @@ Convert:
 #pragma once
 
 #include <FFOS/base.h>
+static int fferr_str(int code, char *buffer, ffsize cap);
+#include <ffbase/time.h>
 #include <time.h>
-
-
-/** Time value */
-typedef struct fftime {
-	ffint64 sec; // seconds after Jan 1, 1970
-	ffuint nsec;
-} fftime;
 
 typedef struct fftime_zone {
 	int off; // UTC+X (in seconds)
 	ffuint have_dst; // may have daylight saving time rules
+	ffuint is_dst; // daylight saving time is active
+	int real_offset; // offset (seconds) considering DST
 } fftime_zone;
-
-/** Add time value */
-static inline void fftime_add(fftime *t, const fftime *add)
-{
-	t->sec += add->sec;
-	t->nsec += add->nsec;
-	if (t->nsec >= 1000000000) {
-		t->nsec -= 1000000000;
-		t->sec++;
-	}
-}
-
-/** Subtract time value */
-static inline void fftime_sub(fftime *t, const fftime *sub)
-{
-	t->sec -= sub->sec;
-	t->nsec -= sub->nsec;
-	if ((int)t->nsec < 0) {
-		t->nsec += 1000000000;
-		t->sec--;
-	}
-}
 
 #define fftime_empty(t)  ((t)->sec == 0 && (t)->nsec == 0)
 
@@ -222,7 +196,7 @@ static inline void fftime_local(fftime_zone *tz)
 
 #else
 
-/** Get UTC time */
+/** Get UTC time (since Jan 1 1970) */
 static inline void fftime_now(fftime *t)
 {
 	struct timespec ts = {};
@@ -233,6 +207,9 @@ static inline void fftime_now(fftime *t)
 /** Get local timezone */
 static inline void fftime_local(fftime_zone *tz)
 {
+	time_t gt = time(NULL);
+	struct tm tm;
+
 #ifdef FF_LINUX
 	tzset();
 	tz->off = -timezone;
@@ -240,12 +217,16 @@ static inline void fftime_local(fftime_zone *tz)
 
 #else
 	tzset();
-	struct tm tm;
-	time_t t = time(NULL);
-	localtime_r(&t, &tm);
+	localtime_r(&gt, &tm);
 	tz->off = tm.tm_gmtoff;
 	tz->have_dst = 0;
 #endif
+
+	gmtime_r(&gt, &tm);
+	tm.tm_isdst = -1;
+	time_t lt = mktime(&tm);
+	tz->is_dst = tm.tm_isdst;
+	tz->real_offset = gt - lt;
 }
 
 #endif
