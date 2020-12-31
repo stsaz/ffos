@@ -24,6 +24,7 @@ enum {
 enum {
 	SIGINT = 1,
 	SIGIO,
+	SIGCHLD,
 	SIGHUP,
 	SIGUSR1,
 };
