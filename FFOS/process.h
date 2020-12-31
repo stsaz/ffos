@@ -23,6 +23,9 @@ typedef struct ffps_execinfo {
 	Windows: double-quotes in arguments are not escaped */
 	const char **argv;
 
+	/** Set working directory */
+	const char *workdir;
+
 	/** List of environment variables
 	Windows: not implemented */
 	const char **env;
@@ -256,7 +259,13 @@ static inline ffps ffps_exec_info(const char *filename, ffps_execinfo *info)
 		dup2(info->out, STDOUT_FILENO);
 	if (info->err != -1)
 		dup2(info->err, STDERR_FILENO);
+
+	if (info->workdir != NULL && 0 != chdir(info->workdir))
+		goto end;
+
 	execve(filename, (char**)info->argv, (char**)info->env);
+
+end:
 	_exit(255);
 	return 0;
 }

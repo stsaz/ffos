@@ -44,7 +44,7 @@ void test_process()
 	fffd pr, pw;
 	x_sys(0 == ffpipe_create(&pr, &pw));
 	char buf[32];
-	ffps_execinfo info;
+	ffps_execinfo info = {};
 	info.argv = args;
 	info.env = env;
 	info.in = FFFILE_NULL;
