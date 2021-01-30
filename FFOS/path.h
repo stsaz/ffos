@@ -9,6 +9,8 @@ ffpath_abs
 ffpath_islong
 ffpath_infoinit
 ffpath_info
+ffpath_splitpath ffpath_splitpath_win ffpath_splitpath_unix
+ffpath_splitname
 ffpath_normalize
 */
 
@@ -96,6 +98,8 @@ static inline ffuint64 ffpath_info(ffpathinfo *st, ffuint name)
 	return 0;
 }
 
+#define ffpath_splitpath ffpath_splitpath_win
+
 #else // UNIX:
 
 #if defined FF_BSD || defined FF_APPLE
@@ -140,6 +144,8 @@ static inline ffuint64 ffpath_info(ffpathinfo *st, ffuint name)
 	return 0;
 }
 
+#define ffpath_splitpath ffpath_splitpath_unix
+
 #endif
 
 
@@ -157,6 +163,46 @@ static int ffpath_infoinit(const char *path, ffpathinfo *st);
 name: enum FFPATH_INFO */
 static ffuint64 ffpath_info(ffpathinfo *st, ffuint name);
 
+/** Split into path (without the last slash) and name so that "foo" is a name without path */
+static inline ffssize ffpath_splitpath_unix(const char *fn, ffsize len, ffstr *dir, ffstr *name)
+{
+	ffssize slash = ffs_rfindchar(fn, len, '/');
+	if (slash < 0) {
+		if (dir != NULL)
+			ffstr_null(dir);
+		if (name != NULL)
+			ffstr_set(name, fn, len);
+		return -1;
+	}
+	return ffs_split(fn, len, slash, dir, name);
+}
+
+static inline ffssize ffpath_splitpath_win(const char *fn, ffsize len, ffstr *dir, ffstr *name)
+{
+	ffssize slash = ffs_rfindany(fn, len, "/\\", 2);
+	if (slash < 0) {
+		if (dir != NULL)
+			ffstr_null(dir);
+		if (name != NULL)
+			ffstr_set(name, fn, len);
+		return -1;
+	}
+	return ffs_split(fn, len, slash, dir, name);
+}
+
+/** Split into name and extension so that ".foo" is a name without extension */
+static inline ffssize ffpath_splitname(const char *fn, ffsize len, ffstr *name, ffstr *ext)
+{
+	ffssize dot = ffs_rfindchar(fn, len, '.');
+	if (dot <= 0) {
+		if (name != NULL)
+			ffstr_set(name, fn, len);
+		if (ext != NULL)
+			ext->len = 0;
+		return 0;
+	}
+	return ffs_split(fn, len, dot, name, ext);
+}
 
 enum FFPATH_NORM {
 	FFPATH_SLASH_ONLY = 1, // split path by slash (default on UNIX)
