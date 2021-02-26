@@ -29,7 +29,9 @@ enum FFDL_OPEN {
 /** Prepare for using ffdl_open() with flags, because some Windows versions may not support this (ERROR_INVALID_PARAMETER).
 May affect the whole process (SetDllDirectoryW())
 filename: filename (.e.g. "\\dir\\file.dll") where to search for .dll dependencies
-  NULL: restore default behaviour */
+  NULL: restore default behaviour
+Return 0: LOAD_LIBRARY_SEARCH_* flags can be used;
+ 1: flags can't be used */
 static int _ffdl_init(const char *filename)
 {
 	int rc = 0;
@@ -57,10 +59,9 @@ static int _ffdl_init(const char *filename)
 		w = NULL;
 	}
 
+	rc = 1;
 	if (!SetDllDirectoryW(w))
 		goto end;
-
-	rc = 0;
 
 end:
 	if (w != ws)

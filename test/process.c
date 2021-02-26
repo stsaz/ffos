@@ -303,8 +303,10 @@ void test_ps_out()
 
 void test_process()
 {
+#ifdef FF_LINUX
 	int sigs[] = { SIGCHLD };
 	ffsig_mask(SIG_BLOCK, sigs, 1);
+#endif
 
 	test_ps();
 	test_ps_kq();

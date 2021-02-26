@@ -10,7 +10,7 @@ void _test_dl(const char *fn, const char *func)
 	ffdl h;
 	void *p;
 
-	h = ffdl_open(fn, 0);
+	h = ffdl_open(fn, FFDL_SELFDIR);
 	x_sys(h != NULL);
 	p = ffdl_addr(h, func);
 	x_sys(p != NULL);

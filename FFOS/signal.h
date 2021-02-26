@@ -311,7 +311,7 @@ Return 0 on success */
 static int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffuint nsigs);
 
 /** Raise the specified signal */
-static inline void ffsig_raise(ffuint sig)
+static inline void ffsig_raise(int sig)
 {
 	switch (sig) {
 	case FFSIG_ABORT:
