@@ -100,7 +100,7 @@ enum FFSIG {
 	FFSIG_ABORT = SIGABRT, // Abort signal
 	FFSIG_FPE = SIGFPE, // Floating-point exception
 	FFSIG_ILL = SIGILL, // Illegal Instruction
-	FFSIG_STACK = 0x80000000 | SIGSEGV, // Stack overflow
+	FFSIG_STACK = 0x40000000 | SIGSEGV, // Stack overflow
 };
 
 #if defined FF_LINUX

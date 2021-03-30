@@ -3,7 +3,7 @@
 */
 
 /*
-ffdir_make ffdir_make_all
+ffdir_make ffdir_make_all ffdir_make_path
 ffdir_remove
 Directory listing:
 	ffdir_open ffdir_close
