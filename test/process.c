@@ -198,18 +198,18 @@ static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info,
 		goto end;
 
 	if (output != NULL) {
-		if (0 != ffpipe_create(&rd, &wr))
+		if (0 != ffpipe_create2(&rd, &wr, FFPIPE_NONBLOCK))
 			goto end;
-		ffpipe_nonblock(rd, 1);
-		ffkq_attach(kq, rd, (void*)I_OUT, FFKQ_READ);
+		if (0 != ffkq_attach(kq, rd, (void*)I_OUT, FFKQ_READ))
+			goto end;
 		info->out = wr;
 	}
 
 	if (error != NULL) {
-		if (0 != ffpipe_create(&rd_err, &wr_err))
+		if (0 != ffpipe_create2(&rd_err, &wr_err, FFPIPE_NONBLOCK))
 			goto end;
-		ffpipe_nonblock(rd_err, 1);
-		ffkq_attach(kq, rd_err, (void*)I_ERR, FFKQ_READ);
+		if (0 != ffkq_attach(kq, rd_err, (void*)I_ERR, FFKQ_READ))
+			goto end;
 		info->err = wr_err;
 	}
 
@@ -235,6 +235,8 @@ static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info,
 				ps = FFPS_NULL;
 				status |= 1;
 				state = I_BOTH;
+				if (output == NULL && error == NULL)
+					status |= 2|4;
 			} else {
 				state = I_KQ;
 			}
