@@ -6,7 +6,7 @@
 ffstdin_read
 ffstdout_write ffstderr_write
 ffstdout_fmt ffstderr_fmt
-fflog
+fflog fflogz
 ffstd_keyread
 ffstd_keyparse
 ffstd_attr
@@ -364,7 +364,11 @@ static inline ffssize ffstderr_fmt(const char *fmt, ...)
 	return r;
 }
 
+/** Write %-formatted text line to stdout */
 #define fflog(fmt, ...)  (void) ffstdout_fmt(fmt "\n", ##__VA_ARGS__)
+
+/** Write text line to stdout */
+#define fflogz(sz)  (void) ffstdout_fmt("%s\n", sz)
 
 /** Read keyboard event from terminal
 fd: usually ffstdin
