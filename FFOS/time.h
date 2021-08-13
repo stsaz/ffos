@@ -192,6 +192,14 @@ static inline void fftime_local(fftime_zone *tz)
 	tzset();
 	tz->off = -timezone;
 	tz->have_dst = daylight;
+
+	struct tm tm;
+	time_t gt = time(NULL);
+	gmtime_s(&tm, &gt);
+	tm.tm_isdst = -1;
+	time_t lt = mktime(&tm);
+	tz->is_dst = tm.tm_isdst;
+	tz->real_offset = gt - lt;
 }
 
 #else
