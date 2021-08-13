@@ -134,22 +134,25 @@ Read value from Registry:
 */
 static inline int ffwinreg_read(ffwinreg k, const char *name, ffwinreg_val *val)
 {
-	int r = -1;
+	int r;
 	ffsize n;
-	DWORD type, type2, size;
+	DWORD type, size;
 	wchar_t wname_s[256], *wname = NULL;
-	char val_s[256], *valbuf = NULL;
-	void *dataptr = val->data;
+	char val_s[256], *valptr = NULL, *outbuf = NULL;
 
 	n = FF_COUNT(wname_s);
 	if (NULL == (wname = ffs_utow(wname_s, &n, name, -1)))
 		goto end;
 
+	valptr = val_s;
+	size = sizeof(val_s);
+	if (val->data != NULL) {
+		valptr = val->data;
+		size = val->datalen;
+	}
+
 	for (;;) {
-
-		size = sizeof(val_s);
-		r = RegQueryValueExW(k, wname, NULL, &type, (ffbyte*)val_s, &size);
-
+		r = RegQueryValueExW(k, wname, NULL, &type, (ffbyte*)valptr, &size);
 		if (r == 0 || r == ERROR_MORE_DATA) {
 		} else {
 			r = -1;
@@ -158,133 +161,87 @@ static inline int ffwinreg_read(ffwinreg k, const char *name, ffwinreg_val *val)
 
 		if (type == REG_SZ || type == REG_EXPAND_SZ) {
 
-			valbuf = val_s;
-			if (r == ERROR_MORE_DATA) {
-				if (NULL == (valbuf = (char*)ffmem_alloc(size))) {
-					r = -1;
-					goto end;
+			if (r == 0) {
+				n = size / sizeof(wchar_t);
+				if (n != 0 && ((wchar_t*)valptr)[n - 1] == '\0')
+					n--;
+
+				if (val->data == NULL) {
+					// temp buffer contains wchar data; allocate user buffer
+					r = ffs_wtou(NULL, 0, (wchar_t*)valptr, n);
+					if (NULL == (val->data = (char*)ffmem_alloc(r))) {
+						r = -1;
+						goto end;
+					}
+					val->datalen = r;
+
+				} else if (valptr == val->data) {
+					// user buffer contains wchar data; copy it to temp buffer
+					if (NULL == (outbuf = (char*)ffmem_alloc(size))) {
+						r = -1;
+						goto end;
+					}
+					ffmem_copy(outbuf, valptr, size);
+					valptr = outbuf;
 				}
 
-				r = RegQueryValueExW(k, wname, NULL, &type2, (ffbyte*)valbuf, &size);
-
-				if (r == 0) {
-
-				} else if (r == ERROR_MORE_DATA) {
-					// value has just become larger
-					ffmem_free(valbuf);
-					valbuf = NULL;
-					continue;
-
-				} else {
-					r = -1;
-					goto end;
-				}
-
-				if (type2 != type) {
-					// value type has just been changed
-					ffmem_free(valbuf);
-					valbuf = NULL;
-					continue;
-				}
-			}
-
-			if (((wchar_t*)valbuf)[size / sizeof(wchar_t)] == '\0')
-				size--;
-
-			if (val->data == NULL) {
-				r = ffs_wtou(NULL, 0, (wchar_t*)valbuf, size / sizeof(wchar_t));
+				r = ffs_wtou(val->data, val->datalen, (wchar_t*)valptr, n);
 				if (r < 0) {
-					SetLastError(EINVAL);
-					r = -1;
-					goto end;
-				}
-				if (NULL == (val->data = (char*)ffmem_alloc(r))) {
-					r = -1;
-					goto end;
+					val->datalen = size / sizeof(wchar_t) * 4;
+					r = 0;
+					goto end; // user buffer is too small
 				}
 				val->datalen = r;
+				break;
 			}
 
-			r = ffs_wtou(val->data, val->datalen, (wchar_t*)valbuf, size / sizeof(wchar_t));
-			if (r < 0) {
-				// buffer supplied by user is too small
+			if (outbuf != NULL) {
 				val->datalen = size / sizeof(wchar_t) * 4;
 				r = 0;
-				goto end;
+				goto end; // value is growing
 			}
-			val->datalen = r;
 
 		} else { //not text:
 
-			if (val->data == NULL) {
-				if (NULL == (val->data = (char*)ffmem_alloc(size))) {
-					r = -1;
-					goto end;
+			if (r == 0) {
+				if (val->data == NULL) {
+					if (outbuf == NULL) {
+						// temp stack buffer contains data; allocate user buffer
+						if (NULL == (outbuf = (char*)ffmem_alloc(size))) {
+							r = -1;
+							goto end;
+						}
+						ffmem_copy(outbuf, valptr, size);
+					}
+					val->data = outbuf;
+					outbuf = NULL;
 				}
 				val->datalen = size;
-
-			} else {
-				if (val->datalen < size) {
-					// buffer supplied by user is too small
-					val->datalen = size;
-					r = 0;
-					goto end;
-				}
+				break;
 			}
 
-			if (r == ERROR_MORE_DATA) {
-
-				size = val->datalen;
-				r = RegQueryValueExW(k, wname, NULL, &type2, (ffbyte*)val->data, &size);
-
-				if (r == 0) {
-
-				} else if (r == ERROR_MORE_DATA) {
-					// value has just become larger
-					if (val->data != dataptr) {
-						ffmem_free(val->data);
-						val->data = NULL;
-					}
-					continue;
-
-				} else {
-					r = -1;
-					goto end;
-				}
-
-				if (type2 != type) {
-					// value type has just been changed
-					if (val->data != dataptr) {
-						ffmem_free(val->data);
-						val->data = NULL;
-					}
-					continue;
-				}
-
+			if (val->data != NULL || outbuf != NULL) {
 				val->datalen = size;
-
-			} else {
-				ffmem_copy(val->data, val_s, size);
-				val->datalen = size;
+				r = 0;
+				goto end; // user buffer is too small OR value is growing
 			}
 		}
 
-		break;
+		if (NULL == (outbuf = (char*)ffmem_alloc(size))) {
+			r = -1;
+			goto end;
+		}
+		valptr = outbuf;
+	}
 
-	} //for()
-
-	val->type = type;
 	r = 1;
 
 end:
+	if (r >= 0)
+		val->type = type;
 	if (wname != wname_s)
 		ffmem_free(wname);
-	if (valbuf != val_s)
-		ffmem_free(valbuf);
-	if (r != 1 && val->data != dataptr) {
-		ffmem_free(val->data);
-		val->data = NULL;
-	}
+	ffmem_free(outbuf);
 	return r;
 }
 
