@@ -185,6 +185,7 @@ static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info,
 	info->out = FFFILE_NULL;
 	info->err = FFFILE_NULL;
 
+	ffkqsig kqsig = FFKQSIG_NULL;
 	ffkq kq = ffkq_create();
 	if (kq == FFKQ_NULL)
 		goto end;
@@ -193,7 +194,7 @@ static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info,
 	ffkq_time_set(&t, -1);
 
 	int sigs[] = { SIGCHLD };
-	ffkqsig kqsig = ffkqsig_attach(kq, sigs, 1, (void*)I_SIG);
+	kqsig = ffkqsig_attach(kq, sigs, 1, (void*)I_SIG);
 	if (kqsig == FFKQSIG_NULL)
 		goto end;
 

@@ -173,11 +173,3 @@ static const ffsyschar* ffthread_backtrace_modname(ffthread_bt *bt, ffuint i);
 
 /** Print backtrace to fd (e.g. ffstdout) */
 static void ffthread_backtrace_print(fffd fd, ffuint limit);
-
-
-#define ffthd_bt  ffthread_bt
-#define ffthd_backtrace  ffthread_backtrace
-#define ffthd_backtrace_frame  ffthread_backtrace_frame
-#define ffthd_backtrace_modbase  ffthread_backtrace_modbase
-#define ffthd_backtrace_modname  ffthread_backtrace_modname
-#define ffthd_backtrace_print  ffthread_backtrace_print

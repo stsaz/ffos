@@ -1,17 +1,12 @@
 /** Preprocessor detection of OS.
 Copyright (c) 2020 Simon Zolin
 
-OS family types:
-. FF_UNIX
-. FF_WIN
-
-OS types:
-. FF_LINUX (mainline Linux + android)
-. FF_LINUX_MAINLINE (mainline Linux)
-. FF_ANDROID (Linux android)
-. FF_APPLE (OS X)
-. FF_BSD
-. FF_WIN
+FF_UNIX:
+	FF_LINUX (mainline Linux + android):
+		FF_ANDROID
+	FF_APPLE (OS X)
+	FF_BSD
+FF_WIN
 */
 
 
@@ -21,7 +16,7 @@ OS types:
 	#ifdef ANDROID
 		#define FF_ANDROID
 	#else
-		#define FF_LINUX_MAINLINE
+		#define FF_LINUX_MAINLINE // obsolete (use `!defined FF_ANDROID`)
 	#endif
 
 #elif defined __APPLE__ && defined __MACH__

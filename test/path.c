@@ -47,6 +47,8 @@ void test_path_normalize()
 	// merge slashes
 	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("a//b"), 0);
 	xseq(&s, "a/b");
+	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("a//b//"), 0);
+	xseq(&s, "a/b/");
 	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("//a\\\\b//c"), FFPATH_SLASH_BACKSLASH | FFPATH_FORCE_SLASH);
 	xseq(&s, "/a/b/c");
 

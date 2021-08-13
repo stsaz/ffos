@@ -72,7 +72,7 @@ on FreeBSD:
 
 on Linux for Windows:
 
-	make -j8 OS=win CPREFIX=x86_64-w64-mingw32-
+	make -j8 OS=windows
 
 
 ## License

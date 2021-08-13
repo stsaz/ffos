@@ -31,6 +31,7 @@ I/O:
 */
 
 #pragma once
+#define _FFOS_FILE_H
 
 #include <FFOS/time.h>
 #include <ffbase/vector.h> // optional
@@ -436,7 +437,7 @@ static wchar_t* _ffs_utow_bslash(const char *s)
 
 /** Create or delete a mount point for disk
 When deleting, the mount point directory isn't deleted
-disk: volume GUI name: "\\?\Volume{GUID}\"
+disk: volume GUID name: "\\?\Volume{GUID}\"
   NULL: delete mount point
 mount: mount point (an existing empty directory) */
 static inline int fffile_mount(const char *disk, const char *mount)

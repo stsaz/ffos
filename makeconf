@@ -48,8 +48,10 @@ PACK_EXT := zip
 
 endif #OS
 
-
-# CPREFIX := x86_64-w64-mingw32-
+CPREFIX :=
+ifeq ($(OS),win)
+	CPREFIX := x86_64-w64-mingw32-
+endif
 C := $(CPREFIX)gcc
 LD := $(C)
 CXX := $(CPREFIX)g++

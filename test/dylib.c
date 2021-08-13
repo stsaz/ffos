@@ -32,6 +32,6 @@ void test_dylib()
 	_test_dl("/usr/lib/libSystem.B.dylib", "open");
 
 #else
-	_test_dl("kernel32.dll", "CreateFileW");
+	_test_dl("c:\\windows\\system32\\kernel32.dll", "CreateFileW");
 #endif
 }

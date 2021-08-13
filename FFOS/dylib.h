@@ -23,51 +23,31 @@ typedef HMODULE ffdl;
 #define FFDL_NULL  NULL
 
 enum FFDL_OPEN {
+	/** Look for dependent libs in:
+	 1. the same dir as the lib being loaded
+	 2. 'system32' dir
+	This changes default search path which is:
+	 1. the app dir
+	     or the same dir as the lib being loaded (LOAD_WITH_ALTERED_SEARCH_PATH)
+	 2. 'system32' & 'windows' dirs
+	 3. current dir (or #2 if SafeDllSearchMode=0)
+	 4. dirs from %PATH% */
 	FFDL_SELFDIR = LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32,
 };
 
-/** Prepare for using ffdl_open() with flags, because some Windows versions may not support this (ERROR_INVALID_PARAMETER).
-May affect the whole process (SetDllDirectoryW())
-filename: filename (.e.g. "\\dir\\file.dll") where to search for .dll dependencies
-  NULL: restore default behaviour
-Return 0: LOAD_LIBRARY_SEARCH_* flags can be used;
- 1: flags can't be used */
-static int _ffdl_init(const char *filename)
+/** Check if LoadLibraryExW() supports LOAD_LIBRARY_SEARCH_... flags
+Return 1: supports;
+ -1: doesn't support */
+static int _ffdl_init_flags()
 {
-	int rc = 0;
-	wchar_t ws[256], *w = ws;
+	int r = 1;
 	ffdl dl;
 	if (NULL == (dl = LoadLibraryExW(L"kernel32.dll", NULL, 0)))
 		return -1;
-	if (NULL != GetProcAddress(dl, "AddDllDirectory"))
-		goto end;
-
-	rc = -1;
-	if (filename != NULL) {
-		if (NULL == (w = ffsz_alloc_buf_utow(ws, FF_COUNT(ws), filename)))
-			goto end;
-
-		// "dir\\file" -> "dir"
-		ffsize len = ffwsz_len(w);
-		for (ffssize i = len - 1;  i >= 0;  i--) {
-			if (w[i] == '\\') {
-				w[i] = '\0';
-				break;
-			}
-		}
-	} else {
-		w = NULL;
-	}
-
-	rc = 1;
-	if (!SetDllDirectoryW(w))
-		goto end;
-
-end:
-	if (w != ws)
-		ffmem_free(w);
+	if (NULL == GetProcAddress(dl, "AddDllDirectory"))
+		r = -1;
 	FreeLibrary(dl);
-	return rc;
+	return r;
 }
 
 FF_EXTERN signed char _ffdl_open_supports_flags;
@@ -79,16 +59,13 @@ static inline ffdl ffdl_open(const char *filename, ffuint flags)
 		return FFDL_NULL;
 
 	if (flags != 0) {
-		if (_ffdl_open_supports_flags == 0) {
-			if (0 != _ffdl_init(filename))
-				_ffdl_open_supports_flags = -1; // OS doesn't support flags to LoadLibraryEx()
-			else
-				_ffdl_open_supports_flags = 1;
+		int f = _ffdl_open_supports_flags;
+		if (f == 0) {
+			f = _ffdl_init_flags();
+			_ffdl_open_supports_flags = f;
 		}
-		if (_ffdl_open_supports_flags < 0) {
-			// load dependencies from the same directory the current module was loaded
+		if (f < 0)
 			flags = LOAD_WITH_ALTERED_SEARCH_PATH;
-		}
 	}
 
 	ffdl dl = LoadLibraryExW(w, NULL, flags);

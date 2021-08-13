@@ -416,9 +416,7 @@ void test_file()
 	test_file_info();
 	test_file_temp();
 	test_file_winattr();
-	test_file_dosname();
 	test_file_link();
 	test_file_rename();
-	test_file_mount();
 	test_file_rwwhole();
 }

@@ -141,6 +141,8 @@ void test_time();
 void test_timer();
 void test_timerqueue();
 
+void test_file_dosname();
+void test_file_mount();
 void test_sig_ctrlc();
 void test_sig_abort();
 void test_sig_segv();
@@ -166,7 +168,6 @@ static const struct test_s atests[] = {
 	F(filemap),
 	F(kqueue),
 	F(mem),
-	F(netconf),
 	F(path),
 	F(perf),
 	F(pipe),
@@ -191,6 +192,9 @@ static const struct test_s atests[] = {
 	// F(kqu),
 };
 static const struct test_s natests[] = {
+	F(netconf), // network may be disabled
+	F(file_dosname), // 8.3 support may be disabled globally
+	F(file_mount), // need admin rights
 	F(sig_ctrlc),
 	F(sig_abort),
 	F(sig_fpe),
