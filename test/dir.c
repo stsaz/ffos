@@ -4,6 +4,7 @@ Copyright (c) 2013 Simon Zolin
 
 #include <FFOS/string.h>
 #include <FFOS/dir.h>
+#include <FFOS/dirscan.h>
 #include <FFOS/path.h>
 #include <FFOS/file.h>
 #include <FFOS/error.h>
@@ -84,6 +85,87 @@ static int test_dirwalk(char *path, ffsize pathcap)
 	return 0;
 }
 
+void test_chdir(const char *dir)
+{
+#ifdef FF_WIN
+	SetCurrentDirectoryA(dir);
+#else
+	chdir(dir);
+#endif
+}
+
+void test_dirscan()
+{
+	const char *name;
+	static const char *names[] = {
+		"ffostest-dirscan",
+			"filea",
+			"fileb",
+			"filec",
+	};
+	ffdir_make(names[0]);
+	test_chdir(names[0]);
+	for (int i = 1;  i != FF_COUNT(names);  i++) {
+		fffile_writewhole(names[i], "123", 3, 0);
+	}
+
+// default
+	ffdirscan d = {};
+	x_sys(0 == ffdirscan_open(&d, ".", 0));
+	for (int i = 1;  ;  i++) {
+		if (NULL == (name = ffdirscan_next(&d))) {
+			xieq(i, FF_COUNT(names));
+			break;
+		}
+		xsz(name, names[i]);
+	}
+	ffdirscan_close(&d);
+
+// wildcard
+	d.wildcard = "f*b";
+	x_sys(0 == ffdirscan_open(&d, ".", FFDIRSCAN_USEWILDCARD));
+	for (;;) {
+		if (NULL == (name = ffdirscan_next(&d)))
+			break;
+		xsz(name, names[2]);
+	}
+	ffdirscan_close(&d);
+
+// dont skip dot
+	x_sys(0 == ffdirscan_open(&d, ".", FFDIRSCAN_DOT));
+	for (int i = 1;  ;  i++) {
+		if (NULL == (name = ffdirscan_next(&d)))
+			break;
+		if (i == 1)
+			xsz(name, ".");
+		else if (i == 2)
+			xsz(name, "..");
+		else
+			break;
+	}
+	ffdirscan_close(&d);
+
+#ifdef FF_LINUX
+// fd
+	fffd f = fffile_open(".", FFFILE_READONLY);
+	x(f != FFFILE_NULL);
+	d.fd = f;
+	x_sys(0 == ffdirscan_open(&d, ".", FFDIRSCAN_USEFD));
+	for (int i = 1;  ;  i++) {
+		if (NULL == (name = ffdirscan_next(&d)))
+			break;
+		xsz(name, names[i]);
+	}
+	ffdirscan_close(&d);
+#endif
+
+	for (int i = 1;  i != FF_COUNT(names);  i++) {
+		fffile_remove(names[i]);
+	}
+	test_chdir("..");
+	ffdir_remove(names[0]);
+}
+
 void test_dir()
 {
 	fffd f;
@@ -117,4 +199,6 @@ void test_dir()
 	x(0 == ffdir_remove(path));
 	path[strlen(path) - FFS_LEN("/tmpdir2")] = '\0';
 	x(0 == ffdir_remove(path));
+
+	test_dirscan();
 }
