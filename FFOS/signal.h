@@ -8,7 +8,7 @@ ffsig_subscribe
 ffsig_raise
 ffkqsig_attach
 ffkqsig_detach
-ffkqsig_read
+ffkqsig_read ffkqsig_readinfo
 */
 
 #pragma once
@@ -20,6 +20,7 @@ struct ffsig_info {
 	void *addr; // FFSIG_SEGV: the virtual address of the inaccessible data
 	ffuint flags; // enum FFSIGINFO_F
 	void *si; // OS-specific information object
+	int pid; // Linux: sender's PID
 };
 
 typedef void (*ffsig_handler)(struct ffsig_info *i);
@@ -138,14 +139,23 @@ static inline int ffkqsig_detach(ffkqsig sig, ffkq kq)
 	return close(sig);
 }
 
-static inline int ffkqsig_read(ffkqsig sig, ffkq_event *ev)
+static inline int ffkqsig_readinfo(ffkqsig sig, ffkq_event *ev, struct ffsig_info *info)
 {
 	(void)ev;
-	struct signalfd_siginfo info;
-	ffssize r = read(sig, &info, sizeof(info));
-	if (r != sizeof(info))
+	struct signalfd_siginfo si;
+	ffssize r = read(sig, &si, sizeof(si));
+	if (r != sizeof(si))
 		return -1;
-	return info.ssi_signo;
+
+	if (info != NULL) {
+		info->pid = si.ssi_pid;
+	}
+	return si.ssi_signo;
+}
+
+static inline int ffkqsig_read(ffkqsig sig, ffkq_event *ev)
+{
+	return ffkqsig_readinfo(sig, ev, NULL);
 }
 
 #else // not Linux:
@@ -300,6 +310,7 @@ User must call it in a loop until it returns an error
 Return signal number
   <0 on error */
 static int ffkqsig_read(ffkqsig sig, ffkq_event *ev);
+static int ffkqsig_readinfo(ffkqsig sig, ffkq_event *ev, struct ffsig_info *info);
 
 #endif
 
