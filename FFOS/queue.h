@@ -31,7 +31,7 @@ typedef OVERLAPPED_ENTRY ffkq_event;
 
 static inline ffkq ffkq_create()
 {
-	return CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+	return CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 }
 
 static inline void ffkq_close(ffkq kq)

@@ -2,6 +2,7 @@
 */
 
 #include <FFOS/base.h>
+int _ffcpu_features;
 
 #ifdef FF_WIN
 

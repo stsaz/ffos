@@ -79,7 +79,7 @@ static inline void ffsockaddr_set_ipv6(ffsockaddr *a, const void *ipv6, ffuint p
 }
 
 /** Get IP address (IPv4 or IPv6) and L4 port */
-static inline ffslice ffsockaddr_ip_port(ffsockaddr *a, ffuint *port)
+static inline ffslice ffsockaddr_ip_port(const ffsockaddr *a, ffuint *port)
 {
 	ffslice s = {};
 	if (a->ip4.sin_family == AF_INET) {
@@ -467,6 +467,18 @@ static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
 	return n;
 }
 
+/** Skip/shift bytes in iovec array
+Return 0 if there's nothing left */
+static inline int ffiovec_array_shift(ffiovec *iov, ffsize n, ffsize skip)
+{
+	for (ffsize i = 0;  i != n;  i++) {
+		if (skip == 0 && iov[i].iov_len != 0)
+			return 1;
+		ffiovec_shift(&iov[i], skip);
+	}
+	return 0;
+}
+
 #endif
 
 
@@ -547,7 +559,7 @@ static int ffsock_connect(ffsock sk, const ffsockaddr *addr);
 /** Listen for connections on a socket
 Example:
   ffsock_listen(lsn_sk, SOMAXCONN);
-Return FFSOCK_NULL on error */
+Return 0 on success */
 static inline int ffsock_listen(ffsock listen_sk, ffuint max_conn)
 {
 	return listen(listen_sk, max_conn);
