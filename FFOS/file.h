@@ -1001,8 +1001,3 @@ end:
 }
 
 #endif
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/file-compat.h>
-#endif

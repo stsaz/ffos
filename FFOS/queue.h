@@ -403,8 +403,3 @@ static int ffkq_post(ffkq_postevent post, void *data);
 
 /** Consume data from user event: must be called on each signal */
 static void ffkq_post_consume(ffkq_postevent post);
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/queue-compat.h>
-#endif

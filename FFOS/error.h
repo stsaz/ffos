@@ -189,8 +189,3 @@ static int fferr_str(int code, char *buffer, ffsize cap);
 
 /** Get pointer to a system error message */
 static const char* fferr_strptr(int code);
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/error-compat.h>
-#endif

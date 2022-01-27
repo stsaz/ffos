@@ -2,6 +2,7 @@
 Copyright (c) 2017 Simon Zolin
 */
 
+#include <FFOS/types.h>
 #include <FFOS/dir.h>
 #include <FFOS/socket.h>
 #include <FFOS/process.h>

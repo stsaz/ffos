@@ -66,10 +66,4 @@
 typedef signed char ffint8;
 typedef int ffbool;
 
-#include <FFOS/mem-compat.h>
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/types.h>
-#endif
-
 #endif

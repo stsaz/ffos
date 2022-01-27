@@ -2,6 +2,7 @@
 Copyright (c) 2013 Simon Zolin
 */
 
+#include <FFOS/types.h>
 #include <FFOS/file.h>
 #include <FFOS/dir.h>
 #include <FFOS/time.h>

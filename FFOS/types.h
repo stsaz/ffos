@@ -19,7 +19,6 @@ Copyright (c) 2013 Simon Zolin
 		FF_BADFD = -1
 	};
 
-	typedef int fffd;
 	typedef unsigned char byte;
 	typedef unsigned short ushort;
 	typedef unsigned int uint;
@@ -31,8 +30,6 @@ Copyright (c) 2013 Simon Zolin
 #endif
 
 #define FF_BADFD  INVALID_HANDLE_VALUE
-
-typedef HANDLE fffd;
 
 //byte;
 typedef unsigned short ushort;
@@ -118,5 +115,17 @@ do { \
 #define FFDBG_PRINTLN(...)
 #endif
 
+#include <FFOS/error-compat.h>
+#include <FFOS/file-compat.h>
+#include <FFOS/mem-compat.h>
 #include <FFOS/number-compat.h>
+#include <FFOS/process.h>
+#include <FFOS/process-compat.h>
+#include <FFOS/socket.h>
+#include <FFOS/socket-compat.h>
+#include <FFOS/queue.h>
+#include <FFOS/queue-compat.h>
+#include <FFOS/thread-compat.h>
+#include <FFOS/timer-compat.h>
+
 #endif

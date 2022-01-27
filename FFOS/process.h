@@ -457,8 +457,3 @@ static void ffps_exit(int status);
 /** Get filename of the current process
 Return NULL on error */
 static const char* ffps_filename(char *name, ffsize cap, const char *argv0);
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/process-compat.h>
-#endif

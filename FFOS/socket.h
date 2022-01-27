@@ -600,8 +600,3 @@ static ffslice ffiovec_get(ffiovec *iov);
 /** Shift offset
 Return number of shifted bytes */
 static ffsize ffiovec_shift(ffiovec *iov, ffsize n);
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/socket-compat.h>
-#endif

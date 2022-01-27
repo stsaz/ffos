@@ -338,8 +338,3 @@ static int fftimer_stop(fftimer tmr, ffkq kq);
 
 /** Consume timer data: must be called on each timer signal */
 static void fftimer_consume(fftimer tmr);
-
-
-#ifndef FFOS_NO_COMPAT
-#include <FFOS/timer-compat.h>
-#endif

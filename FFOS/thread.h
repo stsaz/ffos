@@ -222,6 +222,3 @@ static ffuint64 ffthread_curid();
 
 /** Suspend the thread for the specified time */
 static void ffthread_sleep(ffuint msec);
-
-
-#include <FFOS/thread-compat.h>

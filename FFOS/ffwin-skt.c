@@ -2,6 +2,7 @@
 Copyright (c) 2016 Simon Zolin
 */
 
+#include <FFOS/types.h>
 #include <FFOS/asyncio.h>
 #include <FFOS/socket.h>
 #include <FFOS/netconf.h>
