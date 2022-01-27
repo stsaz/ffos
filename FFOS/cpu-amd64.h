@@ -99,12 +99,4 @@ static FFINL void ffatom_fence_seq_cst(void)
 		: : : "memory", "cc");
 }
 
-
-static FFINL uint64 ffcpu_rdtsc(void)
-{
-	uint lo, hi;
-	__asm volatile("rdtsc" : "=a" (lo), "=d" (hi));
-	return ((uint64)hi << 32) | lo;
-}
-
 #undef LOCK

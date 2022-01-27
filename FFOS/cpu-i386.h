@@ -106,8 +106,6 @@ static FFINL void ffatom32_and(ffatomic32 *a, uint v)
 /** Ensure no "load-load", "load-store" and "store-store" reorder by CPU. */
 #define ffatom_fence_acq_rel()  ff_compiler_fence()
 
-#define ffcpu_pause()  __asm volatile("pause")
-
 
 #ifndef FF_64
 
@@ -126,14 +124,6 @@ static FFINL void ffatom_fence_seq_cst(void)
 	__asm volatile(
 		LOCK "addl $0,(%%esp);"
 		: : : "memory", "cc");
-}
-
-
-static FFINL uint64 ffcpu_rdtsc(void)
-{
-	uint64 r;
-	__asm volatile("rdtsc" : "=A" (r));
-	return r;
 }
 
 #undef LOCK

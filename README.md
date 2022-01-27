@@ -53,7 +53,6 @@ Misc:
 * native system string - `FFOS/string.h`
 * date and time - `FFOS/time.h`
 * system error codes - `FFOS/error.h`
-* CPUID - `FFOS/cpuid.h`
 * random number generator - `FFOS/random.h`
 
 

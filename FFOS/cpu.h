@@ -12,12 +12,12 @@ typedef struct { uint val; } ffatomic32;
 
 #if defined FF_X86
 #include <FFOS/cpu-i386.h>
-#include <FFOS/cpuid.h>
+#include <ffbase/cpuid.h>
 
 #elif defined FF_AMD64
 #include <FFOS/cpu-i386.h>
 #include <FFOS/cpu-amd64.h>
-#include <FFOS/cpuid.h>
+#include <ffbase/cpuid.h>
 
 #elif defined FF_ARM
 #include <FFOS/cpu-arm.h>

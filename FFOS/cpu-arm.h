@@ -36,5 +36,3 @@ static FFINL int ffatom_cmpset(ffatomic *a, size_t old, size_t newval)
 #define ffatom_fence_seq_cst()  __sync_synchronize()
 
 #endif
-
-#define ffcpu_pause()
