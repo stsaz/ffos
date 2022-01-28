@@ -71,7 +71,7 @@ enum {
 * _FFTIMER_STOP: Stop the timer
   Set result code in tmr->result field
 */
-static int __stdcall _fftimer_tread(void *param)
+static int __stdcall _fftimer_thread(void *param)
 {
 	_fftimer *tmr = (_fftimer*)param;
 
@@ -167,7 +167,7 @@ static inline fftimer fftimer_create(int flags)
 	if (NULL == (tmr->evt_result = CreateEvent(NULL, 0, 0, NULL)))
 		goto err;
 
-	if (FFTHREAD_NULL == (tmr->thd = ffthread_create(&_fftimer_tread, tmr, 4 * 1024)))
+	if (FFTHREAD_NULL == (tmr->thd = ffthread_create(&_fftimer_thread, tmr, 4 * 1024)))
 		goto err;
 
 	return tmr;
@@ -206,7 +206,7 @@ typedef int fftimer;
 
 static inline fftimer fftimer_create(int flags)
 {
-	return timerfd_create(CLOCK_MONOTONIC, flags);
+	return timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | flags);
 }
 
 static inline void fftimer_close(fftimer tmr, ffkq kq)

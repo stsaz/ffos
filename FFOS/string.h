@@ -105,7 +105,7 @@ static inline wchar_t* ffs_utow(wchar_t *dst, size_t *dstlen, const char *s, siz
 
 	//not enough space in the provided buffer.  Allocate a new one.
 	wlen = (len == (size_t)-1) ? strlen(s) + 1 : len + 1;
-	dst = ffmem_allocT(wlen, wchar_t);
+	dst = ffmem_alloc(wlen * sizeof(wchar_t));
 	if (dst == NULL)
 		return NULL;
 

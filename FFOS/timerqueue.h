@@ -63,12 +63,16 @@ static inline void fftimerqueue_init(fftimerqueue *tq)
 	tq->tree.insert = &_fftmrq_node_insert;
 }
 
-static inline void fftimerqueue_remove(fftimerqueue *tq, fftimerqueue_node *node)
+/** Remove timer node
+Return 1 if removed */
+static inline int fftimerqueue_remove(fftimerqueue *tq, fftimerqueue_node *node)
 {
 	if (node->active) {
 		ffrbt_rm(&tq->tree, &node->rbtnode);
 		node->active = 0;
+		return 1;
 	}
+	return 0;
 }
 
 /** Add new node
