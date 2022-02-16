@@ -123,6 +123,7 @@ void test_fileaio();
 void test_filemap();
 void test_kqu();
 void test_kqueue();
+void test_kcall();
 void test_mem();
 void test_netconf();
 void test_path();
@@ -165,6 +166,7 @@ static const struct test_s atests[] = {
 	F(file),
 	F(filemap),
 	F(kqueue),
+	F(kcall),
 	F(mem),
 	F(path),
 	F(perf),

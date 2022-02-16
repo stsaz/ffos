@@ -27,6 +27,7 @@ I/O:
 * unnamed and named pipes - `FFOS/pipe.h`
 * asynchronous I/O - `FFOS/asyncio.h`
 * kernel queue - `FFOS/queue.h`
+* kernel call queue - `FFOS/kcall.h`
 
 Process, thread, IPC:
 * process - `FFOS/process.h`

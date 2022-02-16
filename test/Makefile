@@ -18,6 +18,7 @@ TEST_OBJ := \
 	error.o \
 	file.o \
 	filemap.o \
+	kcall.o \
 	kqueue.o \
 	mem.o \
 	path.o \
