@@ -16,14 +16,6 @@
 	#ifndef _LARGEFILE64_SOURCE
 		#define _LARGEFILE64_SOURCE 1
 	#endif
-
-	#if defined FF_GLIBCVER && FF_GLIBCVER < 214 && defined FF_64
-		__asm__(".symver memcpy,memcpy@GLIBC_2.2.5"); // override GLIBC_2.14
-	#endif
-
-	#if defined FF_GLIBCVER && FF_GLIBCVER < 229
-		__asm__(".symver pow,pow@GLIBC_2.2.5"); // override GLIBC_2.29
-	#endif
 #endif
 
 #if defined FF_UNIX

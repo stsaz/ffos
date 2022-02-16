@@ -188,7 +188,7 @@ static inline ffkqsig ffkqsig_attach(ffkq kq, const int *sigs, ffuint nsigs, voi
 static inline int ffkqsig_detach(ffkqsig sig, ffkq kq)
 {
 	if (sig == FFKQSIG_NULL) {
-		errno = EBADFD;
+		errno = EBADF;
 		return -1;
 	}
 

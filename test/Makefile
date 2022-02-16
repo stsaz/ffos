@@ -12,7 +12,6 @@ TEST_EXE := ffostest$(DOTEXE)
 TEST_OBJ := \
 	backtrace.o \
 	compat.o \
-	cpu.o \
 	dir.o \
 	dylib.o \
 	environ.o \

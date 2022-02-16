@@ -114,7 +114,6 @@ void test_atomic()
 
 void test_atomic();
 void test_backtrace();
-void test_cpu();
 void test_dir();
 void test_dylib();
 void test_env();
@@ -159,7 +158,6 @@ struct test_s {
 #define F(nm) { #nm, &test_ ## nm }
 static const struct test_s atests[] = {
 	F(backtrace),
-	F(cpu),
 	F(dir),
 	F(dylib),
 	F(env),

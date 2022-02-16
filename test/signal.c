@@ -108,7 +108,7 @@ void test_sig_ctrlc()
 	ffsig_subscribe(sig_handler, sigs, FF_COUNT(sigs));
 
 	while (sig_number == 0) {
-		ffthd_sleep(500);
+		ffthread_sleep(500);
 	}
 	xieq((ffuint)FFSIG_INT, sig_number);
 }

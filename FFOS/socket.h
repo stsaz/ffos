@@ -313,8 +313,11 @@ typedef struct iovec ffiovec;
 
 static inline int ffsock_init(int flags)
 {
-	if (flags & FFSOCK_INIT_SIGPIPE)
-		signal(SIGPIPE, SIG_IGN);
+	if (flags & FFSOCK_INIT_SIGPIPE) {
+		struct sigaction sa = {};
+		sa.sa_handler = SIG_IGN,
+		sigaction(SIGPIPE, &sa, NULL);
+	}
 	return 0;
 }
 
