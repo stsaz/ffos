@@ -21,6 +21,12 @@ endif
 endif
 
 
+OSFULL := $(OS)
+ifeq "$(OSFULL)" "win"
+	OSFULL := windows
+endif
+
+
 # set OS-specific values
 ifeq ($(OS),win)
 SO := dll
