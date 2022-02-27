@@ -5,6 +5,7 @@
 /*
 ffdirscan_open ffdirscan_close
 ffdirscan_next
+ffdirscan_reset
 */
 
 #pragma once
@@ -217,4 +218,9 @@ static inline const char* ffdirscan_next(ffdirscan *d)
 	d->cur += sizeof(ffuint);
 	const char *name = &((char*)d->names)[off];
 	return name;
+}
+
+static inline void ffdirscan_reset(ffdirscan *d)
+{
+	d->cur = d->index;
 }
