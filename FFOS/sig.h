@@ -10,6 +10,7 @@ ffsig_read
 
 #pragma once
 
+#include <FFOS/types.h>
 #include <FFOS/signal.h>
 #include <FFOS/asyncio.h>
 

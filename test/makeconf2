@@ -68,6 +68,7 @@ endif
 
 
 # Set utils
+WINDRES := $(CROSS_PREFIX)windres
 WGET := wget
 RM := rm -rf
 CP := cp -u
