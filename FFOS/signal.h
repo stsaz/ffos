@@ -246,12 +246,11 @@ Prior to this call the signal handler is set to default (SA_RESETHAND) */
 static void _ffsig_exc_handler(int signo, siginfo_t *info, void *ucontext)
 {
 	(void)ucontext;
-	struct ffsig_info i = {
-		.sig = (ffuint)signo,
-		.addr = info->si_addr,
-		.flags = (ffuint)info->si_code,
-		.si = info,
-	};
+	struct ffsig_info i = {};
+	i.sig = (ffuint)signo;
+	i.addr = info->si_addr;
+	i.flags = (ffuint)info->si_code;
+	i.si = info;
 	_ffsig_userhandler(&i);
 }
 
