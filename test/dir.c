@@ -96,6 +96,18 @@ void test_chdir(const char *dir)
 
 void test_dirscan()
 {
+	x(_ffdirscan_filename_cmpz("/a", "/a") == 0);
+	x(_ffdirscan_filename_cmpz("/A", "/A") == 0);
+
+	x(_ffdirscan_filename_cmpz("/a", "/b") < 0);
+	x(_ffdirscan_filename_cmpz("/b", "/a") > 0);
+
+	x(_ffdirscan_filename_cmpz("/a", "/A") < 0);
+	x(_ffdirscan_filename_cmpz("/A", "/a") > 0);
+
+	x(_ffdirscan_filename_cmpz("/a", "/B") < 0);
+	x(_ffdirscan_filename_cmpz("/B", "/a") > 0);
+
 	const char *name;
 	static const char *names[] = {
 		"ffostest-dirscan",
@@ -199,6 +211,4 @@ void test_dir()
 	x(0 == ffdir_remove(path));
 	path[strlen(path) - FFS_LEN("/tmpdir2")] = '\0';
 	x(0 == ffdir_remove(path));
-
-	test_dirscan();
 }

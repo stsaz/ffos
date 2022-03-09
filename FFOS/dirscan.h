@@ -35,14 +35,42 @@ enum FFDIRSCAN_F {
 	FFDIRSCAN_USEFD = 0x20,
 };
 
+/** Compare file names */
+static int _ffdirscan_filename_cmpz(const char *a, const char *b)
+{
+	for (ffsize i = 0;  ;  i++) {
+		ffuint cl = (ffbyte)a[i];
+		ffuint cr = (ffbyte)b[i];
+
+		if (cl != cr) {
+			if (cl >= 'A' && cl <= 'Z')
+				cl |= 0x20;
+			if (cr >= 'A' && cr <= 'Z')
+				cr |= 0x20;
+			if (cl < cr)
+				return -1;
+			else if (cl > cr)
+				return 1;
+
+			if (a[i] < b[i])
+				return 1; // "a" < "A"
+			return -1;
+
+		} else if (cl == '\0') {
+			return 0;
+		}
+	}
+}
+
 static int _ffdirscan_cmpname(const void *a, const void *b, void *udata)
 {
 	const char *buf = udata;
 	ffuint off1 = *(ffuint*)a, off2 = *(ffuint*)b;
+
 	if (FFPATH_ICASE)
 		return ffsz_icmp(&buf[off1], &buf[off2]);
-	int r = ffsz_cmp(&buf[off1], &buf[off2]);
-	return r;
+
+	return _ffdirscan_filename_cmpz(&buf[off1], &buf[off2]);
 }
 
 /**

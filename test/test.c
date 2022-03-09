@@ -115,6 +115,7 @@ void test_atomic()
 void test_atomic();
 void test_backtrace();
 void test_dir();
+void test_dirscan();
 void test_dylib();
 void test_env();
 void test_error();
@@ -160,6 +161,7 @@ struct test_s {
 static const struct test_s atests[] = {
 	F(backtrace),
 	F(dir),
+	F(dirscan),
 	F(dylib),
 	F(env),
 	F(error),
