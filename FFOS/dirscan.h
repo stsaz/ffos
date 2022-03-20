@@ -91,6 +91,11 @@ static inline int ffdirscan_open(ffdirscan *d, const char *path, ffuint flags)
 
 #ifdef FF_WIN
 
+	if (path[0] == '\0') {
+		SetLastError(ERROR_PATH_NOT_FOUND);
+		return -1;
+	}
+
 	HANDLE dir = INVALID_HANDLE_VALUE;
 	WIN32_FIND_DATAW ent;
 	wchar_t *wpath = NULL;
