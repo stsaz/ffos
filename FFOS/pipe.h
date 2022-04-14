@@ -5,7 +5,7 @@
 /*
 ffpipe_create ffpipe_create2 ffpipe_create_named
 ffpipe_connect
-ffpipe_accept
+ffpipe_accept ffpipe_accept_async
 ffpipe_close ffpipe_peer_close
 ffpipe_nonblock
 ffpipe_read
@@ -16,6 +16,8 @@ ffpipe_write
 
 #include <FFOS/base.h>
 
+#define FFPIPE_ASYNC  2
+
 #ifdef FF_WIN
 
 #include <FFOS/string.h>
@@ -23,6 +25,7 @@ ffpipe_write
 #define FFPIPE_NULL  INVALID_HANDLE_VALUE
 #define FFPIPE_NONBLOCK  1
 #define FFPIPE_NAME_PREFIX  "\\\\.\\pipe\\"
+#define FFPIPE_EINPROGRESS  ERROR_IO_PENDING
 
 static inline int ffpipe_create(fffd *rd, fffd *wr)
 {
@@ -55,11 +58,16 @@ static inline int ffpipe_create2(fffd *rd, fffd *wr, ffuint flags)
 
 static inline fffd ffpipe_create_named(const char *name, ffuint flags)
 {
+	if (flags & FFPIPE_NONBLOCK) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FFPIPE_NULL;
+	}
+
 	wchar_t *w, ws[256];
 	if (NULL == (w = ffsz_alloc_buf_utow(ws, FF_COUNT(ws), name)))
 		return FFPIPE_NULL;
 
-	ffuint f = (flags & FFPIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
+	ffuint f = (flags & FFPIPE_ASYNC) ? FILE_FLAG_OVERLAPPED : 0;
 	fffd p = CreateNamedPipeW(w
 		, PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE | f
 		, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT
@@ -88,6 +96,34 @@ static inline fffd ffpipe_accept(fffd listen_pipe)
 		return FFPIPE_NULL;
 	}
 	return listen_pipe;
+}
+
+static inline fffd ffpipe_accept_async(fffd listen_pipe, ffkq_task *task)
+{
+	if (task->active) {
+		DWORD n;
+		if (!GetOverlappedResult(NULL, &task->overlapped, &n, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return FFPIPE_NULL;
+		}
+		task->active = 0;
+		return listen_pipe;
+	}
+
+	ffmem_zero_obj(task);
+	int ok = 1;
+	if (!ConnectNamedPipe(listen_pipe, &task->overlapped)) {
+		int e = GetLastError();
+		if (e == ERROR_PIPE_CONNECTED)
+			return listen_pipe;
+		else if (e != ERROR_IO_PENDING)
+			ok = 0;
+	}
+	task->active = ok;
+	return FFPIPE_NULL;
 }
 
 static inline fffd ffpipe_connect(const char *name)
@@ -135,6 +171,7 @@ static inline ffssize ffpipe_write(fffd p, const void *data, ffsize size)
 #define FFPIPE_NULL  (-1)
 #define FFPIPE_NONBLOCK  O_NONBLOCK
 #define FFPIPE_NAME_PREFIX  ""
+#define FFPIPE_EINPROGRESS  EINPROGRESS
 
 static inline int ffpipe_nonblock(fffd p, int nonblock)
 {
@@ -194,7 +231,7 @@ static inline fffd ffpipe_create_named(const char *name, ffuint flags)
 	if (FFPIPE_NULL == (p = socket(AF_UNIX, SOCK_STREAM, 0)))
 		return FFPIPE_NULL;
 
-	if (flags & FFPIPE_NONBLOCK) {
+	if (flags & (FFPIPE_NONBLOCK | FFPIPE_ASYNC)) {
 		if (0 != ffpipe_nonblock(p, 1))
 			goto err;
 	}
@@ -253,6 +290,18 @@ static inline fffd ffpipe_accept(fffd listen_pipe)
 	return accept(listen_pipe, NULL, NULL);
 }
 
+static inline fffd ffpipe_accept_async(fffd listen_pipe, ffkq_task *task)
+{
+	(void)task;
+	int c;
+	if (-1 == (c = accept(listen_pipe, NULL, NULL))) {
+		if (errno == EAGAIN)
+			errno = EINPROGRESS;
+		return -1;
+	}
+	return c;
+}
+
 static inline ffssize ffpipe_read(fffd p, void *buf, ffsize size)
 {
 	return read(p, buf, size);
@@ -277,14 +326,16 @@ static int ffpipe_create(fffd *rd, fffd *wr);
 name:
   UNIX: file name to be used for UNIX socket
   Windows: \\.\pipe\NAME
-flags: FFPIPE_NONBLOCK
+flags:
+  UNIX: FFPIPE_NONBLOCK | FFPIPE_ASYNC
+  Windows: FFPIPE_ASYNC
 Return FFPIPE_NULL on error */
 static fffd ffpipe_create_named(const char *name, ffuint flags);
 
 /** Close a pipe */
 static void ffpipe_close(fffd p);
 
-/** Close a peer pipe descriptor returned by ffaio_pipe_accept() */
+/** Close a peer pipe descriptor returned by ffpipe_accept() */
 static void ffpipe_peer_close(fffd p);
 
 /** Connect to a named pipe
@@ -298,6 +349,11 @@ Return pipe descriptor; close with ffpipe_peer_close()
     UNIX: new fd to a UNIX socket's peer is returned
   FFPIPE_NULL on error */
 static fffd ffpipe_accept(fffd listen_pipe);
+
+/** Same as ffpipe_accept(), except in case it can't complete immediately,
+ it begins asynchronous operation and returns FFPIPE_NULL with error FFPIPE_EINPROGRESS.
+Pipe must be opened with ffpipe_create_named(FFPIPE_ASYNC). */
+static fffd ffpipe_accept_async(fffd listen_pipe, ffkq_task *task);
 
 /** Set non-blocking mode on a pipe descriptor */
 static int ffpipe_nonblock(fffd p, int nonblock);

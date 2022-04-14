@@ -21,8 +21,6 @@ void test_pipe_unnamed()
 	x_sys(5 == ffpipe_read(rd, buf, sizeof(buf)));
 	x(!ffmem_cmp(buf, "hello", 5));
 
-	x(-1 == ffpipe_write(rd, "hello", 5));
-
 	ffpipe_close(rd);
 	ffpipe_close(wr);
 }
