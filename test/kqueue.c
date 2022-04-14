@@ -3,9 +3,12 @@
 */
 
 #include <FFOS/queue.h>
+#include <FFOS/pipe.h>
+#include <FFOS/file.h>
 #include <FFOS/socket.h>
 #include <FFOS/test.h>
 
+#if 0
 /** Wait until the specified (read or write) event signals */
 int kq_wait(ffkq kq, ffkq_event *events, ffuint events_cap, ffkq_time timeout, int rw)
 {
@@ -27,8 +30,6 @@ int kq_wait(ffkq kq, ffkq_event *events, ffuint events_cap, ffkq_time timeout, i
 */
 void test_kqueue_socket()
 {
-	x_sys(0 == ffsock_init(FFSOCK_INIT_SIGPIPE | FFSOCK_INIT_WSA | FFSOCK_INIT_WSAFUNCS));
-
 	ffkq kq;
 	kq = ffkq_create();
 	x_sys(kq != FFKQ_NULL);
@@ -71,7 +72,7 @@ void test_kqueue_socket()
 	ffsockaddr_set_ipv4(&addr, "\x7f\x00\x00\x01", port);
 	int r = ffsock_connect(c, &addr);
 	fflog("cli: connect: %d", r);
-	x_sys(r == 0 || r == FFSOCK_INPROGRESS);
+	x_sys(r == 0 || errno == FFSOCK_EINPROGRESS);
 
 	if (r == -1) {
 		fflog("cli: waiting for connect...");
@@ -170,6 +171,7 @@ void test_kqueue_socket()
 	ffkq_close(kq);
 	ffkq_close(kqc);
 }
+#endif
 
 /*
 . create kqueue
@@ -225,10 +227,174 @@ void test_kqueue_post()
 	ffkq_close(kq);
 }
 
+void test_kqueue_pipe()
+{
+	ffkq kq;
+	fffd l, lc, c;
+	ffkq_task task = {};
+
+	kq = ffkq_create();
+
+	const char *name = FFPIPE_NAME_PREFIX "ffostest.pipe";
+#ifdef FF_UNIX
+	name = "/tmp/ffostest.unix";
+	fffile_remove(name);
+#endif
+
+	x_sys(FFPIPE_NULL != (l = ffpipe_create_named(name, FFPIPE_ASYNC)));
+	x_sys(0 == ffkq_attach(kq, l, (void*)1, FFKQ_READ));
+
+// synchronous accept
+	x_sys(FFPIPE_NULL != (c = ffpipe_connect(name)));
+	x_sys(FFPIPE_NULL != (lc = ffpipe_accept_async(l, &task)));
+	ffpipe_peer_close(lc);
+	ffpipe_close(c);
+
+// asynchronous accept
+	x_sys(FFPIPE_NULL == (lc = ffpipe_accept_async(l, &task)));
+	x_sys(fferr_last() == FFPIPE_EINPROGRESS);
+
+	x_sys(FFPIPE_NULL != (c = ffpipe_connect(name)));
+
+	ffkq_event ev;
+	ffkq_time tm;
+	ffkq_time_set(&tm, 1000);
+	x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
+	x(ffkq_event_data(&ev) == (void*)1);
+
+	x_sys(FFPIPE_NULL != (lc = ffpipe_accept_async(l, &task)));
+
+	ffpipe_peer_close(lc);
+	ffpipe_close(l);
+	ffpipe_close(c);
+	ffkq_close(kq);
+#ifdef FF_UNIX
+	fffile_remove(name);
+#endif
+}
+
+void test_kqueue_socket_accept()
+{
+	ffkq kq;
+	ffsock l, lc, c;
+	ffkq_task task = {};
+	ffsockaddr peer, local;
+
+	kq = ffkq_create();
+	x_sys(FFSOCK_NULL != (l = ffsock_create_tcp(AF_INET, FFSOCK_NONBLOCK)));
+
+	ffsockaddr a = {};
+	char ip[] = {127,0,0,1};
+	ffsockaddr_set_ipv4(&a, ip, 64000);
+	x_sys(0 == ffsock_bind(l, &a));
+	x_sys(0 == ffsock_listen(l, SOMAXCONN));
+	x_sys(0 == ffkq_attach_socket(kq, l, &l, FFKQ_READ));
+
+// asynchronous accept
+	x_sys(FFSOCK_NULL == ffsock_accept_async(l, &peer, 0, AF_INET, &local, &task));
+	x_sys(fferr_last() == FFSOCK_EINPROGRESS);
+
+	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, 0)));
+	x_sys(0 == ffsock_connect(c, &a));
+
+	ffkq_event ev;
+	ffkq_time tm;
+	ffkq_time_set(&tm, 1000);
+	x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
+	x(ffkq_event_data(&ev) == &l);
+
+	x_sys(FFSOCK_NULL != (lc = ffsock_accept_async(l, &peer, 0, AF_INET, &local, &task)));
+	ffuint port;
+	ffslice ips = ffsockaddr_ip_port(&peer, &port);
+	x(ffslice_eq(&ips, ip, 4, 1));
+	ips = ffsockaddr_ip_port(&local, &port);
+	x(ffslice_eq(&ips, ip, 4, 1));
+
+	ffsock_close(lc);
+	ffsock_close(c);
+
+// synchronous accept
+	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, 0)));
+	x_sys(0 == ffsock_connect(c, &a));
+#ifdef FF_WIN
+	Sleep(500);
+#endif
+	x_sys(FFSOCK_NULL != (lc = ffsock_accept_async(l, &peer, 0, AF_INET, &local, &task)));
+
+	ffsock_close(l);
+	ffsock_close(lc);
+	ffsock_close(c);
+	ffkq_close(kq);
+}
+
+void test_kqueue_socket_connect()
+{
+	ffkq kq;
+	ffsock l, c;
+	ffkq_task task = {};
+
+	kq = ffkq_create();
+
+	x_sys(FFSOCK_NULL != (l = ffsock_create_tcp(AF_INET, 0)));
+	ffsockaddr a = {};
+	char ip[] = {127,0,0,1};
+	ffsockaddr_set_ipv4(&a, ip, 64000);
+	x_sys(0 == ffsock_bind(l, &a));
+	x_sys(0 == ffsock_listen(l, SOMAXCONN));
+
+// successful connection
+	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, FFSOCK_NONBLOCK)));
+	x_sys(0 == ffkq_attach_socket(kq, c, &c, FFKQ_WRITE));
+	int r = ffsock_connect_async(c, &a, &task);
+	x_sys(r == 0 || fferr_last() == FFSOCK_EINPROGRESS);
+
+	ffkq_event ev;
+	ffkq_time tm;
+	ffkq_time_set(&tm, 1000);
+	if (r != 0) {
+		x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
+		x(ffkq_event_data(&ev) == &c);
+		ffkq_task_event_assign(&task, &ev);
+	}
+
+	x_sys(0 == ffsock_connect_async(c, &a, &task));
+	ffsock_close(c);
+
+// failed connection
+	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, FFSOCK_NONBLOCK)));
+	x_sys(0 == ffkq_attach_socket(kq, c, &c, FFKQ_WRITE));
+
+	ffsock_close(l);
+	l = FFSOCK_NULL;
+
+	x_sys(0 != ffsock_connect_async(c, &a, &task));
+	x_sys(fferr_last() == FFSOCK_EINPROGRESS);
+
+#ifdef FF_WIN
+	ffsock_close(c);
+	c = FFSOCK_NULL;
+#endif
+
+	x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
+	x(ffkq_event_data(&ev) == &c);
+	ffkq_task_event_assign(&task, &ev);
+
+	x_sys(0 != ffsock_connect_async(c, &a, &task));
+	x_sys(fferr_last() != FFSOCK_EINPROGRESS);
+
+	ffsock_close(l);
+	ffsock_close(c);
+	ffkq_close(kq);
+}
+
 void test_kqueue()
 {
 	test_kqueue_post();
-#ifdef FF_UNIX
+	test_kqueue_pipe();
+	x_sys(0 == ffsock_init(FFSOCK_INIT_SIGPIPE | FFSOCK_INIT_WSA | FFSOCK_INIT_WSAFUNCS));
+	test_kqueue_socket_accept();
+	test_kqueue_socket_connect();
+#if 0
 	test_kqueue_socket();
 #endif
 }

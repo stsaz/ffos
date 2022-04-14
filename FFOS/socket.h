@@ -8,14 +8,14 @@ Address:
 	ffsockaddr_ip_port
 Creation:
 	ffsock_create ffsock_create_tcp ffsock_create_udp
-	ffsock_accept
+	ffsock_accept ffsock_accept_async
 	ffsock_close
 Configuration:
 	ffsock_nonblock
 	ffsock_setopt ffsock_deferaccept
 	ffsock_getopt
 	ffsock_bind
-	ffsock_connect
+	ffsock_connect ffsock_connect_async
 	ffsock_listen
 I/O:
 	ffsock_recv ffsock_recvfrom
@@ -106,6 +106,11 @@ typedef SOCKET ffsock;
 typedef WSABUF ffiovec;
 #define FFSOCK_NULL  INVALID_SOCKET
 #define FFSOCK_NONBLOCK  0x0100
+#define FFSOCK_EINPROGRESS  ERROR_IO_PENDING
+FF_EXTERN LPFN_DISCONNECTEX _ff_DisconnectEx;
+FF_EXTERN LPFN_CONNECTEX _ff_ConnectEx;
+FF_EXTERN LPFN_ACCEPTEX _ff_AcceptEx;
+FF_EXTERN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
 
 static inline void ffsock_close(ffsock sk)
 {
@@ -148,13 +153,42 @@ static inline ffsock ffsock_create(int domain, int type, int protocol)
 	return sk;
 }
 
-#define FFSOCK_INPROGRESS  (-1000)
-
 static inline int ffsock_connect(ffsock sk, const ffsockaddr *addr)
 {
 	if (0 != connect(sk, (struct sockaddr*)&addr->ip4, addr->len))
 		return -1;
 	return 0;
+}
+
+static inline int ffsock_connect_async(ffsock sk, const ffsockaddr *addr, ffkq_task *task)
+{
+	if (task->active) {
+		DWORD res;
+		if (!GetOverlappedResult(NULL, &task->overlapped, &res, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+		return 0;
+	}
+
+	ffsockaddr a = *addr;
+	a.ip4.sin_port = 0;
+	if (0 != bind(sk, (struct sockaddr*)&a.ip4, a.len))
+		return -1;
+
+	ffmem_zero_obj(task);
+	BOOL ok = _ff_ConnectEx(sk, (struct sockaddr*)&addr->ip4, addr->len, NULL, 0, NULL, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING)) {
+		return -1;
+	}
+
+	task->active = 1;
+	return -1;
 }
 
 static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *peer, int flags)
@@ -170,6 +204,54 @@ static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *peer, int flags
 
 	peer->len = addr_size;
 	return sk;
+}
+
+static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task)
+{
+	DWORD res;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &res, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return INVALID_SOCKET;
+		}
+
+		int len_local = 0, len_peer = 0;
+		struct sockaddr *addr_local, *addr_peer;
+		_ff_GetAcceptExSockaddrs(task->local_peer_addrs, 0, sizeof(struct sockaddr_in6) + 16, sizeof(struct sockaddr_in6) + 16, &addr_local, &len_local, &addr_peer, &len_peer);
+		peer->len = 0;
+		if (domain == ((struct sockaddr_in*)addr_peer)->sin_family) {
+			peer->len = len_peer;
+			ffmem_copy(&peer->ip4, addr_peer, len_peer);
+			local->len = len_local;
+			ffmem_copy(&local->ip4, addr_local, len_local);
+		}
+
+		task->active = 0;
+		return task->csock;
+	}
+
+	SOCKET csock;
+	if (INVALID_SOCKET != (csock = ffsock_accept(lsock, peer, flags & FFSOCK_NONBLOCK)))
+		return csock;
+	if (GetLastError() != WSAEWOULDBLOCK)
+		return INVALID_SOCKET;
+
+	if (INVALID_SOCKET == (csock = ffsock_create(domain, SOCK_STREAM | (flags & FFSOCK_NONBLOCK), 0)))
+		return INVALID_SOCKET;
+
+	ffmem_zero_obj(task);
+	BOOL ok = _ff_AcceptEx(lsock, csock, task->local_peer_addrs, 0, sizeof(struct sockaddr_in6) + 16, sizeof(struct sockaddr_in6) + 16, &res, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING)) {
+		closesocket(csock);
+		return INVALID_SOCKET;
+	}
+
+	task->csock = csock;
+	task->active = 1;
+	return INVALID_SOCKET;
 }
 
 static inline ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags)
@@ -214,11 +296,6 @@ static inline void* _ff_wsa_getfunc(ffsock sk, const GUID *guid)
 		SetLastError(ERROR_PROC_NOT_FOUND);
 	return func;
 }
-
-FF_EXTERN LPFN_DISCONNECTEX _ff_DisconnectEx;
-FF_EXTERN LPFN_CONNECTEX _ff_ConnectEx;
-FF_EXTERN LPFN_ACCEPTEX _ff_AcceptEx;
-FF_EXTERN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
 
 static inline int _ff_wsa_getfuncs()
 {
@@ -304,6 +381,7 @@ static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
 typedef int ffsock;
 typedef struct iovec ffiovec;
 #define FFSOCK_NULL  (-1)
+#define FFSOCK_EINPROGRESS  EINPROGRESS
 
 #ifdef FF_APPLE
 	#define FFSOCK_NONBLOCK  0x40000000
@@ -349,13 +427,45 @@ static inline ffsock ffsock_create(int domain, int type, int protocol)
 #endif
 }
 
-#define FFSOCK_INPROGRESS  (-EINPROGRESS)
-
 static inline int ffsock_connect(ffsock sk, const ffsockaddr *addr)
 {
 	if (0 != connect(sk, (struct sockaddr*)&addr->ip4, addr->len))
-		return -errno;
+		return -1;
 	return 0;
+}
+
+static inline int ffsock_connect_async(ffsock sk, const ffsockaddr *addr, ffkq_task *task)
+{
+	if (task->active) {
+		task->active = 0;
+
+#ifdef FF_LINUX
+		if (task->kev_flags & 0x008 /*EPOLLERR*/) {
+			int err;
+			socklen_t len = 4;
+			if (0 != getsockopt(sk, SOL_SOCKET, SO_ERROR, &err, &len))
+				return -1;
+			if (err != 0) {
+				errno = err;
+				return -1;
+			}
+		}
+#else
+		if ((task->kev_flags & 0x8000 /*EV_EOF*/) && task->kev_errno != 0) {
+			errno = task->kev_errno;
+			return -1;
+		}
+#endif
+
+		return 0;
+	}
+
+	ffmem_zero_obj(task);
+	if (0 == connect(sk, (struct sockaddr*)&addr->ip4, addr->len))
+		return 0;
+
+	task->active = (errno == EINPROGRESS);
+	return -1;
 }
 
 static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags)
@@ -377,6 +487,25 @@ static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags
 #endif
 
 	addr->len = addr_size;
+	return sk;
+}
+
+static int ffsock_localaddr(ffsock sk, ffsockaddr *addr);
+
+static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task)
+{
+	(void)domain; (void)task;
+	int sk;
+	if (-1 == (sk = ffsock_accept(lsock, peer, flags & FFSOCK_NONBLOCK))) {
+		if (errno == EAGAIN)
+			errno = EINPROGRESS;
+		return -1;
+	}
+
+	if (local != NULL) {
+		ffsock_localaddr(sk, local);
+	}
+
 	return sk;
 }
 
@@ -538,6 +667,15 @@ flags: FFSOCK_NONBLOCK
 Return FFSOCK_NULL on error */
 static ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags);
 
+/** Same as ffsock_accept(), except in case it can't complete immediately,
+ it begins asynchronous operation and returns FFSOCK_NULL with error FFSOCK_EINPROGRESS.
+Socket must be non-blocking.
+flags: FFSOCK_NONBLOCK
+domain: AF_INET | AF_INET6
+local: Optional local address
+*/
+static ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task);
+
 /** Close a socket */
 static void ffsock_close(ffsock sk);
 
@@ -555,9 +693,12 @@ static inline int ffsock_bind(ffsock sk, const ffsockaddr *addr)
 
 /** Initiate a connection on a socket
 Return 0 on success
-  <0 on error
-    FFSOCK_INPROGRESS: non-blocking connect operation is in progress */
+  <0 on error */
 static int ffsock_connect(ffsock sk, const ffsockaddr *addr);
+
+/** Same as ffsock_connect(), except in case it can't complete immediately,
+ it begins asynchronous operation and returns <0 with error FFSOCK_EINPROGRESS. */
+static int ffsock_connect_async(ffsock sk, const ffsockaddr *addr, ffkq_task *task);
 
 /** Listen for connections on a socket
 Example:

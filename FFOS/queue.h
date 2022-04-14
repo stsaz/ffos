@@ -9,7 +9,7 @@ ffkq_time_set
 Event:
 	ffkq_event_data
 	ffkq_event_flags
-	ffkq_event_result_socket
+	ffkq_task_event_assign
 User event:
 	ffkq_post_attach
 	ffkq_post_detach
@@ -103,10 +103,9 @@ static inline int ffkq_event_flags(ffkq_event *ev)
 	return 0;
 }
 
-static inline int ffkq_event_result_socket(ffkq_event *ev, int sk)
+static inline void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev)
 {
-	(void)ev; (void)sk;
-	return 0;
+	(void)task; (void)ev;
 }
 
 
@@ -189,15 +188,9 @@ static inline int ffkq_event_flags(ffkq_event *ev)
 	return !(ev->events & EPOLLERR) ? ev->events : (int)FFKQ_READWRITE;
 }
 
-static inline int ffkq_event_result_socket(ffkq_event *ev, int sk)
+static inline void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev)
 {
-	int err = 0;
-	if (ev->events & EPOLLERR) {
-		socklen_t len = sizeof(int);
-		if (0 != getsockopt(sk, SOL_SOCKET, SO_ERROR, &err, &len))
-			err = errno;
-	}
-	return err;
+	task->kev_flags = ev->events;
 }
 
 
@@ -298,15 +291,10 @@ static inline int ffkq_event_flags(ffkq_event *ev)
 	return (ev->filter != EVFILT_WRITE) ? FFKQ_READ : FFKQ_WRITE;
 }
 
-static inline int ffkq_event_result_socket(ffkq_event *ev, int sk)
+static inline void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev)
 {
-	(void)sk;
-	int err = 0;
-	if (ev->flags & EV_ERROR)
-		err = ev->data;
-	else if (ev->filter == EVFILT_WRITE && (ev->flags & EV_EOF))
-		err = ev->fflags;
-	return err;
+	task->kev_flags = ev->flags;
+	task->kev_errno = ev->fflags;
 }
 
 
@@ -383,8 +371,8 @@ static void* ffkq_event_data(ffkq_event *ev);
 /** Get event flags from kernel event object */
 static int ffkq_event_flags(ffkq_event *ev);
 
-/** Get error code from kernel event object associated with a socket */
-static int ffkq_event_result_socket(ffkq_event *ev, int sk);
+/** Assign data from signalled KQ event to an asynchronous task */
+static void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev);
 
 
 /** Attach user event to kqueue
