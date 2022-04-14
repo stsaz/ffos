@@ -1,4 +1,4 @@
-/** ffos: directory, path
+/** ffos: file-system directory functions
 2020, Simon Zolin
 */
 

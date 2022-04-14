@@ -19,11 +19,11 @@ void test_kcall()
 		.q = &q,
 	};
 
-	fffd f = fffile_open_async("/etc/fedora-release", FFFILE_READONLY, &c);
+	fffd f = fffile_open_async("/etc/fstab", FFFILE_READONLY, &c);
 	x(f == FFFILE_NULL && errno == EINPROGRESS);
 	ffkcallq_process_sq(q.sq);
 	ffkcallq_process_cq(q.cq);
-	f = fffile_open_async("/etc/fedora-release", FFFILE_READONLY, &c);
+	f = fffile_open_async("/etc/fstab", FFFILE_READONLY, &c);
 	x(f != FFFILE_NULL);
 
 	char buf[1000];
