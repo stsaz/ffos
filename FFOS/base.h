@@ -29,16 +29,6 @@
 
 #else // Windows:
 
-	#ifndef FFOS_NO_COMPAT
-		#ifndef UNICODE
-			#define UNICODE
-		#endif
-
-		#ifndef _UNICODE
-			#define _UNICODE
-		#endif
-	#endif
-
 	#define _WIN32_WINNT FF_WIN_APIVER
 	#define NOMINMAX
 	#define _CRT_SECURE_NO_WARNINGS

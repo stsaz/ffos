@@ -2,7 +2,7 @@
 Copyright (c) 2017 Simon Zolin
 */
 
-#include <FFOS/win/reg.h>
+#include <FFOS/winreg.h>
 #include <FFOS/test.h>
 
 void test_winreg()

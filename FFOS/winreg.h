@@ -337,19 +337,3 @@ end:
 		ffmem_free(wname);
 	return r;
 }
-
-
-#ifndef FFOS_NO_COMPAT
-#define ffwreg  ffwinreg
-#define ffwreg_val  ffwinreg_val
-#define ffwreg_info  ffwinreg_info
-#define FFWREG_BADKEY  FFWINREG_NULL
-#define ffwreg_open  ffwinreg_open
-#define ffwreg_close  ffwinreg_close
-#define ffwreg_isstr  ffwinreg_isstr
-#define ffwreg_write  ffwinreg_write
-#define ffwreg_writestr  ffwinreg_writestr
-#define ffwreg_writeint  ffwinreg_writeint
-#define ffwreg_del  ffwinreg_del
-#define ffwreg_read  ffwinreg_read
-#endif

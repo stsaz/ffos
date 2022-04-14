@@ -58,7 +58,7 @@ clean:
 
 TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -fno-strict-aliasing \
-	-DFF_DEBUG -DFFOS_NO_COMPAT -g
+	-DFF_DEBUG -g
 ifeq "$(OPT)" "0"
 	TEST_CFLAGS += -O0 -DFFBASE_DEBUG
 else

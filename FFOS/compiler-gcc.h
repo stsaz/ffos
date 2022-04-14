@@ -24,12 +24,3 @@ typedef unsigned long long uint64;
 #ifdef FF_64
 #define ffbit_ffs64(i)  __builtin_ffsll(i)
 #endif
-
-
-/** Set module constructor function. */
-#define FFDL_ONINIT(init, fin) \
-void _ffdl_oninit(void)__attribute__((constructor)); \
-void _ffdl_oninit(void) \
-{ \
-	init(); \
-}

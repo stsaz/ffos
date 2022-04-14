@@ -38,9 +38,3 @@ static void ffrand_seed(ffuint seed);
 
 /** Get random number */
 static int ffrand_get();
-
-
-#ifndef FFOS_NO_COMPAT
-#define ffrnd_seed  ffrand_seed
-#define ffrnd_get  ffrand_get
-#endif

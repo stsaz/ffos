@@ -327,7 +327,3 @@ static inline ffssize ffpath_normalize(char *dst, ffsize cap, const char *src, f
 
 	return k;
 }
-
-#ifndef FFOS_NO_COMPAT
-#define FFPATH_BSIZE  FFPATH_BLOCKSIZE
-#endif

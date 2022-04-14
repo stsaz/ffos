@@ -238,26 +238,3 @@ static inline void fftime_local(fftime_zone *tz)
 }
 
 #endif
-
-
-#ifndef FFOS_NO_COMPAT
-static void fftime_now(fftime *t);
-static void fftime_local(fftime_zone *tz);
-#define fftime_init()
-static inline void fftime_fromtime_t(fftime *t, time_t tt)
-{
-	*t = fftime_from_time_t(tt);
-}
-#ifdef FF_UNIX
-static inline void fftime_fromtimeval(fftime *t, const struct timeval *tv)
-{
-	*t = fftime_from_timeval(tv);
-}
-static inline void fftime_fromtimespec(fftime *t, const struct timespec *ts)
-{
-	*t = fftime_from_timespec(ts);
-}
-#endif
-#define fftime_mcs  fftime_to_usec
-#define fftime_ms  fftime_to_msec
-#endif

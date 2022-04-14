@@ -27,10 +27,5 @@
 #include <FFOS/timer.h>
 
 #ifdef FF_WIN
-#include <FFOS/win/reg.h>
+#include <FFOS/winreg.h>
 #endif
-
-// #include <FFOS/asyncio.h>
-// #include <FFOS/atomic.h>
-// #include <FFOS/cpu.h>
-// #include <FFOS/sig.h>

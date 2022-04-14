@@ -341,17 +341,3 @@ static const char* ffdir_entry_name(ffdirentry *ent);
 /** Get file information
 Return NULL on error */
 static fffileinfo* ffdir_entry_info(ffdirentry *ent);
-
-
-#ifndef FFOS_NO_COMPAT
-#define ffdir_rm  ffdir_remove
-#define ffdir_rmake  ffdir_make_all
-#define ffdir_entryinfo  ffdir_entry_info
-#ifdef FF_WIN
-#define ffdir_entryname(ent)  ((ent)->find_data.cFileName)
-#else
-#define ffdir_entryname  ffdir_entry_name
-#endif
-#define ENOMOREFILES  FFERR_NOMOREFILES
-#include <FFOS/path.h>
-#endif
