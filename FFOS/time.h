@@ -172,7 +172,7 @@ static inline fftime_winftime fftime_to_winftime(const fftime *t)
 static inline void fftime_now(fftime *t)
 {
 	FILETIME ft;
-#if FF_WIN >= 0x0600
+#if FF_WIN >= 0x0602
 	GetSystemTimePreciseAsFileTime(&ft);
 #else
 	typedef VOID WINAPI (*_GetSystemTimePreciseAsFileTime_t)(LPFILETIME);

@@ -20,42 +20,44 @@ The resulting code is almost completely inlined by a compiler: the code is nativ
 
 ## FEATURES
 
-I/O:
-* standard I/O - `FFOS/std.h`
-* files - `FFOS/file.h`
-* file mapping - `FFOS/filemap.h`
-* unnamed and named pipes - `FFOS/pipe.h`
-* asynchronous I/O - `FFOS/asyncio.h`
-* kernel queue - `FFOS/queue.h`
-* kernel call queue - `FFOS/kcall.h`
+```
+General:
+  base.h        Detect CPU, OS and compiler; base types; heap memory functions
+  ffos-extern.h Define external symbols
+
+I/O, FS:
+  std.h         Standard I/O
+  file.h        Files
+  filemap.h     File mapping
+  pipe.h        Unnamed and named pipes
+  queue.h       Kernel queue
+  kcall.h       Kernel call queue (to call kernel functions asynchronously)
+  dir.h         File-system directory functions
+  dirscan.h     Scan directory for files
+  path.h        Native file-system paths
 
 Process, thread, IPC:
-* process - `FFOS/process.h`
-* process environment - `FFOS/process.h`
-* threads - `FFOS/thread.h`
-* UNIX signals, execution exceptions - `FFOS/signal.h`
-* semaphores - `FFOS/semaphore.h`
-* process/thread performance counters `ffps_perf` - `FFOS/perf.h`
-* dynamically loaded libraries - `FFOS/dylib.h`
-* backtrace - `FFOS/backtrace.h`
+  process.h     Process
+  environ.h     Process environment
+  thread.h      Threads
+  signal.h      UNIX signals, CPU exceptions
+  semaphore.h   Semaphores
+  perf.h        Process/thread performance counters
+  dylib.h       Dynamically loaded libraries
+  backtrace.h   Backtrace
 
 Network:
-* sockets - `FFOS/socket.h`
-* network address; IPv4/IPv6 address - `FFOS/socket.h`
-* network configuration `ffnetconf` - `FFOS/netconf.h`
+  socket.h      Sockets, network address
+  netconf.h     Network configuration
 
 Misc:
-* detect CPU, OS and compiler; base types; heap memory functions - `FFOS/base.h`
-* preprocessor detection of OS, CPU, compiler - `FFOS/detect-*.h`
-* directories - `FFOS/dir.h`
-* native file-system paths - `FFOS/path.h`
-* timer, clock - `FFOS/timer.h`
-* timer queue - `FFOS/timerqueue.h`
-* native system string - `FFOS/string.h`
-* date and time - `FFOS/time.h`
-* system error codes - `FFOS/error.h`
-* random number generator - `FFOS/random.h`
-
+  time.h        Date and time
+  timer.h       System timer
+  timerqueue.h  Timer queue
+  string.h      Native system string
+  error.h       System error codes
+  random.h      Random number generator
+```
 
 ## Build & Test
 

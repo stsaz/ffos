@@ -10,6 +10,7 @@ ffsem_unlink
 ffsem_post
 */
 
+#pragma once
 #include <FFOS/base.h>
 
 #ifdef FF_WIN

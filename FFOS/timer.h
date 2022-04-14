@@ -142,6 +142,8 @@ static int _fftimer_cmd(fftimer tmr, ffuint cmd)
 static inline void fftimer_close(fftimer tmr, ffkq kq)
 {
 	(void)kq;
+	if (tmr == NULL)
+		return;
 	CloseHandle(tmr->htmr);
 	if (tmr->thd != FFTHREAD_NULL) {
 		_fftimer_cmd(tmr, _FFTIMER_EXIT);

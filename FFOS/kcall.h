@@ -69,7 +69,7 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 
 		switch (kc->op) {
 		case FFKCALL_FILE_OPEN:
-			kc->result = fffile_open(kc->name, kc->flags);
+			kc->result = (ffssize)fffile_open(kc->name, kc->flags);
 			break;
 
 		case FFKCALL_FILE_INFO:
@@ -151,7 +151,7 @@ static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkc
 	if (kc->op != 0) {
 		kc->op = 0;
 		fferr_set(kc->error);
-		return kc->result;
+		return (fffd)(ffssize)kc->result;
 	}
 
 	kc->name = name;

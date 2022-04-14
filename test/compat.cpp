@@ -10,6 +10,7 @@
 #include <FFOS/error.h>
 #include <FFOS/file.h>
 #include <FFOS/filemap.h>
+#include <FFOS/kcall.h>
 #include <FFOS/netconf.h>
 #include <FFOS/path.h>
 #include <FFOS/perf.h>

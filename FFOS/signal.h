@@ -309,7 +309,7 @@ User must call it in a loop until it returns an error
 Return signal number
   <0 on error */
 static int ffkqsig_read(ffkqsig sig, ffkq_event *ev);
-static int ffkqsig_readinfo(ffkqsig sig, ffkq_event *ev, struct ffsig_info *info);
+static inline int ffkqsig_readinfo(ffkqsig sig, ffkq_event *ev, struct ffsig_info *info);
 
 #endif
 
