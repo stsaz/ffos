@@ -20,6 +20,9 @@ Configuration:
 I/O:
 	ffsock_recv ffsock_recvfrom
 	ffsock_send ffsock_sendv ffsock_sendto
+Async I/O:
+	ffsock_recv_async ffsock_recv_udp_async ffsock_recvfrom_async
+	ffsock_send_async ffsock_sendv_async
 I/O vector:
 	ffiovec_set
 	ffiovec_get
@@ -29,6 +32,7 @@ I/O vector:
 #pragma once
 
 #include <FFOS/string.h>
+#include <FFOS/kqtask.h>
 #include <ffbase/slice.h>
 
 #ifdef FF_WIN
@@ -206,7 +210,7 @@ static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *peer, int flags
 	return sk;
 }
 
-static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task)
+static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task_accept *task)
 {
 	DWORD res;
 	if (task->active) {
@@ -225,8 +229,10 @@ static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int fla
 		if (domain == ((struct sockaddr_in*)addr_peer)->sin_family) {
 			peer->len = len_peer;
 			ffmem_copy(&peer->ip4, addr_peer, len_peer);
-			local->len = len_local;
-			ffmem_copy(&local->ip4, addr_local, len_local);
+			if (local != NULL) {
+				local->len = len_local;
+				ffmem_copy(&local->ip4, addr_local, len_local);
+			}
 		}
 
 		task->active = 0;
@@ -268,6 +274,104 @@ static inline ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flag
 	peer_addr->len = size;
 	return r;
 }
+
+static inline ffssize ffsock_recv_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task)
+{
+	DWORD read;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &read, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+	}
+
+	cap = ffmin(cap, 0xffffffff);
+	int r = recv(sk, (char*)buf, cap, 0);
+	if (!(r < 0 && GetLastError() == WSAEWOULDBLOCK))
+		return r;
+
+	ffmem_zero_obj(&task->overlapped);
+	BOOL ok = ReadFile((HANDLE)sk, NULL, 0, &read, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+		return -1;
+
+	task->active = 1;
+	return -1;
+}
+
+static inline ffssize ffsock_recv_udp_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task)
+{
+	DWORD read;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &read, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+		return read;
+	}
+
+	cap = ffmin(cap, 0xffffffff);
+	int r = recv(sk, (char*)buf, cap, 0);
+	if (!(r < 0 && GetLastError() == WSAEWOULDBLOCK))
+		return r;
+
+	ffmem_zero_obj(&task->overlapped);
+	BOOL ok = ReadFile((HANDLE)sk, buf, cap, &read, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+		return -1;
+
+	task->active = 1;
+	return -1;
+}
+
+static inline ffssize ffsock_recvfrom_async(ffsock sk, void *buf, ffsize cap, ffsockaddr *peer_addr, ffkq_task *task)
+{
+	DWORD read;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &read, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+		return read;
+	}
+
+	cap = ffmin(cap, 0xffffffff);
+	socklen_t addr_size = sizeof(struct sockaddr_in6);
+	int r = recvfrom(sk, (char*)buf, cap, 0, (struct sockaddr*)&peer_addr->ip4, &addr_size);
+	if (!(r < 0 && GetLastError() == WSAEWOULDBLOCK)) {
+		peer_addr->len = addr_size;
+		return r;
+	}
+
+	ffmem_zero_obj(&task->overlapped);
+	peer_addr->len = sizeof(struct sockaddr_in6);
+	WSABUF wb;
+	wb.buf = (char*)buf;
+	wb.len = cap;
+	DWORD flags = 0;
+	r = WSARecvFrom(sk, &wb, 1, &read, &flags, (SOCKADDR*)&peer_addr->ip4, (int*)&peer_addr->len, &task->overlapped, NULL);
+	if (!(r == 0 || GetLastError() == ERROR_IO_PENDING))
+		return -1;
+
+	task->active = 1;
+	return -1;
+}
+
 static inline ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags)
 {
 	return send(sk, (const char*)buf, ffmin(len, 0xffffffff), flags);
@@ -284,6 +388,80 @@ static inline ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n)
 static inline ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr)
 {
 	return sendto(sk, (char*)buf, ffmin(len, 0xffffffff), flags, (struct sockaddr*)&peer_addr->ip4, peer_addr->len);
+}
+
+static inline ffssize ffsock_send_async(ffsock sk, const void *buf, ffsize len, ffkq_task *task)
+{
+	DWORD sent;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &sent, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+		return sent;
+	}
+
+	len = ffmin(len, 0xffffffff);
+	int r = send(sk, (const char*)buf, len, 0);
+	if (!(r < 0 && GetLastError() == WSAEWOULDBLOCK))
+		return r;
+
+	ffmem_zero_obj(&task->overlapped);
+	len = ffmin(len, sizeof(task->buf));
+	ffmem_copy(task->buf, buf, len);
+	BOOL ok = WriteFile((HANDLE)sk, task->buf, len, &sent, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+		return -1;
+
+	task->active = 1;
+	return -1;
+}
+
+static inline ffssize ffsock_sendv_async(ffsock sk, ffiovec *iov, ffuint iov_n, ffkq_task *task)
+{
+	DWORD sent;
+	if (task->active) {
+		if (!GetOverlappedResult(NULL, &task->overlapped, &sent, 0)) {
+			if (GetLastError() == ERROR_IO_INCOMPLETE)
+				SetLastError(ERROR_IO_PENDING);
+			else
+				task->active = 0;
+			return -1;
+		}
+
+		task->active = 0;
+		return sent;
+	}
+
+	if (0 == WSASend(sk, iov, iov_n, &sent, 0, NULL, NULL))
+		return sent;
+	else if (GetLastError() != WSAEWOULDBLOCK)
+		return -1;
+
+	// get the first bytes from the first non-empty iovec
+	ffuint len = 0;
+	for (ffuint i = 0;  i != iov_n;  i++) {
+		if (iov[i].len != 0) {
+			len = ffmin(iov[i].len, sizeof(task->buf));
+			ffmem_copy(task->buf, iov[i].buf, len);
+			break;
+		}
+	}
+	if (len == 0)
+		return 0;
+
+	ffmem_zero_obj(&task->overlapped);
+	BOOL ok = WriteFile((HANDLE)sk, task->buf, len, &sent, &task->overlapped);
+	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+		return -1;
+
+	task->active = 1;
+	return -1;
 }
 
 /** Get WSA function pointer */
@@ -492,7 +670,7 @@ static inline ffsock ffsock_accept(ffsock listen_sk, ffsockaddr *addr, int flags
 
 static int ffsock_localaddr(ffsock sk, ffsockaddr *addr);
 
-static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task)
+static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task_accept *task)
 {
 	(void)domain; (void)task;
 	int sk;
@@ -557,6 +735,34 @@ static inline ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flag
 	return r;
 }
 
+static inline ffssize ffsock_recv_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task)
+{
+	(void)task;
+	ffssize r = recv(sk, buf, cap, 0);
+	if (r < 0 && errno == EAGAIN)
+		errno = EINPROGRESS;
+	return r;
+}
+
+static inline ffssize ffsock_recv_udp_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task)
+{
+	return ffsock_recv_async(sk, buf, cap, task);
+}
+
+static inline ffssize ffsock_recvfrom_async(ffsock sk, void *buf, ffsize cap, ffsockaddr *peer_addr, ffkq_task *task)
+{
+	(void)task;
+	socklen_t size = sizeof(struct sockaddr_in6);
+	int r = recvfrom(sk, buf, cap, 0, (struct sockaddr*)&peer_addr->ip4, &size);
+	if (r < 0) {
+		if (errno == EAGAIN)
+			errno = EINPROGRESS;
+		return r;
+	}
+	peer_addr->len = size;
+	return r;
+}
+
 static inline ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags)
 {
 	return send(sk, (char*)buf, len, flags);
@@ -570,6 +776,24 @@ static inline ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n)
 static inline ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr)
 {
 	return sendto(sk, buf, len, flags, (struct sockaddr*)&peer_addr->ip4, peer_addr->len);
+}
+
+static inline ffssize ffsock_send_async(ffsock sk, const void *buf, ffsize len, ffkq_task *task)
+{
+	(void)task;
+	ffssize r = send(sk, buf, len, 0);
+	if (r < 0 && errno == EAGAIN)
+		errno = EINPROGRESS;
+	return r;
+}
+
+static inline ffssize ffsock_sendv_async(ffsock sk, ffiovec *iov, ffuint iov_n, ffkq_task *task)
+{
+	(void)task;
+	ffssize r = writev(sk, iov, iov_n);
+	if (r < 0 && errno == EAGAIN)
+		errno = EINPROGRESS;
+	return r;
 }
 
 static inline int ffsock_fin(ffsock sk)
@@ -599,19 +823,23 @@ static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
 	return n;
 }
 
+#endif
+
 /** Skip/shift bytes in iovec array
 Return 0 if there's nothing left */
 static inline int ffiovec_array_shift(ffiovec *iov, ffsize n, ffsize skip)
 {
 	for (ffsize i = 0;  i != n;  i++) {
+#ifdef FF_UNIX
 		if (skip == 0 && iov[i].iov_len != 0)
+#else
+		if (skip == 0 && iov[i].len != 0)
+#endif
 			return 1;
 		ffiovec_shift(&iov[i], skip);
 	}
 	return 0;
 }
-
-#endif
 
 
 /** Prepare sockets for use
@@ -674,7 +902,7 @@ flags: FFSOCK_NONBLOCK
 domain: AF_INET | AF_INET6
 local: Optional local address
 */
-static ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task *task);
+static ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task_accept *task);
 
 /** Close a socket */
 static void ffsock_close(ffsock sk);
@@ -717,6 +945,23 @@ static ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags);
 Return <0 on error */
 static ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flags, ffsockaddr *peer_addr);
 
+/** Same as ffsock_recv(), except if it can't complete immediately,
+ it begins asynchronous operation and returns <0 with error FFSOCK_EINPROGRESS.
+Windows:
+ For TCP sockets only! */
+static ffssize ffsock_recv_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task);
+
+/** Same as ffsock_recv_async(), but for UDP sockets connected with ffsock_connect().
+Windows:
+ The `buf[0..cap]` region MUST STAY VALID until the signal from IOCP! */
+static ffssize ffsock_recv_udp_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task);
+
+/** Same as ffsock_recvfrom(), except if it can't complete immediately,
+ it begins asynchronous operation and returns <0 with error FFSOCK_EINPROGRESS.
+Windows:
+ The `buf[0..cap]` region and `peer_addr` MUST STAY VALID until the signal from IOCP! */
+static ffssize ffsock_recvfrom_async(ffsock sk, void *buf, ffsize cap, ffsockaddr *peer_addr, ffkq_task *task);
+
 /** Send data to a socket
 Return <0 on error */
 static ffssize ffsock_send(ffsock sk, const void *buf, ffsize len, int flags);
@@ -729,8 +974,20 @@ static ffssize ffsock_sendv(ffsock sk, ffiovec *iov, ffuint iov_n);
 Return <0 on error */
 static ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int flags, const ffsockaddr *peer_addr);
 
+/** Same as ffsock_send()/ffsock_sendv(), except if it can't complete immediately,
+ it begins asynchronous operation and returns <0 with error FFSOCK_EINPROGRESS.
+Windows:
+ The function creates the task which sends `buf[0]` byte before returning with FFSOCK_EINPROGRESS,
+  otherwise we can't make IOCP signal us.
+ On the next call it returns 1 as it should, but the new `buf[0]` byte is IGNORED!
+ This means that if you wish to change the data to send AFTER the call - it's TOO LATE for that! */
+static ffssize ffsock_send_async(ffsock sk, const void *buf, ffsize len, ffkq_task *task);
+static ffssize ffsock_sendv_async(ffsock sk, ffiovec *iov, ffuint iov_n, ffkq_task *task);
+
 /** Send TCP FIN
-Windows: requires ffsock_init(FFSOCK_INIT_WSAFUNCS), because shutdown() fails with WSAENOTCONN on a connected and valid socket assigned to IOCP
+Windows:
+ Requires ffsock_init(FFSOCK_INIT_WSAFUNCS) to get DisconnectEx() function pointer,
+  because shutdown() fails with WSAENOTCONN on a connected and valid socket assigned to IOCP.
 Return 0 on success */
 static int ffsock_fin(ffsock sk);
 
