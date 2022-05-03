@@ -34,20 +34,13 @@ TEST_OBJ := \
 	timer.o \
 	timerqueue.o
 # 	fileaio.o
-# 	kqu.o
-# TEST_OBJ += ffos.o
 HEADERS += $(FFOS_DIR)/test/Makefile
 ifeq "$(OS)" "windows"
-# 	TEST_OBJ += ffwin.o ffwin-skt.o
 	TEST_OBJ += winreg.o
 else
-# 	TEST_OBJ += ffunix.o
 	ifeq ($(OS),linux)
-# 		TEST_OBJ += fflinux.o
 	else ifeq ($(OS),freebsd)
-# 		TEST_OBJ += ffbsd.o
 	else ifeq ($(OS),apple)
-# 		TEST_OBJ += ffapple.o
 	endif
 endif
 

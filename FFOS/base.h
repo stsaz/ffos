@@ -26,12 +26,6 @@
 	typedef int fffd;
 	typedef char ffsyschar;
 
-typedef struct ffkq_task {
-	unsigned short active;
-	unsigned short kev_flags; // epoll: EPOLLERR;  kqueue: EV_EOF
-	unsigned int kev_errno; // kqueue: error code for EV_EOF and EVFILT_READ or EVFILT_WRITE
-} ffkq_task;
-
 #else // Windows:
 
 	#define _WIN32_WINNT FF_WIN_APIVER
@@ -43,13 +37,6 @@ typedef struct ffkq_task {
 
 	typedef HANDLE fffd;
 	typedef wchar_t ffsyschar;
-
-typedef struct ffkq_task {
-	OVERLAPPED overlapped;
-	unsigned active;
-	unsigned char local_peer_addrs[(sizeof(struct sockaddr_in6) + 16) * 2];
-	SOCKET csock;
-} ffkq_task;
 
 #endif
 

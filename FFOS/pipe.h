@@ -15,6 +15,7 @@ ffpipe_write
 #pragma once
 
 #include <FFOS/base.h>
+#include <FFOS/kqtask.h>
 
 #define FFPIPE_ASYNC  2
 

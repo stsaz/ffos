@@ -194,4 +194,4 @@ static inline wchar_t* ffs_alloc_buf_utow(wchar_t *dst, ffsize *cap_wchars, cons
 
 #define ffq_alloc(n)  ffmem_allocT(n, ffsyschar)
 
-#define ffws_alloc(n)  ffmem_alloc(n * sizeof(wchar_t))
+#define ffws_alloc(n)  (wchar_t*)ffmem_alloc(n * sizeof(wchar_t))

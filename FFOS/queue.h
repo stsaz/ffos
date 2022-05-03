@@ -20,6 +20,7 @@ User event:
 #pragma once
 
 #include <FFOS/base.h>
+#include <FFOS/kqtask.h>
 
 #ifdef FF_WIN
 
