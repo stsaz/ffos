@@ -477,28 +477,64 @@ void test_kqueue_socket_recvfrom()
 	ffsockaddr_set_ipv4(&a, ip, 64000);
 	x_sys(0 == ffsock_bind(l, &a));
 
-	char lbuf[16];
-	int r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &a, &task);
-	x_sys(r < 0 && fferr_last() == FFSOCK_EINPROGRESS);
-
 	// client
 	x_sys(FFSOCK_NULL != (c = ffsock_create_udp(AF_INET, FFSOCK_NONBLOCK)));
 	ffsockaddr ca = {};
 	ffsockaddr_set_ipv4(&ca, ip, 64001);
 	x_sys(0 == ffsock_bind(c, &ca));
 
+	char lbuf[16];
+	int r;
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
+	x_sys(r < 0 && fferr_last() == FFSOCK_EINPROGRESS);
+
 	// client -> server
-	r = ffsock_sendto(c, "cldata", 6, 0, &a);
+	x_sys(6 == ffsock_sendto(c, "cldata", 6, 0, &a));
+	x_sys(6 == ffsock_sendto(c, "CLDATA", 6, 0, &a));
 
 	x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
 	x(ffkq_event_data(&ev) == &l);
 
 	// server <- client
-	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &a, &task);
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
 	x_sys(r == 6);
 	x(!memcmp(lbuf, "cldata", 6));
 	ffuint port;
-	ffsockaddr_ip_port(&a, &port);
+	ffsockaddr_ip_port(&ca, &port);
+	x(port == 64001);
+
+	// server <- client
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
+	x_sys(r == 6);
+	x(!memcmp(lbuf, "CLDATA", 6));
+	ffsockaddr_ip_port(&ca, &port);
+	x(port == 64001);
+	// server -> client
+	x_sys(6 == ffsock_sendto(l, "svdata", 6, 0, &ca));
+
+#ifdef FF_WIN
+	// server -> client
+	// server <- "port unreachable" error
+	ffsockaddr bad_addr;
+	ffsockaddr_set_ipv4(&bad_addr, ip, 64002);
+	x_sys(6 == ffsock_sendto(l, "svdata", 6, 0, &bad_addr));
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
+	x_sys(r < 0 && fferr_last() == WSAECONNRESET);
+#endif
+
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
+	x_sys(r < 0 && fferr_last() == FFSOCK_EINPROGRESS);
+
+	x_sys(6 == ffsock_sendto(c, "cldata", 6, 0, &a));
+
+	x_sys(1 == ffkq_wait(kq, &ev, 1, tm));
+	x(ffkq_event_data(&ev) == &l);
+
+	// server <- client
+	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
+	x_sys(r == 6);
+	x(!memcmp(lbuf, "cldata", 6));
+	ffsockaddr_ip_port(&ca, &port);
 	x(port == 64001);
 
 	ffsock_close(l);
