@@ -187,9 +187,10 @@ static inline int ffsock_connect_async(ffsock sk, const ffsockaddr *addr, ffkq_t
 
 	ffmem_zero_obj(task);
 	BOOL ok = _ff_ConnectEx(sk, (struct sockaddr*)&addr->ip4, addr->len, NULL, 0, NULL, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING)) {
+	if (ok)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
-	}
 
 	task->active = 1;
 	return -1;
@@ -250,7 +251,9 @@ static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int fla
 
 	ffmem_zero_obj(task);
 	BOOL ok = _ff_AcceptEx(lsock, csock, task->local_peer_addrs, 0, sizeof(struct sockaddr_in6) + 16, sizeof(struct sockaddr_in6) + 16, &res, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING)) {
+	if (ok) {
+		SetLastError(ERROR_IO_PENDING);
+	} else if (GetLastError() != ERROR_IO_PENDING) {
 		closesocket(csock);
 		return INVALID_SOCKET;
 	}
@@ -297,7 +300,9 @@ static inline ffssize ffsock_recv_async(ffsock sk, void *buf, ffsize cap, ffkq_t
 
 	ffmem_zero_obj(&task->overlapped);
 	BOOL ok = ReadFile((HANDLE)sk, NULL, 0, &read, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+	if (ok)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
 
 	task->active = 1;
@@ -327,7 +332,9 @@ static inline ffssize ffsock_recv_udp_async(ffsock sk, void *buf, ffsize cap, ff
 
 	ffmem_zero_obj(&task->overlapped);
 	BOOL ok = ReadFile((HANDLE)sk, buf, cap, &read, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+	if (ok)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
 
 	task->active = 1;
@@ -365,7 +372,9 @@ static inline ffssize ffsock_recvfrom_async(ffsock sk, void *buf, ffsize cap, ff
 	wb.len = cap;
 	DWORD flags = 0;
 	r = WSARecvFrom(sk, &wb, 1, &read, &flags, (SOCKADDR*)&peer_addr->ip4, (int*)&peer_addr->len, &task->overlapped, NULL);
-	if (!(r == 0 || GetLastError() == ERROR_IO_PENDING))
+	if (r == 0)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
 
 	task->active = 1;
@@ -415,7 +424,9 @@ static inline ffssize ffsock_send_async(ffsock sk, const void *buf, ffsize len, 
 	len = ffmin(len, sizeof(task->buf));
 	ffmem_copy(task->buf, buf, len);
 	BOOL ok = WriteFile((HANDLE)sk, task->buf, len, &sent, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+	if (ok)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
 
 	task->active = 1;
@@ -457,7 +468,9 @@ static inline ffssize ffsock_sendv_async(ffsock sk, ffiovec *iov, ffuint iov_n, 
 
 	ffmem_zero_obj(&task->overlapped);
 	BOOL ok = WriteFile((HANDLE)sk, task->buf, len, &sent, &task->overlapped);
-	if (!(ok || GetLastError() == ERROR_IO_PENDING))
+	if (ok)
+		SetLastError(ERROR_IO_PENDING);
+	else if (GetLastError() != ERROR_IO_PENDING)
 		return -1;
 
 	task->active = 1;
@@ -942,6 +955,9 @@ Return <0 on error */
 static ffssize ffsock_recv(ffsock sk, void *buf, ffsize cap, int flags);
 
 /** Receive data from a socket
+Windows:
+ Returns with WSAECONNRESET after the previous sendto() on this socket to an unreachable destination UDP port.
+ This behaviour can be disabled by WSAIoctl(SIO_UDP_CONNRESET).
 Return <0 on error */
 static ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flags, ffsockaddr *peer_addr);
 
