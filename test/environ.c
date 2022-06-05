@@ -44,5 +44,7 @@ void test_env()
 	ffmem_free(p);
 #endif
 
-	(void) ffenv_locale(FFENV_LANGUAGE);
+	int r = ffenv_locale(buf, sizeof(buf), FFENV_LANGUAGE);
+	x(r != 0);
+	fflog("ffenv_locale(FFENV_LANGUAGE): %*s", (ffsize)r, buf);
 }

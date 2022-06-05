@@ -12,6 +12,10 @@ ffenv_locale
 
 #include <FFOS/base.h>
 
+enum FFENV_F {
+	FFENV_LANGUAGE = 1, // "language[_REGION]"
+};
+
 #ifdef FF_WIN
 
 #include <FFOS/string.h>
@@ -58,22 +62,41 @@ end:
 	return dst;
 }
 
-enum FFENV_F {
-	FFENV_LANGUAGE = LOCALE_ILANGUAGE, // enum FFLANG
-};
-
-enum FFLANG {
-	FFLANG_NONE,
-	FFLANG_ENG = LANG_ENGLISH,
-	FFLANG_ESP = LANG_SPANISH,
-	FFLANG_FRA = LANG_FRENCH,
-	FFLANG_GER = LANG_GERMAN,
-	FFLANG_IND = LANG_INDONESIAN,
-	FFLANG_RUS = LANG_RUSSIAN,
-};
-
-static inline int ffenv_locale(ffuint flags)
+static inline int ffenv_locale(char *buf, ffsize buf_cap, ffuint flags)
 {
+	switch (flags) {
+	case FFENV_LANGUAGE: {
+#if FF_WIN >= 0x0600
+		wchar_t ws[LOCALE_NAME_MAX_LENGTH]; // language[-Script[-REGION]...]
+		ffuint n = GetUserDefaultLocaleName(ws, FF_COUNT(ws));
+		if (n != 0)
+			n--;
+
+		char sb[LOCALE_NAME_MAX_LENGTH];
+		n = ffs_wtou(sb, sizeof(sb), ws, n);
+		ffstr s = FFSTR_INITN(sb, n), lang, region;
+		ffstr_splitby(&s, '-', &lang, &s);
+		ffstr_splitby(&s, '-', NULL, &s);
+		ffstr_splitby(&s, '-', &region, NULL);
+		if (buf != NULL) {
+			// form "language[_REGION]" string
+			n = ffmem_ncopy(buf, buf_cap, lang.ptr, lang.len);
+			if (n < buf_cap && region.len != 0) {
+				buf[n++] = '_';
+				n += ffmem_ncopy(&buf[n], buf_cap - n, region.ptr, region.len);
+			}
+		} else {
+			n = lang.len;
+			if (region.len != 0)
+				n += 1 + region.len;
+		}
+		return n;
+#else
+		return 0;
+#endif
+	}
+	}
+
 	wchar_t val[4];
 	GetLocaleInfoW(LOCALE_USER_DEFAULT, flags | LOCALE_RETURN_NUMBER, val, FF_COUNT(val));
 	return *(ffushort*)val & 0xff;
@@ -180,56 +203,25 @@ static inline char* ffenv_expand(void *unused, char *dst, ffsize dst_cap, const 
 	return out.ptr;
 }
 
-
-enum FFENV_F {
-	FFENV_LANGUAGE = 1, // enum FFLANG
-};
-
-enum FFLANG {
-	FFLANG_NONE,
-	FFLANG_GER,
-	FFLANG_ENG,
-	FFLANG_ESP,
-	FFLANG_FRA,
-	FFLANG_IND,
-	FFLANG_RUS,
-};
-
-static int _fflang_cmp(const void *a, const void *b)
+static inline int ffenv_locale(char *buf, ffsize buf_cap, ffuint flags)
 {
-	return ffmem_cmp(a, b, 2);
-}
+	switch (flags) {
+	case FFENV_LANGUAGE: {
+		ffstr s;
+		if (NULL == (s.ptr = (char*)_ffenv_val("LANG", 4)))
+			return -1;
+		// "lang_COUNTRY.UTF-8"
 
-/** Get user locale information
-flags: enum FFENV_F
-Return a value
-  -1 on error */
-static inline int ffenv_locale(ffuint flags)
-{
-	if (flags != FFENV_LANGUAGE)
-		return -1;
+		s.len = ffsz_len(s.ptr);
+		ffstr_splitby(&s, '.', &s, NULL);
+		s.len = ffmin(s.len, buf_cap);
+		if (buf != NULL)
+			ffmem_copy(buf, s.ptr, s.len);
+		return s.len;
+	}
+	}
 
-	const char *val;
-	if (NULL == (val = _ffenv_val("LANG", 4)))
-		return FFLANG_NONE;
-	// "lang_COUNTRY.UTF-8"
-
-	if (ffsz_len(val) < FFS_LEN("xx_")
-		|| val[2] != '_')
-		return FFLANG_NONE;
-
-	static const char langstr_sorted[][2] = {
-		{'d','e'}, // FFLANG_GER
-		{'e','n'}, // FFLANG_ENG
-		{'e','s'}, // FFLANG_ESP
-		{'f','r'}, // FFLANG_FRA
-		{'i','d'}, // FFLANG_IND
-		{'r','u'}, // FFLANG_RUS
-	};
-	int i = ffarr_binfind(langstr_sorted, FF_COUNT(langstr_sorted), val, 2, _fflang_cmp);
-	if (i < 0)
-		return FFLANG_NONE;
-	return i + 1;
+	return -1;
 }
 
 #endif
@@ -249,5 +241,7 @@ Return 'dst' or a new allocated buffer
 static char* ffenv_expand(void *unused, char *dst, ffsize dst_cap, const char *src);
 
 /** Get user locale information
-flags: enum FFENV_F */
-static int ffenv_locale(ffuint flags);
+flags: enum FFENV_F
+Return N of bytes written
+  -1 on error */
+static int ffenv_locale(char *buf, ffsize buf_cap, ffuint flags);
