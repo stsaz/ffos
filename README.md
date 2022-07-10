@@ -49,6 +49,7 @@ Process, thread, IPC:
 Network:
   socket.h      Sockets, network address
   netconf.h     Network configuration
+  netlink.h     Linux netlink helper functions
 
 Misc:
   time.h        Date and time
