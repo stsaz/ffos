@@ -127,6 +127,7 @@ void test_kqueue();
 void test_kcall();
 void test_mem();
 void test_netconf();
+void test_netlink();
 void test_path();
 void test_perf();
 void test_pipe();
@@ -202,6 +203,7 @@ static const struct test_s natests[] = {
 	F(sig_fpe),
 	F(sig_segv),
 	F(sig_stack),
+	F(netlink),
 };
 #undef F
 

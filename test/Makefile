@@ -20,6 +20,7 @@ TEST_OBJ := \
 	filemap.o \
 	kcall.o \
 	kqueue.o \
+	netlink.o \
 	mem.o \
 	path.o \
 	perf.o \
@@ -51,7 +52,7 @@ clean:
 
 TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -fno-strict-aliasing \
-	-DFF_DEBUG -g
+	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g
 ifeq "$(OPT)" "0"
 	TEST_CFLAGS += -O0 -DFFBASE_DEBUG
 else
