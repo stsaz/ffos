@@ -8,6 +8,31 @@
 
 static int tq_func_n;
 
+struct tq_rm {
+	fftimerqueue tq;
+	fftimerqueue_node n1, n2, n3;
+};
+
+void tq_func_rm(void *param)
+{
+	struct tq_rm *tqrm = param;
+	fftimerqueue_remove(&tqrm->tq, &tqrm->n1);
+	fftimerqueue_remove(&tqrm->tq, &tqrm->n2);
+	fftimerqueue_remove(&tqrm->tq, &tqrm->n3);
+}
+
+void test_timerqueue_rm()
+{
+	struct tq_rm tqrm = {};
+	fftimerqueue_init(&tqrm.tq);
+
+	fftimerqueue_add(&tqrm.tq, &tqrm.n1, 1, -2, tq_func_rm, &tqrm);
+	fftimerqueue_add(&tqrm.tq, &tqrm.n2, 1, -2, tq_func_rm, &tqrm);
+	fftimerqueue_add(&tqrm.tq, &tqrm.n3, 1, -2, tq_func_rm, &tqrm);
+
+	fftimerqueue_process(&tqrm.tq, 3);
+}
+
 void tq_func(void *param)
 {
 	int i = (ffsize)param;
@@ -16,6 +41,8 @@ void tq_func(void *param)
 
 void test_timerqueue()
 {
+	test_timerqueue_rm();
+
 	fftimerqueue tq;
 	fftimerqueue_node node, node2, node3;
 	fftimerqueue_init(&tq);
