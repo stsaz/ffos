@@ -5,7 +5,7 @@ FFOS_DIR := ..
 FFBASE_DIR := ../../ffbase
 HEADERS := $(wildcard $(FFOS_DIR)/FFOS/*.h)
 
-include $(FFOS_DIR)/test/makeconf2
+include $(FFBASE_DIR)/test/makeconf
 
 TEST_EXE := ffostest$(DOTEXE)
 
