@@ -96,18 +96,16 @@ static inline void fftimerqueue_add(fftimerqueue *tq, fftimerqueue_node *node, f
 /** Call the functions of expired events in timer queue.
 For one-shot event: remove the node from the queue before calling the associated function.
 For periodic event: re-add the node to the queue before calling the associated function.
-If new nodes are added during this process, they will be processed:
-  * immediately if the new node is newer than the current
-  * next time if the new node is older than the current
-  Note: another approach of immediate processing of all new events in the past
-   may lead to high CPU usage (i.e. hanging) in case the event interval is too small than clock time.
 Return the number of processed events */
 static inline ffuint fftimerqueue_process(fftimerqueue *tq, ffuint now_msec)
 {
 	ffuint n = 0;
 	fftimerqueue_node *node;
-	ffrbt_node *it;
-	FFRBT_FOR(&tq->tree, it) {
+	for (;;) {
+
+		ffrbt_node *it = ffrbt_node_min(tq->tree.root, &tq->tree.sentl);
+		if (it == &tq->tree.sentl)
+			break;
 
 		ffuint key = it->key;
 		/* Check if the time of this event is in the past and thus the event must be processed,
@@ -126,12 +124,11 @@ static inline ffuint fftimerqueue_process(fftimerqueue *tq, ffuint now_msec)
 			break;
 
 		node = FF_STRUCTPTR(fftimerqueue_node, rbtnode, it);
-		it = ffrbt_node_successor(it, &tq->tree.sentl);
 		ffrbt_rm(&tq->tree, &node->rbtnode);
 		node->active = 0;
 
 		if (node->interval_msec > 0) {
-			node->rbtnode.key = ffmax(key + node->interval_msec, now_msec);
+			node->rbtnode.key = ffmax(key + node->interval_msec, now_msec + 1);
 			ffrbt_insert(&tq->tree, &node->rbtnode, NULL);
 			node->active = 1;
 		}
