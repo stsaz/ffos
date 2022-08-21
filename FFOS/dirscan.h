@@ -9,6 +9,7 @@ ffdirscan_reset
 */
 
 #pragma once
+#define _FFOS_DIRSCAN_H
 
 #include <FFOS/dir.h>
 #include <FFOS/path.h>
@@ -83,7 +84,7 @@ static inline int ffdirscan_open(ffdirscan *d, const char *path, ffuint flags)
 	int rc = -1;
 
 	ffuint wcflags;
-	ffsize wclen;
+	ffsize wclen = 0;
 	if (flags & FFDIRSCAN_USEWILDCARD) {
 		wclen = ffsz_len(d->wildcard);
 		wcflags = FFPATH_ICASE ? FFS_WC_ICASE : 0;
