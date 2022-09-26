@@ -331,6 +331,7 @@ static inline fffd fffile_dup(fffd fd)
 
 static inline int fffile_close(fffd fd)
 {
+	if (fd == FFFILE_NULL) return 0;
 	return !CloseHandle(fd);
 }
 
@@ -673,6 +674,7 @@ static inline fffd fffile_dup(fffd fd)
 
 static inline int fffile_close(fffd fd)
 {
+	if (fd == FFFILE_NULL) return 0;
 	return close(fd);
 }
 

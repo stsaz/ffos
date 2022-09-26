@@ -9,7 +9,7 @@ ffpath_abs
 ffpath_islong
 ffpath_infoinit
 ffpath_info
-ffpath_splitpath ffpath_splitpath_win ffpath_splitpath_unix
+ffpath_splitpath ffpath_splitpath_str ffpath_splitpath_win ffpath_splitpath_unix
 ffpath_splitname
 ffpath_normalize
 */
@@ -30,6 +30,7 @@ enum FFPATH_INFO {
 #define FFPATH_ICASE  1
 
 #define FFPATH_SLASH  '\\'
+#define FFPATH_SLASHES  "\\/"
 
 static inline ffbool ffpath_slash(int c)
 {
@@ -115,6 +116,7 @@ static inline ffuint64 ffpath_info(ffpathinfo *st, ffuint name)
 
 /** File system native path separator */
 #define FFPATH_SLASH  '/'
+#define FFPATH_SLASHES  "/"
 
 static inline ffbool ffpath_slash(int c)
 {
@@ -202,6 +204,11 @@ static inline ffssize ffpath_splitname(const char *fn, ffsize len, ffstr *name, 
 		return 0;
 	}
 	return ffs_split(fn, len, dot, name, ext);
+}
+
+static inline ffssize ffpath_splitpath_str(ffstr fn, ffstr *dir, ffstr *name)
+{
+	return ffpath_splitpath(fn.ptr, fn.len, dir, name);
 }
 
 enum FFPATH_NORM {
