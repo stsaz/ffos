@@ -118,6 +118,7 @@ FF_EXTERN LPFN_GETACCEPTEXSOCKADDRS _ff_GetAcceptExSockaddrs;
 
 static inline void ffsock_close(ffsock sk)
 {
+	if (sk == FFSOCK_NULL) return;
 	closesocket(sk);
 }
 
@@ -592,6 +593,7 @@ static inline int ffsock_init(int flags)
 
 static inline void ffsock_close(ffsock sk)
 {
+	if (sk == FFSOCK_NULL) return;
 	close(sk);
 }
 
