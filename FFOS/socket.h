@@ -845,13 +845,13 @@ Return 0 if there's nothing left */
 static inline int ffiovec_array_shift(ffiovec *iov, ffsize n, ffsize skip)
 {
 	for (ffsize i = 0;  i != n;  i++) {
+		skip -= ffiovec_shift(&iov[i], skip);
 #ifdef FF_UNIX
-		if (skip == 0 && iov[i].iov_len != 0)
+		if (iov[i].iov_len != 0)
 #else
-		if (skip == 0 && iov[i].len != 0)
+		if (iov[i].len != 0)
 #endif
 			return 1;
-		ffiovec_shift(&iov[i], skip);
 	}
 	return 0;
 }
