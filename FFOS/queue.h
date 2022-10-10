@@ -37,6 +37,8 @@ static inline ffkq ffkq_create()
 
 static inline void ffkq_close(ffkq kq)
 {
+	if (kq == FFKQ_NULL) return;
+
 	CloseHandle(kq);
 }
 
@@ -335,6 +337,8 @@ static inline void ffkq_post_consume(ffkq_postevent post)
 
 static inline void ffkq_close(ffkq kq)
 {
+	if (kq == FFKQ_NULL) return;
+
 	close(kq);
 }
 
