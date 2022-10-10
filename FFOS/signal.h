@@ -135,6 +135,8 @@ static inline ffkqsig ffkqsig_attach(ffkq kq, const int *sigs, ffuint nsigs, voi
 
 static inline int ffkqsig_detach(ffkqsig sig, ffkq kq)
 {
+	if (sig == FFKQSIG_NULL) return 0;
+
 	(void)kq;
 	return close(sig);
 }
@@ -188,8 +190,7 @@ static inline ffkqsig ffkqsig_attach(ffkq kq, const int *sigs, ffuint nsigs, voi
 static inline int ffkqsig_detach(ffkqsig sig, ffkq kq)
 {
 	if (sig == FFKQSIG_NULL) {
-		errno = EBADF;
-		return -1;
+		return 0;
 	}
 
 	struct kevent *evs = (struct kevent*)ffmem_alloc(32 * sizeof(struct kevent));
