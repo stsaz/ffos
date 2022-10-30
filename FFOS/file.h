@@ -564,11 +564,15 @@ static inline int fffile_set_mtime(fffd fd, const fftime *last_write)
 	ts[1] = fftime_to_timespec(last_write);
 	return futimens(fd, ts);
 
-#else
+#elif !defined FF_ANDROID || defined __ANDROID_API__ >= 26
 	struct timeval tv[2];
 	tv[0] = fftime_to_timeval(last_write);
 	tv[1] = fftime_to_timeval(last_write);
 	return futimes(fd, tv);
+
+#else
+	errno = ENOSYS;
+	return -1;
 #endif
 }
 
