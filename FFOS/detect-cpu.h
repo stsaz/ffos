@@ -20,7 +20,12 @@ FF_64 - set if CPU supports 64-bit instruction set.
 
 #elif defined __arm__ || defined _M_ARM || defined __aarch64__
 	#define FF_ARM
-	#define FF_BIG_ENDIAN
+
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		#define FF_LITTLE_ENDIAN
+	#else
+		#define FF_BIG_ENDIAN
+	#endif
 
 #else
 	#warning "This CPU is not supported.  Assuming big-endian."
