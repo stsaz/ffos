@@ -1,8 +1,9 @@
 # ffos makefile
 # 2020, Simon Zolin
 
-FFOS_DIR := ..
-FFBASE_DIR := ../../ffbase
+ROOT := ../..
+FFOS_DIR := $(ROOT)/ffos
+FFBASE_DIR := $(ROOT)/ffbase
 HEADERS := $(wildcard $(FFOS_DIR)/FFOS/*.h)
 
 include $(FFBASE_DIR)/test/makeconf
@@ -20,7 +21,6 @@ TEST_OBJ := \
 	filemap.o \
 	kcall.o \
 	kqueue.o \
-	netlink.o \
 	mem.o \
 	path.o \
 	perf.o \
@@ -37,9 +37,14 @@ TEST_OBJ := \
 # 	fileaio.o
 HEADERS += $(FFOS_DIR)/test/Makefile
 ifeq "$(OS)" "windows"
-	TEST_OBJ += winreg.o
+	TEST_OBJ += \
+		filemon.o \
+		winreg.o
 else
 	ifeq ($(OS),linux)
+		TEST_OBJ += \
+			filemon.o \
+			netlink.o
 	else ifeq ($(OS),freebsd)
 	else ifeq ($(OS),apple)
 	endif
@@ -53,7 +58,7 @@ clean:
 TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -fno-strict-aliasing \
 	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g
-ifeq "$(OPT)" "0"
+ifeq "$(DEBUG)" "1"
 	TEST_CFLAGS += -O0 -DFFBASE_DEBUG
 else
 	TEST_CFLAGS += -O3
