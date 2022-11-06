@@ -122,6 +122,7 @@ void test_error();
 void test_file();
 void test_fileaio();
 void test_filemap();
+void test_filemon();
 void test_kqu();
 void test_kqueue();
 void test_kcall();
@@ -186,8 +187,11 @@ static const struct test_s atests[] = {
 	F(timer),
 	F(timerqueue),
 #ifdef FF_WIN
+	F(filemon),
 	F(winreg),
 #else
+	F(filemon),
+	F(netlink),
 	F(unixsignal),
 #endif
 	// F(atomic),
@@ -203,7 +207,6 @@ static const struct test_s natests[] = {
 	F(sig_fpe),
 	F(sig_segv),
 	F(sig_stack),
-	F(netlink),
 };
 #undef F
 

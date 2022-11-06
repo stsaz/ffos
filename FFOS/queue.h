@@ -6,6 +6,7 @@
 ffkq_create ffkq_close
 ffkq_attach ffkq_attach_socket
 ffkq_time_set
+ffkq_wait
 Event:
 	ffkq_event_data
 	ffkq_event_flags
