@@ -5,7 +5,6 @@
 #ifndef _FFOS_BASE_H
 #define _FFOS_BASE_H
 
-#include <FFOS/detect-cpu.h>
 #include <FFOS/detect-os.h>
 
 #if defined FF_LINUX
