@@ -965,7 +965,7 @@ static inline int fffile_readwhole(const char *fn, ffvec *dst, ffuint64 limit)
 		goto end; // too large file for 32-bit system
 #endif
 
-	if (NULL == ffvec_reallocT(dst, sz, char))
+	if (NULL == ffvec_reallocT(dst, sz+1, char))
 		goto end;
 
 	if (sz != (ffsize)fffile_read(f, dst->ptr, sz))
