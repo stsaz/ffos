@@ -214,6 +214,8 @@ static inline ffkq_postevent ffkq_post_attach(ffkq kq, void *data)
 
 static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
 {
+	if (post == FFKQ_NULL) return;
+
 	(void)kq;
 	close(post);
 }
@@ -314,6 +316,8 @@ static inline ffkq_postevent ffkq_post_attach(ffkq kq, void *data)
 
 static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
 {
+	if (post == FFKQ_NULL) return;
+
 	FF_ASSERT(post == kq);
 	(void)post;
 	struct kevent ev;
