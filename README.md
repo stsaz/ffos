@@ -1,7 +1,7 @@
 # ffos
 
 FFOS library allows to write cross-platform code for these OS:
-* Linux
+* Linux (+Android)
 * Windows
 * FreeBSD
 * macOS
