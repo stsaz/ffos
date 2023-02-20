@@ -211,6 +211,11 @@ static inline ffssize ffpath_splitpath_str(ffstr fn, ffstr *dir, ffstr *name)
 	return ffpath_splitpath(fn.ptr, fn.len, dir, name);
 }
 
+static inline ffssize ffpath_splitname_str(ffstr fn, ffstr *name, ffstr *ext)
+{
+	return ffpath_splitname(fn.ptr, fn.len, name, ext);
+}
+
 enum FFPATH_NORM {
 	FFPATH_SLASH_ONLY = 1, // split path by slash (default on UNIX)
 	FFPATH_SLASH_BACKSLASH = 2, // split path by both slash and backslash (default on Windows)
