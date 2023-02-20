@@ -421,52 +421,6 @@ static inline int fffile_set_mtime_path(const char *name, const fftime *last_wri
 	return r;
 }
 
-/** Create a system string and add a backslash to the end */
-static wchar_t* _ffs_utow_bslash(const char *s)
-{
-	ffsize n = 2;
-	wchar_t *w;
-	if (NULL == (w = (wchar_t*)ffs_alloc_utow_addcap(s, ffsz_len(s), &n)))
-		return NULL;
-
-	// "name" -> "name\\\0"
-	if (n == 0 || s[n - 1] != '\\')
-		w[n++] = '\\';
-	w[n] = '\0';
-	return w;
-}
-
-/** Create or delete a mount point for disk
-When deleting, the mount point directory isn't deleted
-disk: volume GUID name: "\\?\Volume{GUID}\"
-  NULL: delete mount point
-mount: mount point (an existing empty directory) */
-static inline int fffile_mount(const char *disk, const char *mount)
-{
-	int r = -1;
-	wchar_t *wdisk = NULL, *wmount = NULL;
-	if (NULL == (wmount = _ffs_utow_bslash(mount)))
-		goto end;
-
-	if (disk == NULL) {
-		if (!DeleteVolumeMountPointW(wmount))
-			goto end;
-
-	} else {
-		if (NULL == (wdisk = ffsz_alloc_utow(disk)))
-			goto end;
-		if (!SetVolumeMountPointW(wmount, wdisk))
-			goto end;
-	}
-
-	r = 0;
-
-end:
-	ffmem_free(wdisk);
-	ffmem_free(wmount);
-	return r;
-}
-
 #else // UNIX:
 
 #include <fcntl.h>

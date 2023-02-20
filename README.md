@@ -36,6 +36,7 @@ I/O, FS:
   dirscan.h     Scan directory for files
   path.h        Native file-system paths
   filemon.h     File system monitoring (Linux, Windows) (incompatible)
+  volume.h      Volumes (Windows)
 
 Process, thread, IPC:
   process.h     Process
