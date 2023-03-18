@@ -82,4 +82,4 @@ on Linux for Windows:
 
 ## License
 
-This code is absolutely free.
+ffos is in the public-domain.
