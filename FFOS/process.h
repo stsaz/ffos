@@ -146,7 +146,7 @@ static inline ffps ffps_exec_info(const char *filename, ffps_execinfo *info)
 	ffps ps = FFPS_NULL;
 	wchar_t wfn_s[256], *wfn, *args;
 	if (NULL == (wfn = ffsz_alloc_buf_utow(wfn_s, FF_COUNT(wfn_s), filename)))
-		return NULL;
+		return FFPS_NULL;
 
 	if (NULL == (args = _ffargv_to_cmdln(info->argv)))
 		goto end;

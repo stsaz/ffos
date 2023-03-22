@@ -50,14 +50,14 @@ static inline ffssize ffstdin_read(void *buf, ffsize cap)
 	if (GetConsoleMode(h, &read)) {
 
 		wchar_t ws[1024], *w = ws;
-		ffsize wcap = FF_COUNT(ws);
+		FF_ASSERT(cap >= 4);
+		ffsize wcap = cap / 4;
 		if (cap / 4 > FF_COUNT(ws)) {
 			if (NULL == (w = (wchar_t*)ffmem_alloc(cap / 2)))
 				return -1;
-			wcap = cap;
 		}
 
-		BOOL b = ReadConsoleW(h, w, wcap, &read, NULL);
+		BOOL b = ReadConsoleW(h, w, ffmin(wcap, 0xffffffff), &read, NULL);
 
 		ffssize r;
 		if (b) {
@@ -71,7 +71,7 @@ static inline ffssize ffstdin_read(void *buf, ffsize cap)
 		return (b) ? r : -1;
 	}
 
-	if (!ReadFile(h, buf, cap, &read, 0))
+	if (!ReadFile(h, buf, ffmin(cap, 0xffffffff), &read, 0))
 		return -1;
 	return read;
 }
@@ -323,7 +323,9 @@ static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 #endif
 
 
-/** Read from stdin */
+/** Read from stdin.
+Windows: 'cap' must be >=4.
+Return N of bytes read */
 static ffssize ffstdin_read(void *buf, ffsize cap);
 
 /** Write to stdout */

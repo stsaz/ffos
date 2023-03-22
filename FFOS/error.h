@@ -63,7 +63,7 @@ static inline int fferr_str(int code, char *buffer, ffsize cap)
 
 	wchar_t ws[256];
 	const int f = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK;
-	int n = FormatMessageW(f, 0, code, 0, ws, sizeof(ws), 0);
+	int n = FormatMessageW(f, 0, code, 0, ws, FF_COUNT(ws), 0);
 	if (n == 0) {
 		ffsz_copyz(buffer, cap, "unknown error");
 		return 0;

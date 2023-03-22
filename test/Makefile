@@ -33,7 +33,8 @@ TEST_OBJ := \
 	test.o \
 	thread.o \
 	timer.o \
-	timerqueue.o
+	timerqueue.o \
+	vol.o
 # 	fileaio.o
 HEADERS += $(FFOS_DIR)/test/Makefile
 ifeq "$(OS)" "windows"
