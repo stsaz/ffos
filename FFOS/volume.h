@@ -6,7 +6,7 @@
 ffvol_open ffvol_close
 ffvol_next
 ffvol_info ffvol_info_destroy
-fffile_mount
+ffvol_mount
 */
 
 #ifdef FF_WIN
@@ -38,7 +38,7 @@ static inline int ffvol_next(fffd h, void *buf, ffsize cap)
 }
 
 struct ffvol_info {
-	uint type;
+	ffuint type;
 	DWORD sectors_cluster, bytes_sector, clusters_free, clusters_total;
 	wchar_t fs[64];
 	ffvec paths; // NULL-terminated 2d array: wchar_t*[]

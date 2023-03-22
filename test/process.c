@@ -176,6 +176,7 @@ void test_ps_kq()
 static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info, int *exit_code, ffvec *output, ffvec *error, ffuint flags)
 {
 	(void)flags;
+	ffps ps = FFPS_NULL;
 	int rc = -1, r;
 	fffd rd = FFPIPE_NULL, wr = FFPIPE_NULL;
 	fffd rd_err = FFPIPE_NULL, wr_err = FFPIPE_NULL;
@@ -214,7 +215,7 @@ static inline int ffps_exec_info_wait(const char *filename, ffps_execinfo *info,
 		info->err = wr_err;
 	}
 
-	ffps ps = ffps_exec_info(filename, info);
+	ps = ffps_exec_info(filename, info);
 	if (ps == FFPS_NULL)
 		goto end;
 

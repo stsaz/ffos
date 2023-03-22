@@ -20,7 +20,7 @@ void test_std()
 
 #if 1
 	fflog("please enter 'Привет' and press <Enter>");
-	char buf[16];
+	char buf[100];
 	xint_sys(FFS_LEN(S1), ffstdin_read(buf, sizeof(buf)));
 	x(!ffmem_cmp(buf, S1, FFS_LEN(S1)));
 #endif
