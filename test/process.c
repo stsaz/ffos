@@ -305,6 +305,13 @@ void test_ps_out()
 #endif
 }
 
+void test_ps_curdir()
+{
+	char buf[1000];
+	x(0 == ffps_curdir(buf, sizeof(buf)));
+	fflog("ffps_curdir: %s", buf);
+}
+
 void test_process()
 {
 #ifdef FF_LINUX
@@ -313,6 +320,7 @@ void test_process()
 #endif
 
 	test_ps();
+	test_ps_curdir();
 	test_ps_kq();
 	test_ps_out();
 }

@@ -12,6 +12,7 @@ Current:
 	ffps_curhdl
 	ffps_exit
 	ffps_filename
+	ffps_curdir
 */
 
 #pragma once
@@ -229,6 +230,32 @@ end:
 	return r;
 }
 
+static inline int ffps_curdir(char *buf, ffsize cap)
+{
+	int r = -1;
+	wchar_t ws[256], *w = ws;
+	ffsize n = GetCurrentDirectoryW(FF_COUNT(ws), ws);
+	if (n == 0)
+		return -1;
+	else if (n > FF_COUNT(ws)) {
+		if (NULL == (w = (wchar_t*)ffmem_alloc(n * 4)))
+			return -1;
+
+		if (0 == (n = GetCurrentDirectoryW(n, w)))
+			goto end;
+	}
+
+	n = ffsz_wtou(buf, cap, w);
+	if ((ffssize)n < 0)
+		goto end;
+	r = 0;
+
+end:
+	if (w != ws)
+		ffmem_free(w);
+	return r;
+}
+
 #else // UNIX:
 
 #include <sys/wait.h>
@@ -405,6 +432,11 @@ static inline const char* ffps_filename(char *name, ffsize cap, const char *argv
 #endif
 }
 
+static inline int ffps_curdir(char *buf, ffsize cap)
+{
+	return (NULL == getcwd(buf, cap));
+}
+
 #endif
 
 
@@ -457,3 +489,6 @@ static void ffps_exit(int status);
 /** Get filename of the current process
 Return NULL on error */
 static const char* ffps_filename(char *name, ffsize cap, const char *argv0);
+
+/** Get current directory for the process */
+static int ffps_curdir(char *buf, ffsize cap);
