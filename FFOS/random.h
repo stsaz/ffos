@@ -10,12 +10,14 @@
 
 static inline void ffrand_seed(ffuint seed)
 {
-	srand(seed);
+	(void)seed;
 }
 
 static inline int ffrand_get()
 {
-	return rand();
+	ffuint i;
+	rand_s(&i);
+	return i;
 }
 
 #else

@@ -48,11 +48,6 @@ void test_rand()
 	n = ffrand_get();
 	n2 = ffrand_get();
 	x(n != n2);
-
-	ffrand_seed(fftime_sec(&t));
-	n2 = ffrand_get();
-	x(n == n2);
-
 }
 
 #if 0
