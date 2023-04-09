@@ -209,8 +209,8 @@ static inline const char* ffps_filename(char *name, ffsize cap, const char *argv
 	if (n == 0)
 		return NULL;
 	if (n == FF_COUNT(ws)) {
-		n = 4096 * 2;
-		if (NULL == (w = (wchar_t*)ffmem_alloc(n)))
+		n = 4096;
+		if (NULL == (w = (wchar_t*)ffmem_alloc(n * 4)))
 			return NULL;
 
 		n = GetModuleFileNameW(NULL, w, n);
