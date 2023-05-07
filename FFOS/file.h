@@ -4,7 +4,7 @@
 
 /*
 Get properties:
-	fffile_info_path fffile_info
+	fffile_info_path fffile_info_linkpath fffile_info
 	fffile_size fffileinfo_size
 	fffileinfo_mtime
 	fffileinfo_attr fffile_isdir
@@ -91,6 +91,11 @@ end:
 	if (w != ws)
 		ffmem_free(w);
 	return r;
+}
+
+static inline int fffile_info_linkpath(const char *name, fffileinfo *fi)
+{
+	return fffile_info_path(name, fi);
 }
 
 static inline int fffile_info(fffd fd, fffileinfo *fi)
@@ -440,6 +445,13 @@ static inline int fffile_set_mtime_path(const char *name, const fftime *last_wri
 static inline int fffile_info_path(const char *name, fffileinfo *fi)
 {
 	return stat(name, fi);
+}
+
+/** Get file status by its path.
+For symbolic links: get info about the link, not the target. */
+static inline int fffile_info_linkpath(const char *name, fffileinfo *fi)
+{
+	return lstat(name, fi);
 }
 
 static inline int fffile_info(fffd fd, fffileinfo *fi)
