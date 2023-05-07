@@ -37,6 +37,7 @@ I/O, FS:
   path.h        Native file-system paths
   filemon.h     File system monitoring (Linux, Windows) (incompatible)
   volume.h      Volumes (Windows)
+  winreg.h      Windows Registry
 
 Process, thread, IPC:
   process.h     Process

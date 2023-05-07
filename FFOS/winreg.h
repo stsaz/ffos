@@ -9,9 +9,15 @@ ffwinreg_info ffwinreg_isstr
 ffwinreg_read
 ffwinreg_write ffwinreg_writestr ffwinreg_writeint
 ffwinreg_del
+ffwinreg_enum_init
+ffwinreg_enum_destroy
+ffwinreg_enum_begin
+ffwinreg_enum_nextkey
+ffwinreg_enum_nextval
 */
 
 #include <FFOS/string.h>
+#include <ffbase/vector.h>
 
 typedef HKEY ffwinreg;
 #define FFWINREG_NULL  ((HKEY)-1)
@@ -336,4 +342,198 @@ end:
 	if (wname != wname_s)
 		ffmem_free(wname);
 	return r;
+}
+
+
+typedef struct ffwinreg_enum {
+	ffwinreg key;
+	ffuint idx;
+	ffvec name, value;
+	ffvec wname, wval;
+	ffuint options;
+} ffwinreg_enum;
+
+static inline void ffwinreg_enum_destroy(ffwinreg_enum *e)
+{
+	ffvec_free(&e->name);
+	ffvec_free(&e->value);
+	ffvec_free(&e->wname);
+	ffvec_free(&e->wval);
+}
+
+enum FFWINREG_ENUM_OPT {
+	FFWINREG_ENUM_VALSTR = 1, // convert value (of any type) to UTF-8 string
+};
+
+/**
+options: enum FFWINREG_ENUM_OPT */
+static inline int ffwinreg_enum_init(ffwinreg_enum *e, ffuint options)
+{
+	if (NULL == ffvec_alloc(&e->name, 256, 1)
+		|| NULL == ffvec_alloc(&e->value, 256, 1)
+		|| NULL == ffvec_allocT(&e->wname, 256, wchar_t)
+		|| NULL == ffvec_alloc(&e->wval, 256, 1)) {
+		ffwinreg_enum_destroy(e);
+		return -1;
+	}
+	e->key = FFWINREG_NULL;
+	e->options = options;
+	return 0;
+}
+
+/** Begin enumerating keys or values */
+static inline void ffwinreg_enum_begin(ffwinreg_enum *e, ffwinreg key)
+{
+	e->key = key;
+	e->idx = 0;
+}
+
+/** Get next subkey
+Return 0 if the next entry is ready;
+  1 if no more entries;
+  <0 on error. */
+static inline int ffwinreg_enum_nextkey(ffwinreg_enum *e, ffstr *name)
+{
+	int r;
+	DWORD name_len;
+
+	for (;;) {
+		name_len = e->wname.cap;
+		r = RegEnumKeyExW(e->key, e->idx, (wchar_t*)e->wname.ptr, &name_len, NULL, NULL, NULL, NULL);
+		if (r == 0)
+			break;
+
+		switch (r) {
+		case ERROR_MORE_DATA: {
+			// get maximum length of subkey's name
+			DWORD subkey_maxlen;
+			if (0 != RegQueryInfoKeyW(e->key, NULL, NULL, NULL, NULL, &subkey_maxlen, NULL, NULL, NULL, NULL, NULL, NULL))
+				return -1;
+			if (NULL == ffvec_reallocT(&e->wname, subkey_maxlen + 1, wchar_t))
+				return -1;
+			continue;
+		}
+
+		case ERROR_NO_MORE_ITEMS:
+			return 1;
+
+		default:
+			SetLastError(r);
+			return -1;
+		}
+	}
+
+	if (NULL == ffvec_realloc(&e->name, name_len * 4, 1))
+		return -1;
+	r = ffs_wtou((char*)e->name.ptr, e->name.cap, (wchar_t*)e->wname.ptr, name_len);
+	FF_ASSERT(r >= 0);
+	e->name.len = r;
+
+	ffstr_setstr(name, &e->name);
+	e->idx++;
+	return 0;
+}
+
+static int _ffwinreg_val_str(ffwinreg_enum *e, ffuint type, ffvec *value)
+{
+	value->len = 0;
+
+	int r;
+	switch (type) {
+
+	case REG_DWORD: {
+		ffuint i = *(ffuint*)e->wval.ptr;
+		value->len = ffs_format_r0((char*)value->ptr, value->cap, "0x%08xu (%u)", i, i);
+		break;
+	}
+
+	case REG_QWORD: {
+		ffuint64 i = *(uint64*)e->wval.ptr;
+		value->len = ffs_format_r0((char*)value->ptr, value->cap, "0x%016xU (%U)", i, i);
+		break;
+	}
+
+	case REG_BINARY:
+		if (NULL == ffvec_realloc(value, e->wval.len * 2, 1))
+			return -1;
+		value->len = ffs_format_r0((char*)value->ptr, value->cap, "%*xb", e->wval.len, e->wval.ptr);
+		break;
+
+	case REG_SZ:
+	case REG_EXPAND_SZ:
+		if (e->wval.len == 0)
+			break;
+		if (NULL == ffvec_realloc(value, e->wval.len / sizeof(wchar_t) * 4, 1))
+			return -1;
+		r = ffs_wtou((char*)value->ptr, value->cap, (wchar_t*)e->wval.ptr, (e->wval.len - 1) / sizeof(wchar_t));
+		FF_ASSERT(r >= 0);
+		e->value.len = r;
+		break;
+
+	default:
+		SetLastError(ERROR_INVALID_DATA);
+		return -1;
+	}
+
+	return 0;
+}
+
+/** Get next value
+val_type: value's type
+Return 0 if the next entry is ready;
+  1 if no more entries;
+  <0 on error. */
+static inline int ffwinreg_enum_nextval(ffwinreg_enum *e, ffstr *name, ffstr *value, ffuint *value_type)
+{
+	int r;
+	DWORD type, name_len, val_len;
+
+	for (;;) {
+		name_len = e->wname.cap;
+		val_len = e->wval.cap;
+		r = RegEnumValueW(e->key, e->idx, (wchar_t*)e->wname.ptr, &name_len, NULL, &type, (byte*)e->wval.ptr, &val_len);
+		if (r == 0)
+			break;
+
+		switch (r) {
+		case ERROR_MORE_DATA: {
+			// get maximum length of value's name and data
+			DWORD name_maxlen, val_maxlen;
+			if (0 != RegQueryInfoKeyW(e->key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &name_maxlen, &val_maxlen, NULL, NULL))
+				return -1;
+			if (NULL == ffvec_reallocT(&e->wname, name_maxlen + 1, wchar_t)
+				|| NULL == ffvec_realloc(&e->wval, val_maxlen, 1))
+				return -1;
+			continue;
+		}
+
+		case ERROR_NO_MORE_ITEMS:
+			return 1;
+
+		default:
+			SetLastError(r);
+			return -1;
+		}
+	}
+	e->wval.len = val_len;
+
+	if (NULL == ffvec_realloc(&e->name, name_len * 4, 1))
+		return -1;
+	r = ffs_wtou((char*)e->name.ptr, e->name.cap, (wchar_t*)e->wname.ptr, name_len);
+	FF_ASSERT(r >= 0);
+	e->name.len = r;
+
+	ffstr_setstr(name, &e->name);
+
+	*value_type = type;
+	if (e->options & FFWINREG_ENUM_VALSTR) {
+		if (0 != _ffwinreg_val_str(e, type, &e->value))
+			return -1;
+		ffstr_setstr(value, &e->value);
+	} else {
+		ffstr_setstr(value, &e->wval);
+	}
+
+	e->idx++;
+	return 0;
 }
