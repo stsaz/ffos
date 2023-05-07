@@ -23,11 +23,11 @@ static int test_str()
 		size_t n;
 		WCHAR *pw;
 		ffsyschar ss[1024];
-		n = ff_utow(ss, FF_COUNT(ss), FFSTR("asdf"), 0);
+		n = ff_utow(ss, FF_COUNT(ss), "asdf", 4, 0);
 		x(n != 0);
 
 		n = 5;
-		x(ss == (pw = ffs_utow(ss, &n, FFSTR("asdf"))));
+		x(ss == (pw = ffs_utow(ss, &n, "asdf", 4)));
 		pw[n] = L'\0';
 		x(n == FFS_LEN("asdf") && !ffq_cmpz(pw, L"asdf"));
 

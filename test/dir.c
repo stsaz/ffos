@@ -18,6 +18,8 @@ Copyright (c) 2013 Simon Zolin
 #define TMP_PATH "."
 #endif
 
+#define FFSTR(s)  (char*)(s), FFS_LEN(s)
+
 static int test_pathinfo(const char *dirname)
 {
 	(void)dirname;

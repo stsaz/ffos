@@ -18,6 +18,8 @@
 #define TMP_PATH "."
 #endif
 
+#define FFSTR(s)  (char*)(s), FFS_LEN(s)
+
 static int test_mapwr(const char *fn)
 {
 	fffd fd
