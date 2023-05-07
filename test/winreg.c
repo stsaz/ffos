@@ -5,6 +5,42 @@ Copyright (c) 2017 Simon Zolin
 #include <FFOS/winreg.h>
 #include <FFOS/test.h>
 
+void test_winreg_enum(ffwinreg k)
+{
+	ffwinreg k2;
+	x_sys(FFWINREG_NULL != (k2 = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffostest\\subkey", FFWINREG_CREATE | FFWINREG_READWRITE)));
+
+	ffwinreg_enum e = {};
+	ffwinreg_enum_init(&e, FFWINREG_ENUM_VALSTR);
+
+	ffstr name, val;
+	ffuint t;
+
+	ffwinreg_enum_begin(&e, k);
+	x_sys(0 == ffwinreg_enum_nextkey(&e, &name));
+	xseq(&name, "subkey");
+	x_sys(1 == ffwinreg_enum_nextkey(&e, &name));
+
+	ffwinreg_enum_begin(&e, k);
+	x_sys(0 == ffwinreg_enum_nextval(&e, &name, &val, &t));
+	xseq(&name, "NameInt");
+	xseq(&val, "0x00003039 (12345)");
+	x(t == REG_DWORD);
+
+	x_sys(0 == ffwinreg_enum_nextval(&e, &name, &val, &t));
+	xseq(&name, "NameStr");
+	xseq(&val, "Value");
+	x(t == REG_SZ);
+
+	x_sys(1 == ffwinreg_enum_nextval(&e, &name, &val, &t));
+
+	ffwinreg_enum_destroy(&e);
+
+#if FF_WIN >= 0x0600
+	x_sys(0 == ffwinreg_del(k2, "", NULL));
+#endif
+}
+
 void test_winreg()
 {
 	ffwinreg k;
@@ -74,6 +110,8 @@ void test_winreg()
 	x(val.type == REG_DWORD);
 	x(val.data == (void*)&n);
 	x(val.datalen == sizeof(int));
+
+	test_winreg_enum(k);
 
 #if FF_WIN >= 0x0600
 	x_sys(0 == ffwinreg_del(k, "", "NameStr"));
