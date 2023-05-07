@@ -111,11 +111,3 @@ static int ffmmap_unmap(void *p, ffsize sz);
 
 /** Close a file mapping */
 static void ffmmap_close(fffd fmap);
-
-
-#define ffmap_create  ffmmap_create
-#define ffmap_open  ffmmap_open
-#define ffmap_unmap  ffmmap_unmap
-#define ffmap_close  ffmmap_close
-#define FFMAP_PAGEREAD  FFMMAP_READ
-#define FFMAP_PAGERW  FFMMAP_READWRITE

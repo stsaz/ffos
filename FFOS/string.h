@@ -21,8 +21,6 @@ Example:
 is translated into "select * from table". */
 #define FFS_QUOTE(...)  #__VA_ARGS__
 
-#define FFSTR(s)  (char*)(s), FFS_LEN(s)
-
 #define FFCRLF "\r\n"
 
 #ifdef FF_UNIX

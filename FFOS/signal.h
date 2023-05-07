@@ -61,7 +61,7 @@ static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 	i.sig = inf->ExceptionRecord->ExceptionCode; //EXCEPTION_*
 	i.si = inf;
 
-	switch (inf->ExceptionRecord->ExceptionCode) {
+	switch ((int)inf->ExceptionRecord->ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 		i.flags = inf->ExceptionRecord->ExceptionInformation[0];
 		i.addr = (void*)inf->ExceptionRecord->ExceptionInformation[1];
@@ -90,7 +90,7 @@ static inline int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffu
 	return 0;
 }
 
-#else
+#else // UNIX:
 
 #include <FFOS/queue.h>
 #include <signal.h>
@@ -108,7 +108,6 @@ enum FFSIG {
 
 #include <sys/signalfd.h>
 #include <sys/epoll.h>
-#include <signal.h>
 
 typedef int ffkqsig;
 #define FFKQSIG_NULL  (-1)

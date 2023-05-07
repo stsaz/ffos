@@ -16,6 +16,7 @@ ffwinreg_enum_nextkey
 ffwinreg_enum_nextval
 */
 
+#pragma once
 #include <FFOS/string.h>
 #include <ffbase/vector.h>
 

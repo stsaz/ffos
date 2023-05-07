@@ -224,10 +224,13 @@ static inline fffd ffpipe_create_named(const char *name, ffuint flags)
 	a.sun_len = sizeof(struct sockaddr_un);
 #endif
 	a.sun_family = AF_UNIX;
+
 	ffsize len = ffsz_len(name);
-	if (len + 1 > sizeof(a.sun_path))
+	if (len + 1 > sizeof(a.sun_path)) {
+		errno = EINVAL;
 		return FFPIPE_NULL;
-	strcpy(a.sun_path, name);
+	}
+	ffmem_copy(a.sun_path, name, len + 1);
 
 	if (FFPIPE_NULL == (p = socket(AF_UNIX, SOCK_STREAM, 0)))
 		return FFPIPE_NULL;
