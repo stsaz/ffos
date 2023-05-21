@@ -11,8 +11,6 @@ static int test_str()
 {
 	char su[1024];
 
-	FFTEST_FUNC;
-
 	fferr_set(EINVAL);
 	x(0 == fferr_str(fferr_last(), su, FF_COUNT(su)));
 
@@ -55,8 +53,6 @@ int test_mem()
 	char ss10[10] = { 0,1,2,3,4,5,6,7,8,9 };
 	char ss0[10] = { 0 };
 	char *d;
-
-	FFTEST_FUNC;
 
 	d = ffmem_alloc(10);
 	x(d != NULL);

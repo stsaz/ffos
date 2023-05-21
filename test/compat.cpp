@@ -28,5 +28,11 @@
 #include <FFOS/timer.h>
 
 #ifdef FF_WIN
+#include <FFOS/filemon.h>
+#include <FFOS/volume.h>
 #include <FFOS/winreg.h>
+
+#elif defined FF_LINUX
+#include <FFOS/filemon.h>
+#include <FFOS/netlink.h>
 #endif

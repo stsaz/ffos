@@ -59,6 +59,8 @@ void test_kcall()
 	ffstr d = FFSTR_INITN(buf, r);
 	xstr(d, "hello");
 
+	ffrq_free(q.sq);
+	ffrq_free(q.cq);
 	fffile_close(f);
 	fffile_remove(fn);
 }

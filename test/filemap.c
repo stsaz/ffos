@@ -105,8 +105,6 @@ static int test_mapanon()
 
 int test_filemap()
 {
-	FFTEST_FUNC;
-
 	char fn[256];
 	strcpy(fn, TMP_PATH);
 	strcat(fn, "/tmpfile");

@@ -61,6 +61,7 @@ void test_file_rename()
 
 	x_sys(0 == fffile_remove(fnnew));
 	ffmem_free(fn);
+	ffmem_free(fnnew);
 }
 
 /** Check symlink and hardlink */
@@ -387,6 +388,7 @@ void test_file_rwwhole()
 	x(0 == fffile_readwhole(fn, &data, -1));
 	xseq((ffstr*)&data, "wholedata");
 	ffmem_free(fn);
+	ffvec_free(&data);
 }
 
 void test_file()

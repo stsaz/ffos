@@ -687,11 +687,14 @@ static int ffsock_localaddr(ffsock sk, ffsockaddr *addr);
 
 static inline ffsock ffsock_accept_async(ffsock lsock, ffsockaddr *peer, int flags, int domain, ffsockaddr *local, ffkq_task_accept *task)
 {
-	(void)domain; (void)task;
+	(void)domain;
+	task->active = 0;
 	int sk;
 	if (-1 == (sk = ffsock_accept(lsock, peer, flags & FFSOCK_NONBLOCK))) {
-		if (errno == EAGAIN)
+		if (errno == EAGAIN) {
 			errno = EINPROGRESS;
+			task->active = 1;
+		}
 		return -1;
 	}
 
@@ -752,10 +755,12 @@ static inline ffssize ffsock_recvfrom(ffsock sk, void *buf, ffsize cap, int flag
 
 static inline ffssize ffsock_recv_async(ffsock sk, void *buf, ffsize cap, ffkq_task *task)
 {
-	(void)task;
 	ffssize r = recv(sk, buf, cap, 0);
-	if (r < 0 && errno == EAGAIN)
+	task->active = 0;
+	if (r < 0 && errno == EAGAIN) {
 		errno = EINPROGRESS;
+		task->active = 1;
+	}
 	return r;
 }
 
@@ -766,12 +771,14 @@ static inline ffssize ffsock_recv_udp_async(ffsock sk, void *buf, ffsize cap, ff
 
 static inline ffssize ffsock_recvfrom_async(ffsock sk, void *buf, ffsize cap, ffsockaddr *peer_addr, ffkq_task *task)
 {
-	(void)task;
 	socklen_t size = sizeof(struct sockaddr_in6);
 	int r = recvfrom(sk, buf, cap, 0, (struct sockaddr*)&peer_addr->ip4, &size);
+	task->active = 0;
 	if (r < 0) {
-		if (errno == EAGAIN)
+		if (errno == EAGAIN) {
 			errno = EINPROGRESS;
+			task->active = 1;
+		}
 		return r;
 	}
 	peer_addr->len = size;
@@ -795,19 +802,23 @@ static inline ffssize ffsock_sendto(ffsock sk, const void *buf, ffsize len, int 
 
 static inline ffssize ffsock_send_async(ffsock sk, const void *buf, ffsize len, ffkq_task *task)
 {
-	(void)task;
 	ffssize r = send(sk, buf, len, 0);
-	if (r < 0 && errno == EAGAIN)
+	task->active = 0;
+	if (r < 0 && errno == EAGAIN) {
 		errno = EINPROGRESS;
+		task->active = 1;
+	}
 	return r;
 }
 
 static inline ffssize ffsock_sendv_async(ffsock sk, ffiovec *iov, ffuint iov_n, ffkq_task *task)
 {
-	(void)task;
 	ffssize r = writev(sk, iov, iov_n);
-	if (r < 0 && errno == EAGAIN)
+	task->active = 0;
+	if (r < 0 && errno == EAGAIN) {
 		errno = EINPROGRESS;
+		task->active = 1;
+	}
 	return r;
 }
 

@@ -6,7 +6,6 @@
 
 #if defined FF_UNIX
 
-/** Used by ffsock_connect_async() */
 typedef struct ffkq_task {
 	ffushort active;
 	ffushort kev_flags; // epoll: EPOLLERR;  kqueue: EV_EOF

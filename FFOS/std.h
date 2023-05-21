@@ -233,8 +233,7 @@ static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 			mode &= ~ENABLE_LINE_INPUT;
 	}
 
-	SetConsoleMode(fd, mode);
-	return 0;
+	return !SetConsoleMode(fd, mode);
 }
 
 #else // UNIX:
