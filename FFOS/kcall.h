@@ -142,6 +142,9 @@ static inline void _ffkcall_add(struct ffkcall *kc, int op)
 
 static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkcall *kc)
 {
+	if (kc->q == NULL)
+		return fffile_open(name, flags);
+
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
 		fferr_set(EBUSY);
@@ -162,6 +165,9 @@ static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkc
 
 static inline int fffile_info_async(fffd fd, fffileinfo *fi, struct ffkcall *kc)
 {
+	if (kc->q == NULL)
+		return fffile_info(fd, fi);
+
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
 		fferr_set(EBUSY);
@@ -182,6 +188,9 @@ static inline int fffile_info_async(fffd fd, fffileinfo *fi, struct ffkcall *kc)
 
 static inline ffssize fffile_read_async(fffd fd, void *buf, ffsize size, struct ffkcall *kc)
 {
+	if (kc->q == NULL)
+		return fffile_read(fd, buf, size);
+
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
 		fferr_set(EBUSY);
@@ -203,6 +212,9 @@ static inline ffssize fffile_read_async(fffd fd, void *buf, ffsize size, struct 
 
 static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, struct ffkcall *kc)
 {
+	if (kc->q == NULL)
+		return fffile_write(fd, buf, size);
+
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
 		fferr_set(EBUSY);
@@ -221,11 +233,3 @@ static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, 
 	_ffkcall_add(kc, FFKCALL_FILE_WRITE);
 	return -1;
 }
-
-// Disable ffkcall logic entirely.  This may be useful for testing/debugging.
-#if 0
-#define fffile_open_async(name, flags, kc)  fffile_open(name, flags)
-#define fffile_info_async(fd, fi, kc)  fffile_info(fd, fi)
-#define fffile_read_async(fd, buf, size, kc)  fffile_read(fd, buf, size)
-#define fffile_write_async(fd, buf, size, kc)  fffile_write(fd, buf, size)
-#endif
