@@ -14,7 +14,18 @@ fffile_read_async fffile_write_async
 #include <FFOS/file.h>
 #include <FFOS/semaphore.h>
 #include <FFOS/queue.h>
+#include <FFOS/error.h>
 #include <ffbase/ringqueue.h>
+
+#ifdef FF_WIN
+#define FFKCALL_EINPROGRESS  ERROR_IO_PENDING
+#define FFKCALL_EBUSY  ERROR_BUSY
+#define FFKCALL_EAGAIN  WSAEWOULDBLOCK
+#else
+#define FFKCALL_EINPROGRESS  EINPROGRESS
+#define FFKCALL_EBUSY  EBUSY
+#define FFKCALL_EAGAIN  EAGAIN
+#endif
 
 struct ffkcallqueue {
 	ffringqueue *sq; // submission queue
@@ -42,12 +53,15 @@ struct ffkcall {
 			const char *name;
 		};
 		struct {
+			fffd fd_info;
+			fffileinfo *finfo;
+		};
+		struct {
 			fffd fd;
 			void *buf;
 			ffsize size;
 		};
 	};
-	fffileinfo *finfo;
 	kcall_func handler;
 	void *param;
 };
@@ -130,14 +144,14 @@ static inline void _ffkcall_add(struct ffkcall *kc, int op)
 	ffuint unused;
 	if (0 != ffrq_add(kc->q->sq, kc, &unused)) {
 		kc->op = 0;
-		fferr_set(EAGAIN);
+		fferr_set(FFKCALL_EAGAIN);
 		return;
 	}
 	if (kc->q->sem != FFSEM_NULL) {
 		ffcpu_fence_release();
 		ffsem_post(kc->q->sem);
 	}
-	fferr_set(EINPROGRESS);
+	fferr_set(FFKCALL_EINPROGRESS);
 }
 
 static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkcall *kc)
@@ -147,7 +161,7 @@ static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkc
 
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
-		fferr_set(EBUSY);
+		fferr_set(FFKCALL_EBUSY);
 		return FFFILE_NULL;
 	}
 
@@ -170,7 +184,7 @@ static inline int fffile_info_async(fffd fd, fffileinfo *fi, struct ffkcall *kc)
 
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
-		fferr_set(EBUSY);
+		fferr_set(FFKCALL_EBUSY);
 		return -1;
 	}
 
@@ -193,7 +207,7 @@ static inline ffssize fffile_read_async(fffd fd, void *buf, ffsize size, struct 
 
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
-		fferr_set(EBUSY);
+		fferr_set(FFKCALL_EBUSY);
 		return -1;
 	}
 
@@ -217,7 +231,7 @@ static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, 
 
 	if (kc->state != 0) {
 		// the previous operation is still active in SQ or CQ
-		fferr_set(EBUSY);
+		fferr_set(FFKCALL_EBUSY);
 		return -1;
 	}
 
