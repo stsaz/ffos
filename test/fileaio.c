@@ -74,7 +74,6 @@ void test_fileaio()
 	fffd f;
 	ffaio_filetask tfil;
 	const char *fn = "./ff-aiofile";
-	FFTEST_FUNC;
 
 	{
 	ffpathinfo fsst;

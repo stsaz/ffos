@@ -66,8 +66,10 @@ else
 endif
 TEST_CXXFLAGS := $(TEST_CFLAGS)
 TEST_CFLAGS += -std=gnu99
-# TEST_CFLAGS += -fsanitize=address
-# TEST_LDFLAGS += -fsanitize=address
+ifeq "$(ASAN)" "1"
+	TEST_CFLAGS += -fsanitize=address
+	TEST_LDFLAGS += -fsanitize=address
+endif
 
 ifeq "$(OS)" "windows"
 	# TEST_CFLAGS += -DFF_WIN_APIVER=0x0501
@@ -84,6 +86,8 @@ endif
 %.o: $(FFOS_DIR)/FFOS/%.c
 	$(C) $(TEST_CFLAGS) $< -o $@
 
+test.o: $(FFOS_DIR)/test/test.c $(FFOS_DIR)/test/tests.h $(HEADERS)
+	$(C) $(TEST_CFLAGS) $< -o $@
 %.o: $(FFOS_DIR)/test/%.c $(HEADERS)
 	$(C) $(TEST_CFLAGS) $< -o $@
 

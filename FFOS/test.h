@@ -7,99 +7,61 @@
 #include <FFOS/string.h>
 #include <ffbase/stringz.h>
 
-#define FFTEST_FUNC
 #define FFTEST_TIMECALL(f)  f
+extern ffuint _ffos_checks_success;
+extern ffuint _ffos_keep_running;
 
-#define FFARRAY_FOREACH(static_array, it) \
-	for (it = static_array;  it != static_array + FF_COUNT(static_array);  it++)
-
-static inline void test_check(int ok, const char *expr, const char *file, ffuint line, const char *func)
+static inline void test_check(int ok, const char *file, ffuint line, const char *func, const char *fmt, ...)
 {
 	if (ok) {
+		_ffos_checks_success++;
 		return;
 	}
 
-	ffstderr_fmt("FAIL: %s:%u: %s: %s\n"
-		, file, line, func, expr);
-	abort();
-}
+	ffstr s = {};
+	ffsize cap = 0;
+	ffstr_growfmt(&s, &cap, "FAIL: %s:%u: %s: ", file, line, func);
 
-static inline void test_check_int_int(int ok, ffint64 i1, ffint64 i2, const char *file, ffuint line, const char *func)
-{
-	if (ok) {
-		return;
-	}
+	va_list va;
+	va_start(va, fmt);
+	ffstr_growfmtv(&s, &cap, fmt, va);
+	va_end(va);
 
-	ffstderr_fmt("FAIL: %s:%u: %s: %D != %D\n"
-		, file, line, func
-		, i1, i2);
-	abort();
-}
+	ffstr_growaddchar(&s, &cap, '\n');
+	ffstderr_write(s.ptr, s.len);
+	ffstr_free(&s);
 
-static inline void test_check_str_sz(int ok, ffsize slen, const char *s, const char *sz, const char *file, ffuint line, const char *func)
-{
-	if (ok) {
-		return;
-	}
-
-	ffstderr_fmt("FAIL: %s:%u: %s: %*s != %s\n"
-		, file, line, func
-		, slen, s, sz);
-	abort();
-}
-
-static inline void test_check_sys(int ok, const char *expr, const char *file, ffuint line, const char *func)
-{
-	if (ok) {
-		return;
-	}
-
-	ffstderr_fmt("FAIL: %s:%u: %s: %s (%d %s)\n"
-		, file, line, func, expr
-		, (int)fferr_last(), fferr_strptr(fferr_last())
-		);
-	abort();
-}
-
-static inline void test_check_int_int_sys(int ok, ffint64 i1, ffint64 i2, const char *file, ffuint line, const char *func)
-{
-	if (ok) {
-		return;
-	}
-
-	ffstderr_fmt("FAIL: %s:%u: %s: %D != %D (%d %s)\n"
-		, file, line, func
-		, i1, i2
-		, (int)fferr_last(), fferr_strptr(fferr_last())
-		);
-	abort();
+	if (!_ffos_keep_running)
+		abort();
 }
 
 #define x(expr) \
-	test_check(expr, #expr, __FILE__, __LINE__, __func__)
+	test_check(expr, __FILE__, __LINE__, __func__, "%s", #expr)
 
 #define xieq(i1, i2) \
 ({ \
 	ffint64 __i1 = (i1); \
 	ffint64 __i2 = (i2); \
-	test_check_int_int(__i1 == __i2, __i1, __i2, __FILE__, __LINE__, __func__); \
+	test_check((__i1 == __i2), __FILE__, __LINE__, __func__, "%D != %D", __i1, __i2); \
 })
 
-#define xseq(s, sz) \
+#define xstr(str, sz) \
 ({ \
-	ffstr __s = *(s); \
-	test_check_str_sz(ffstr_eqz(&__s, sz), __s.len, __s.ptr, sz, __FILE__, __LINE__, __func__); \
+	ffstr __s = str; \
+	test_check(ffstr_eqz(&__s, sz), __FILE__, __LINE__, __func__, "'%S' != '%s'", &__s, sz); \
 })
+
+#define xseq(str_ptr, sz)  xstr(*str_ptr, sz)
 
 #define xsz(sz1, sz2) \
 ({ \
-	test_check_str_sz(ffsz_eq(sz1, sz2), ffsz_len(sz1), sz1, sz2, __FILE__, __LINE__, __func__); \
+	test_check(ffsz_eq(sz1, sz2), __FILE__, __LINE__, __func__, "'%s' != '%s'", sz1, sz2); \
 })
 
 /** Expect TRUE or die with system error */
 #define x_sys(expr) \
 ({ \
-	test_check_sys(expr, #expr, __FILE__, __LINE__, __func__); \
+	test_check(expr, __FILE__, __LINE__, __func__, "%s: %E", #expr, fferr_last()); \
 })
 
 /** Expect equal integers or die with system error */
@@ -107,5 +69,5 @@ static inline void test_check_int_int_sys(int ok, ffint64 i1, ffint64 i2, const 
 ({ \
 	ffint64 __i1 = (i1); \
 	ffint64 __i2 = (i2); \
-	test_check_int_int_sys(__i1 == __i2, __i1, __i2, __FILE__, __LINE__, __func__); \
+	test_check((__i1 == __i2), __FILE__, __LINE__, __func__, "%D != %D: %E", __i1, __i2, fferr_last()); \
 })

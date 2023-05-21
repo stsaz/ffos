@@ -73,6 +73,33 @@ enum FFKCALL_OP {
 	FFKCALL_FILE_WRITE,
 };
 
+static int _ffkcall_exec(struct ffkcall *kc)
+{
+	switch (kc->op) {
+	case FFKCALL_FILE_OPEN:
+		kc->result = (ffssize)fffile_open(kc->name, kc->flags);
+		break;
+
+	case FFKCALL_FILE_INFO:
+		kc->result = fffile_info(kc->fd, kc->finfo);
+		break;
+
+	case FFKCALL_FILE_READ:
+		kc->result = fffile_read(kc->fd, kc->buf, kc->size);
+		break;
+
+	case FFKCALL_FILE_WRITE:
+		kc->result = fffile_write(kc->fd, kc->buf, kc->size);
+		break;
+
+	default:
+		return -1;
+	}
+
+	kc->error = fferr_last();
+	return 0;
+}
+
 /** Process the submission queue, perform operations, store result in completion queue */
 static inline void ffkcallq_process_sq(ffringqueue *sq)
 {
@@ -81,29 +108,10 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 		if (0 != ffrq_fetch(sq, (void**)&kc))
 			break;
 
-		switch (kc->op) {
-		case FFKCALL_FILE_OPEN:
-			kc->result = (ffssize)fffile_open(kc->name, kc->flags);
-			break;
-
-		case FFKCALL_FILE_INFO:
-			kc->result = fffile_info(kc->fd, kc->finfo);
-			break;
-
-		case FFKCALL_FILE_READ:
-			kc->result = fffile_read(kc->fd, kc->buf, kc->size);
-			break;
-
-		case FFKCALL_FILE_WRITE:
-			kc->result = fffile_write(kc->fd, kc->buf, kc->size);
-			break;
-
-		case 0:
+		if (0 != _ffkcall_exec(kc)) {
 			kc->state = 0;
 			continue;
 		}
-
-		kc->error = fferr_last();
 		kc->state = 2;
 
 		ffuint unused;
@@ -118,7 +126,7 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 	}
 }
 
-/** Process the complettion queue, call a result handling function */
+/** Process the completion queue, call a result handling function */
 static inline void ffkcallq_process_cq(ffringqueue *cq)
 {
 	struct ffkcall *kc;
@@ -127,7 +135,7 @@ static inline void ffkcallq_process_cq(ffringqueue *cq)
 			break;
 
 		kc->state = 0;
-		if (kc->handler != NULL)
+		if (kc->op != 0)
 			kc->handler(kc->param);
 	}
 }
@@ -135,7 +143,6 @@ static inline void ffkcallq_process_cq(ffringqueue *cq)
 static inline void ffkcall_cancel(struct ffkcall *kc)
 {
 	kc->op = 0;
-	kc->handler = NULL;
 }
 
 static inline void _ffkcall_add(struct ffkcall *kc, int op)

@@ -10,6 +10,11 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/time.h>
 #include <FFOS/ffos-extern.h>
 #include <ffbase/stringz.h>
+#include <FFOS/../test/tests.h>
+#define FFARRAY_FOREACH FF_FOREACH
+
+ffuint _ffos_checks_success;
+ffuint _ffos_keep_running;
 
 // void test_types()
 // {
@@ -41,8 +46,6 @@ void test_rand()
 	int n, n2;
 	fftime t;
 
-	FFTEST_FUNC;
-
 	fftime_now(&t);
 	ffrand_seed(fftime_sec(&t));
 	n = ffrand_get();
@@ -50,160 +53,30 @@ void test_rand()
 	x(n != n2);
 }
 
-#if 0
-void test_atomic()
-{
-	ffatomic a;
-
-	FFTEST_FUNC;
-
-	ffatom_set(&a, 0x12345678);
-	x(0x12345678 == ffatom_swap(&a, 0x87654321));
-	x(!ffatom_cmpset(&a, 0x11223344, 0xabcdef));
-	x(ffatom_cmpset(&a, 0x87654321, 0xabcdef));
-	x(0xabcdef == ffatom_get(&a));
-	x(0xffabcdef == ffatom_addret(&a, 0xff000000));
-	x(0xffabcdee == ffatom_decret(&a));
-	x(0xffabcdef == ffatom_incret(&a));
-
-	ffatom_set(&a, 0xabcdef);
-	x(0xabcdef == ffatom_fetchadd(&a, 0xff000000));
-	x(0xffabcdef == ffatom_get(&a));
-
-	ffatom_set(&a, 0);
-	ffatom_or(&a, 0x1000);
-	x(ffatom_get(&a) == 0x1000);
-	ffatom_and(&a, ~0x1000);
-	x(ffatom_get(&a) == 0);
-
-#ifdef FF_64
-	ffatom_set(&a, 0x12345678);
-	x(0x12345678 == ffatom_fetchadd(&a, 0xffffffff00000000ULL));
-	x(0xffffffff12345678ULL == ffatom_get(&a));
-
-	ffatom_set(&a, 0x12345678);
-	ffatom_add(&a, 0xffffffff00000000ULL);
-	x(0xffffffff12345678ULL == ffatom_get(&a));
-
-	ffatom_set(&a, 0xffffffffffffffffULL);
-	ffatom_inc(&a);
-	x(0 == ffatom_get(&a));
-
-	ffatom_dec(&a);
-	x(0xffffffffffffffffULL == ffatom_get(&a));
-
-#else
-	ffatom_set(&a, 0x12345678);
-	ffatom_add(&a, 0x98000000);
-	x(0xaa345678 == ffatom_get(&a));
-
-	ffatom_inc(&a);
-	x(0xaa345679 == ffatom_get(&a));
-
-	ffatom_dec(&a);
-	x(0xaa345678 == ffatom_get(&a));
-#endif
-
-}
-#endif
-
-void test_atomic();
-void test_backtrace();
-void test_dir();
-void test_dirscan();
-void test_dylib();
-void test_env();
-void test_error();
-void test_file();
-void test_fileaio();
-void test_filemap();
-void test_filemon();
-void test_kqu();
-void test_kqueue();
-void test_kcall();
-void test_mem();
-void test_netconf();
-void test_netlink();
-void test_path();
-void test_perf();
-void test_pipe();
-void test_process();
-void test_rand();
-void test_sysconf();
-void test_semaphore();
-void test_socket();
-void test_std();
-void test_std_event();
-void test_thread();
-void test_time();
-void test_timer();
-void test_timerqueue();
-
-void test_file_dosname();
-void test_vol_mount();
-void test_sig_ctrlc();
-void test_sig_abort();
-void test_sig_segv();
-void test_sig_stack();
-void test_sig_fpe();
-void test_unixsignal();
-void test_winreg();
-
 struct test_s {
 	const char *name;
 	void (*func)();
 };
 
-#define F(nm) { #nm, &test_ ## nm }
+// function declarations
+#define X(NAME) extern void test_##NAME();
+FFOS_TESTS_AUTO(X)
+FFOS_TESTS_AUTO_OS(X)
+FFOS_TESTS_MANUAL(X)
+FFOS_TESTS_MANUAL_OS(X)
+#undef X
+
+// function tables
+#define X(NAME) { #NAME, &test_##NAME },
 static const struct test_s atests[] = {
-	F(backtrace),
-	F(dir),
-	F(dirscan),
-	F(dylib),
-	F(env),
-	F(error),
-	F(file),
-	F(filemap),
-	F(kqueue),
-	F(kcall),
-	F(mem),
-	F(path),
-	F(perf),
-	F(pipe),
-	F(process),
-	F(rand),
-	F(sysconf),
-	F(semaphore),
-	F(socket),
-	F(std),
-	F(std_event),
-	F(thread),
-	F(time),
-	F(timer),
-	F(timerqueue),
-#ifdef FF_WIN
-	F(filemon),
-	F(winreg),
-#else
-	F(filemon),
-	F(netlink),
-	F(unixsignal),
-#endif
-	// F(atomic),
-	// F(fileaio),
-	// F(kqu),
+	FFOS_TESTS_AUTO(X)
+	FFOS_TESTS_AUTO_OS(X)
 };
 static const struct test_s natests[] = {
-	F(netconf), // network may be disabled
-	F(file_dosname), // 8.3 support may be disabled globally
-	F(vol_mount), // need admin rights
-	F(sig_ctrlc),
-	F(sig_abort),
-	F(sig_fpe),
-	F(sig_segv),
-	F(sig_stack),
+	FFOS_TESTS_MANUAL(X)
+	FFOS_TESTS_MANUAL_OS(X)
 };
-#undef F
+#undef X
 
 const char *ffostest_argv0;
 
@@ -213,7 +86,8 @@ int main(int argc, const char **argv)
 	const struct test_s *t;
 
 	if (argc == 1) {
-		ffstdout_fmt("Supported tests: all ");
+		fflog("Usage:\n  ffostest [-k] TEST...");
+		ffstdout_fmt("Automatic tests: all ");
 		FFARRAY_FOREACH(atests, t) {
 			ffstdout_fmt("%s ", t->name);
 		}
@@ -225,7 +99,17 @@ int main(int argc, const char **argv)
 		return 0;
 	}
 
-	if (ffsz_eq(argv[1], "all")) {
+	ffuint k = 1;
+	if (ffsz_eq(argv[k], "-k")) {
+		k++;
+		_ffos_keep_running = 1;
+	}
+
+	if (k == (ffuint)argc) {
+		return 1;
+	}
+
+	if (ffsz_eq(argv[k], "all")) {
 		//run all tests
 		FFARRAY_FOREACH(atests, t) {
 			ffstdout_fmt("%s\n", t->name);
@@ -236,7 +120,7 @@ int main(int argc, const char **argv)
 	} else {
 		//run the specified tests only
 
-		for (ffuint n = 1;  n < (ffuint)argc;  n++) {
+		for (ffuint n = k;  n < (ffuint)argc;  n++) {
 			const struct test_s *sel = NULL;
 
 			FFARRAY_FOREACH(atests, t) {
@@ -264,5 +148,7 @@ call:
 			ffstdout_fmt("  OK\n");
 		}
 	}
+
+	fflog("Successful checks:\t%u", _ffos_checks_success);
 	return 0;
 }
