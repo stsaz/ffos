@@ -3,37 +3,62 @@
 */
 
 #include <FFOS/queue.h>
-#ifdef FF_UNIX
 #include <FFOS/kcall.h>
-#endif
 #include <FFOS/test.h>
+
+static void kc_complete(void *param)
+{
+	(void)param;
+}
 
 void test_kcall()
 {
-#ifdef FF_UNIX
+	const char *fn = "kcall.ffos";
+	fffile_remove(fn);
+
 	struct ffkcallqueue q = {};
 	q.sq = ffrq_alloc(10);
 	q.cq = ffrq_alloc(10);
 	q.kqpost = FFKQ_NULL;
 	struct ffkcall c = {
 		.q = &q,
+		.handler = kc_complete,
 	};
 
-	fffd f = fffile_open_async("/etc/fstab", FFFILE_READONLY, &c);
-	x(f == FFFILE_NULL && errno == EINPROGRESS);
+	fffd f = fffile_open_async(fn, FFFILE_CREATE | FFFILE_READWRITE, &c);
+	x_sys(f == FFFILE_NULL && fferr_last() == FFKCALL_EINPROGRESS);
 	ffkcallq_process_sq(q.sq);
 	ffkcallq_process_cq(q.cq);
-	f = fffile_open_async("/etc/fstab", FFFILE_READONLY, &c);
-	x(f != FFFILE_NULL);
+	f = fffile_open_async(NULL, 0, &c);
+	x_sys(f != FFFILE_NULL);
 
-	char buf[1000];
-	int r = fffile_read_async(f, buf, 1000, &c);
-	x(r < 0 && errno == EINPROGRESS);
+	int r = fffile_write_async(f, "hello", 5, &c);
+	x_sys(r < 0 && fferr_last() == FFKCALL_EINPROGRESS);
 	ffkcallq_process_sq(q.sq);
 	ffkcallq_process_cq(q.cq);
-	r = fffile_read_async(f, buf, 1000, &c);
+	r = fffile_write_async(FFFILE_NULL, NULL, 0, &c);
 	x(r > 0);
 
+	fffileinfo fi;
+	r = fffile_info_async(f, &fi, &c);
+	x_sys(r != 0 && fferr_last() == FFKCALL_EINPROGRESS);
+	ffkcallq_process_sq(q.sq);
+	ffkcallq_process_cq(q.cq);
+	r = fffile_info_async(FFFILE_NULL, NULL, &c);
+	x(r == 0);
+	x(fffileinfo_size(&fi) == 5);
+
+	fffile_seek(f, 0, FFFILE_SEEK_BEGIN);
+
+	char buf[10];
+	r = fffile_read_async(f, buf, 10, &c);
+	x_sys(r < 0 && fferr_last() == FFKCALL_EINPROGRESS);
+	ffkcallq_process_sq(q.sq);
+	ffkcallq_process_cq(q.cq);
+	r = fffile_read_async(FFFILE_NULL, NULL, 0, &c);
+	ffstr d = FFSTR_INITN(buf, r);
+	xstr(d, "hello");
+
 	fffile_close(f);
-#endif
+	fffile_remove(fn);
 }
