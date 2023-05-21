@@ -32,7 +32,32 @@ enum FFKEY {
 enum FFSTD_ATTR {
 	FFSTD_ECHO = 1, // set echo on/off (stdin)
 	FFSTD_LINEINPUT = 2, // set line-input/character-input (stdin)
+	FFSTD_VTERM = 4, // Windows: enable control character sequences
 };
+
+
+#define FFSTD_BLACK  "0"
+#define FFSTD_RED  "1"
+#define FFSTD_GREEN  "2"
+#define FFSTD_YELLOW  "3"
+#define FFSTD_BLUE  "4"
+#define FFSTD_PURPLE  "5"
+#define FFSTD_CYAN  "6"
+#define FFSTD_WHITE  "7"
+
+#define FFSTD_CLR_RESET  "\033[0m"
+
+/** Normal */
+#define FFSTD_CLR(f)      "\033["   "3" f "m"
+/** Intense */
+#define FFSTD_CLR_I(f)    "\033["   "9" f "m"
+/** Bold/bright */
+#define FFSTD_CLR_B(f)    "\033[1;" "3" f "m"
+
+/** Background normal */
+#define FFSTD_CLRBG(b)    "\033["   "4" b "m"
+/** Background intense */
+#define FFSTD_CLRBG_I(b)  "\033["  "10" b "m"
 
 
 #ifdef FF_WIN
@@ -190,6 +215,10 @@ static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 	if (!GetConsoleMode(fd, &mode))
 		return -1;
 
+	if ((attr & FFSTD_VTERM) && (val & FFSTD_VTERM)) {
+		mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	}
+
 	if (attr & FFSTD_ECHO) {
 		if (val & FFSTD_ECHO)
 			mode |= ENABLE_ECHO_INPUT;
@@ -295,6 +324,9 @@ static inline int ffstd_keyparse(ffstr *data)
 
 static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 {
+	if (attr == FFSTD_VTERM)
+		return 0; // enabled by default
+
 	struct termios t;
 	if (0 != tcgetattr(fd, &t))
 		return -1;
