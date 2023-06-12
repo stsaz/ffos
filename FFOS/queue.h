@@ -221,7 +221,8 @@ static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
 
 static inline int ffkq_post(ffkq_postevent post, void *data)
 {
-	ffuint64 val = (ffsize)data;
+	(void)data;
+	ffuint64 val = 1;
 	if (sizeof(ffuint64) != write(post, &val, sizeof(ffuint64)))
 		return -1;
 	return 0;
