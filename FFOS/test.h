@@ -8,13 +8,25 @@
 #include <ffbase/stringz.h>
 
 #define FFTEST_TIMECALL(f)  f
-extern ffuint _ffos_checks_success;
-extern ffuint _ffos_keep_running;
+
+struct ffos_test {
+	ffuint checks_success;
+	ffuint keep_running :1;
+	ffuint log_all_checks :1;
+};
+
+extern struct ffos_test fftest;
 
 static inline void test_check(int ok, const char *file, ffuint line, const char *func, const char *fmt, ...)
 {
+	if (fftest.log_all_checks) {
+		int e = fferr_last();
+		ffstderr_fmt("%s:%d\n", file, line);
+		fferr_set(e);
+	}
+
 	if (ok) {
-		_ffos_checks_success++;
+		fftest.checks_success++;
 		return;
 	}
 
@@ -31,7 +43,7 @@ static inline void test_check(int ok, const char *file, ffuint line, const char 
 	ffstderr_write(s.ptr, s.len);
 	ffstr_free(&s);
 
-	if (!_ffos_keep_running)
+	if (!fftest.keep_running)
 		abort();
 }
 

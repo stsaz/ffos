@@ -68,7 +68,7 @@ static inline int fffilemon_add_dir(fffilemon fm, const char *path, ffuint event
 		goto end;
 
 	struct _fffilemon_watch *w, **pw;
-	if (NULL == (w = ffmem_alloc(sizeof(struct _fffilemon_watch) + 1)))
+	if (NULL == (w = (struct _fffilemon_watch*)ffmem_alloc(sizeof(struct _fffilemon_watch) + 1)))
 		goto end;
 
 	if (NULL == (pw = ffvec_pushT(&fm->wl, struct _fffilemon_watch*)))
@@ -104,7 +104,7 @@ static inline int fffilemon_add_file(fffilemon fm, const char *path, ffuint even
 		goto end;
 
 	struct _fffilemon_watch *w, **pw;
-	if (NULL == (w = ffmem_alloc(sizeof(struct _fffilemon_watch) + name.len + 1)))
+	if (NULL == (w = (struct _fffilemon_watch*)ffmem_alloc(sizeof(struct _fffilemon_watch) + name.len + 1)))
 		goto end;
 
 	if (NULL == (pw = ffvec_pushT(&fm->wl, struct _fffilemon_watch*)))

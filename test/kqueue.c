@@ -499,7 +499,7 @@ void test_kqueue_socket_recvfrom()
 	r = ffsock_recvfrom_async(l, lbuf, sizeof(lbuf), &ca, &task);
 	x_sys(r == 6);
 	x(!memcmp(lbuf, "cldata", 6));
-	ffuint port;
+	ffuint port = 0;
 	ffsockaddr_ip_port(&ca, &port);
 	x(port == 64001);
 

@@ -42,7 +42,7 @@ void test_std_event()
 	ffstd_ev ev = {};
 	int r;
 	ffuint key;
-	ffstr data;
+	ffstr data = {};
 
 	for (;;) {
 		r = ffstd_keyread(ffstdin, &ev, &data);
