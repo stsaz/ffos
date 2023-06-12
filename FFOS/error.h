@@ -137,7 +137,7 @@ static inline int fferr_str(int code, char *buffer, ffsize cap)
 	if (cap == 0)
 		return -1;
 
-#if defined _GNU_SOURCE && (!defined FF_ANDROID || __ANDROID_API__ >= 23)
+#if !defined FF_MUSL && defined _GNU_SOURCE && (!defined FF_ANDROID || __ANDROID_API__ >= 23)
 
 	const char *r = strerror_r(code, buffer, cap);
 	if (r != buffer) {
