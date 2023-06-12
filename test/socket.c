@@ -146,3 +146,20 @@ void test_socket()
 	test_socket_udp();
 	test_socket_tcp();
 }
+
+void test_resolve()
+{
+	x_sys(0 == ffsock_init(FFSOCK_INIT_WSA));
+	ffaddrinfo *a = ffaddrinfo_resolve("localhost", 0);
+	ffuint f = 0;
+	x(a != NULL);
+	for (const ffaddrinfo *i = a;  i != NULL;  i = i->ai_next) {
+		if (i->ai_family == AF_INET) {
+			f |= 1;
+		} else if (i->ai_family == AF_INET6) {
+			f |= 2;
+		}
+	}
+	xieq(f, 1|2);
+	ffaddrinfo_free(a);
+}

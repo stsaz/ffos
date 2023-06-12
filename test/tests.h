@@ -17,6 +17,7 @@
 	X(pipe) \
 	X(process) \
 	X(rand) \
+	X(resolve) \
 	X(semaphore) \
 	X(socket) \
 	X(sysconf) \

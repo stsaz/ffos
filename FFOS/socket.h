@@ -6,6 +6,8 @@
 Address:
 	ffsockaddr_set_ipv4 ffsockaddr_set_ipv6
 	ffsockaddr_ip_port
+	ffaddrinfo_resolve ffaddrinfo_free
+	ffaddrinfo_error
 Creation:
 	ffsock_create ffsock_create_tcp ffsock_create_udp
 	ffsock_accept ffsock_accept_async
@@ -26,7 +28,7 @@ Async I/O:
 I/O vector:
 	ffiovec_set
 	ffiovec_get
-	ffiovec_shift
+	ffiovec_shift ffiovec_array_shift
 */
 
 #pragma once
@@ -105,6 +107,8 @@ enum FFSOCK_INIT {
 
 
 #ifdef FF_WIN
+
+#include <FFOS/error.h>
 
 typedef SOCKET ffsock;
 typedef WSABUF ffiovec;
@@ -563,6 +567,27 @@ static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
 	return n;
 }
 
+typedef ADDRINFOW ffaddrinfo;
+
+static inline ffaddrinfo* ffaddrinfo_resolve(const char *name, int flags)
+{
+	wchar_t wname[NI_MAXHOST];
+	if (0 >= ffsz_utow(wname, FF_COUNT(wname), name)) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return NULL;
+	}
+
+	ADDRINFOW *a, hints = {};
+	hints.ai_flags = flags;
+	if (0 != GetAddrInfoW(wname, NULL, &hints, &a))
+		return NULL;
+	return a;
+}
+
+static inline void ffaddrinfo_free(ffaddrinfo *a) { FreeAddrInfoW(a); }
+
+static inline const char* ffaddrinfo_error(ffuint e) { return fferr_strptr(e); }
+
 #else // UNIX:
 
 #include <sys/uio.h>
@@ -849,24 +874,28 @@ static inline ffsize ffiovec_shift(ffiovec *iov, ffsize n)
 	return n;
 }
 
-#endif
 
-/** Skip/shift bytes in iovec array
-Return 0 if there's nothing left */
-static inline int ffiovec_array_shift(ffiovec *iov, ffsize n, ffsize skip)
+#include <netdb.h>
+typedef struct addrinfo ffaddrinfo;
+
+static inline ffaddrinfo* ffaddrinfo_resolve(const char *name, int flags)
 {
-	for (ffsize i = 0;  i != n;  i++) {
-		skip -= ffiovec_shift(&iov[i], skip);
-#ifdef FF_UNIX
-		if (iov[i].iov_len != 0)
-#else
-		if (iov[i].len != 0)
-#endif
-			return 1;
+	struct addrinfo *a, hints = {};
+	hints.ai_flags = flags;
+	hints.ai_socktype = SOCK_DGRAM; // exclude results with the same IP but different ai_socktype
+	int r = getaddrinfo(name, NULL, &hints, &a);
+	if (r != 0) {
+		errno = r;
+		return NULL;
 	}
-	return 0;
+	return a;
 }
 
+static inline void ffaddrinfo_free(ffaddrinfo *a) { freeaddrinfo(a); }
+
+static inline const char* ffaddrinfo_error(ffuint e) { return gai_strerror(e); }
+
+#endif
 
 /** Prepare sockets for use
 flags: enum FFSOCK_INIT
@@ -1042,3 +1071,45 @@ static ffslice ffiovec_get(ffiovec *iov);
 /** Shift offset
 Return number of shifted bytes */
 static ffsize ffiovec_shift(ffiovec *iov, ffsize n);
+
+/** Skip/shift bytes in iovec array
+Return 0 if there's nothing left */
+static inline int ffiovec_array_shift(ffiovec *iov, ffsize n, ffsize skip)
+{
+	for (ffsize i = 0;  i != n;  i++) {
+		skip -= ffiovec_shift(&iov[i], skip);
+#ifdef FF_UNIX
+		if (iov[i].iov_len != 0)
+#else
+		if (iov[i].len != 0)
+#endif
+			return 1;
+	}
+	return 0;
+}
+
+
+/** Translate name to network address
+
+Example:
+
+ffaddrinfo *a = ffaddrinfo_resolve("hostname", 0);
+
+for (const ffaddrinfo *i = a;  i != NULL;  i = i->ai_next) {
+	if (i->ai_family == AF_INET) {
+		const struct sockaddr_in *a4 = (void*)i->ai_addr;
+		a4->sin_addr
+	} else {
+		const struct sockaddr_in6 *a6 = (void*)i->ai_addr;
+		a6->sin6_addr
+	...
+
+ffaddrinfo_free(a);
+*/
+static ffaddrinfo* ffaddrinfo_resolve(const char *name, int flags);
+
+/** Free ffaddrinfo object */
+static void ffaddrinfo_free(ffaddrinfo *a);
+
+/** Get error message */
+static const char* ffaddrinfo_error(ffuint e);
