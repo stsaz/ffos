@@ -145,7 +145,6 @@ typedef int ffkq_postevent;
 
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
-#include <sys/errno.h>
 #include <sys/socket.h>
 
 typedef struct epoll_event ffkq_event;
