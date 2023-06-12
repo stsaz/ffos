@@ -13,8 +13,7 @@ Copyright (c) 2013 Simon Zolin
 #include <FFOS/../test/tests.h>
 #define FFARRAY_FOREACH FF_FOREACH
 
-ffuint _ffos_checks_success;
-ffuint _ffos_keep_running;
+struct ffos_test fftest;
 
 // void test_types()
 // {
@@ -102,7 +101,7 @@ int main(int argc, const char **argv)
 	ffuint k = 1;
 	if (ffsz_eq(argv[k], "-k")) {
 		k++;
-		_ffos_keep_running = 1;
+		fftest.keep_running = 1;
 	}
 
 	if (k == (ffuint)argc) {
@@ -149,6 +148,6 @@ call:
 		}
 	}
 
-	fflog("Successful checks:\t%u", _ffos_checks_success);
+	fflog("Successful checks:\t%u", fftest.checks_success);
 	return 0;
 }

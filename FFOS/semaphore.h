@@ -304,6 +304,3 @@ static int ffsem_unlink(const char *name);
 
 /** Increase semaphore value */
 static int ffsem_post(ffsem s);
-
-
-#define FFSEM_INV  FFSEM_NULL

@@ -56,7 +56,7 @@ void test_filemon()
 	ffstr name = {};
 	ffsize cap = 0;
 	for (;;) {
-		ffuint ev;
+		ffuint ev = 0;
 		int wd = fffilemon_next(fm, &s, &name, &cap, &ev);
 		if (wd == -1)
 			break;

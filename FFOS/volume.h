@@ -16,7 +16,7 @@ ffvol_mount
 
 /**
 Return FFFILE_NULL on error */
-static inline fffd ffvol_open(void *buf, ffsize cap)
+static inline fffd ffvol_open(wchar_t *buf, ffsize cap)
 {
 	return FindFirstVolumeW(buf, cap);
 }
@@ -30,7 +30,7 @@ static inline void ffvol_close(fffd h)
 
 /**
 Return !=0 with FFERR_NOMOREVOLS if no more entries */
-static inline int ffvol_next(fffd h, void *buf, ffsize cap)
+static inline int ffvol_next(fffd h, wchar_t *buf, ffsize cap)
 {
 	if (!FindNextVolumeW(h, buf, cap))
 		return 1;
@@ -73,7 +73,7 @@ static inline int ffvol_info(const wchar_t *name, struct ffvol_info *vi, ffuint 
 		DWORD size = MAX_PATH + 1;
 		for (;;) {
 			ffvec_allocT(&vi->paths, size, wchar_t);
-			if (!GetVolumePathNamesForVolumeNameW(name, (void*)vi->paths.ptr, vi->paths.cap, &size)) {
+			if (!GetVolumePathNamesForVolumeNameW(name, (wchar_t*)vi->paths.ptr, vi->paths.cap, &size)) {
 				if (GetLastError() == ERROR_MORE_DATA) {
 					ffvec_free(&vi->paths);
 					continue;

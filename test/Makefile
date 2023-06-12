@@ -57,7 +57,7 @@ clean:
 	$(RM) $(TEST_EXE) $(TEST_OBJ)
 
 TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) \
-	-Wall -Wextra -fno-strict-aliasing \
+	-Wall -Wextra -Wno-array-bounds -fno-strict-aliasing \
 	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g
 ifeq "$(DEBUG)" "1"
 	TEST_CFLAGS += -O0 -DFFBASE_DEBUG

@@ -141,7 +141,7 @@ Read value from Registry:
 */
 static inline int ffwinreg_read(ffwinreg k, const char *name, ffwinreg_val *val)
 {
-	int r;
+	int r = 0;
 	ffsize n;
 	DWORD type, size;
 	wchar_t wname_s[256], *wname = NULL;
