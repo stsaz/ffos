@@ -14,6 +14,7 @@ fffile_read_async fffile_write_async
 #include <FFOS/file.h>
 #include <FFOS/semaphore.h>
 #include <FFOS/queue.h>
+#include <FFOS/socket.h>
 #include <FFOS/error.h>
 #include <ffbase/ringqueue.h>
 
@@ -71,6 +72,7 @@ enum FFKCALL_OP {
 	FFKCALL_FILE_INFO,
 	FFKCALL_FILE_READ,
 	FFKCALL_FILE_WRITE,
+	FFKCALL_NET_RESOLVE,
 };
 
 static int _ffkcall_exec(struct ffkcall *kc)
@@ -90,6 +92,10 @@ static int _ffkcall_exec(struct ffkcall *kc)
 
 	case FFKCALL_FILE_WRITE:
 		kc->result = fffile_write(kc->fd, kc->buf, kc->size);
+		break;
+
+	case FFKCALL_NET_RESOLVE:
+		kc->result = (ffsize)ffaddrinfo_resolve(kc->name, kc->flags);
 		break;
 
 	default:
@@ -253,4 +259,27 @@ static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, 
 	kc->size = size;
 	_ffkcall_add(kc, FFKCALL_FILE_WRITE);
 	return -1;
+}
+
+static inline ffaddrinfo* ffaddrinfo_resolve_async(const char *name, int flags, struct ffkcall *kc)
+{
+	if (kc->q == NULL)
+		return ffaddrinfo_resolve(name, flags);
+
+	if (kc->state != 0) {
+		// the previous operation is still active in SQ or CQ
+		fferr_set(FFKCALL_EBUSY);
+		return NULL;
+	}
+
+	if (kc->op != 0) {
+		kc->op = 0;
+		fferr_set(kc->error);
+		return (ffaddrinfo*)kc->result;
+	}
+
+	kc->name = name;
+	kc->flags = flags;
+	_ffkcall_add(kc, FFKCALL_NET_RESOLVE);
+	return NULL;
 }
