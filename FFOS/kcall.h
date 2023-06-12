@@ -17,6 +17,7 @@ fffile_read_async fffile_write_async
 #include <FFOS/socket.h>
 #include <FFOS/error.h>
 #include <ffbase/ringqueue.h>
+#include <assert.h>
 
 #ifdef FF_WIN
 #define FFKCALL_EINPROGRESS  ERROR_IO_PENDING
@@ -111,23 +112,24 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 {
 	struct ffkcall *kc;
 	for (;;) {
-		if (0 != ffrq_fetch(sq, (void**)&kc))
+		if (0 != ffrq_fetch(sq, (void**)&kc, NULL))
 			break;
 
-		if (0 != _ffkcall_exec(kc)) {
+		if (ff_unlikely(0 != _ffkcall_exec(kc))) {
 			kc->state = 0;
 			continue;
 		}
 		kc->state = 2;
 
-		ffuint unused;
-		if (0 != ffrq_add(kc->q->cq, kc, &unused)) {
-			FF_ASSERT(0);
+		ffuint used;
+		if (ff_unlikely(0 != ffrq_add(kc->q->cq, kc, &used))) {
+			assert(0);
+			continue;
 		}
 
-		if (unused == kc->q->cq->cap && kc->q->kqpost != FFKQ_NULL) {
-			ffcpu_fence_release();
-			ffkq_post(kc->q->kqpost, kc->q->kqpost_data);
+		if (used == 0 && kc->q->kqpost != FFKQ_NULL) {
+			if (ff_unlikely(0 != ffkq_post(kc->q->kqpost, kc->q->kqpost_data)))
+				assert(0);
 		}
 	}
 }
@@ -137,7 +139,7 @@ static inline void ffkcallq_process_cq(ffringqueue *cq)
 {
 	struct ffkcall *kc;
 	for (;;) {
-		if (0 != ffrq_fetch_sr(cq, (void**)&kc))
+		if (0 != ffrq_fetch_sr(cq, (void**)&kc, NULL))
 			break;
 
 		kc->state = 0;
@@ -161,7 +163,6 @@ static inline void _ffkcall_add(struct ffkcall *kc, int op)
 		return;
 	}
 	if (kc->q->sem != FFSEM_NULL) {
-		ffcpu_fence_release();
 		ffsem_post(kc->q->sem);
 	}
 	fferr_set(FFKCALL_EINPROGRESS);
