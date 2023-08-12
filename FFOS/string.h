@@ -21,43 +21,9 @@ Example:
 is translated into "select * from table". */
 #define FFS_QUOTE(...)  #__VA_ARGS__
 
-#define FFCRLF "\r\n"
-
-#ifdef FF_UNIX
-
-#include <string.h>
-#include <wchar.h>
-
-#define FFSTRQ(s)  s, FFS_LEN(s)
-
-#define FF_NEWLN  "\n"
-
-#define ffq_len  strlen
-#define ffq_cmpz  strcmp
-#define ffq_icmpz  strcasecmp
-#define ffq_icmpnz  strncasecmp
-#define ffq_cpy2  strcpy
-#define ffq_cat2  strcat
-
-#else // Windows:
+#ifdef FF_WIN
 
 #include <ffbase/unicode.h>
-
-#define FF_NEWLN  "\r\n"
-#define FFSTRQ(s)  L##s, FFS_LEN(s)
-
-#if defined FF_MSVC || defined FF_MINGW
-	#define strncasecmp  _strnicmp
-	#define wcsncasecmp  _wcsnicmp
-	#define wcscasecmp  _wcsicmp
-#endif
-
-#define ffq_len  wcslen
-#define ffq_cmpz  wcscmp
-#define ffq_icmpz  wcscasecmp
-#define ffq_icmpnz  wcsncasecmp
-#define ffq_cpy2  wcscpy
-#define ffq_cat2  wcscat
 
 /** Convert UTF-8 to wide string.
 len: if -1 then 'src' is treated as null-terminated and 'dst' will also be null-terminated. */
@@ -189,7 +155,5 @@ static inline wchar_t* ffs_alloc_buf_utow(wchar_t *dst, ffsize *cap_wchars, cons
 }
 
 #endif
-
-#define ffq_alloc(n)  ffmem_allocT(n, ffsyschar)
 
 #define ffws_alloc(n)  (wchar_t*)ffmem_alloc(n * sizeof(wchar_t))

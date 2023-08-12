@@ -15,8 +15,6 @@ static int test_str()
 	x(0 == fferr_str(fferr_last(), su, FF_COUNT(su)));
 
 #ifdef FF_WIN
-	x(0 == ffq_icmpnz(L"asdf", FFSTRQ("ASDF")));
-	x(FFS_LEN("asdf") == ffq_len(L"asdf"));
 	{
 		size_t n;
 		WCHAR *pw;
@@ -27,12 +25,12 @@ static int test_str()
 		n = 5;
 		x(ss == (pw = ffs_utow(ss, &n, "asdf", 4)));
 		pw[n] = L'\0';
-		x(n == FFS_LEN("asdf") && !ffq_cmpz(pw, L"asdf"));
+		x(n == FFS_LEN("asdf") && !wcscmp(pw, L"asdf"));
 
 		n = 3;
 		pw = ffs_utow(ss, &n, "asdf", -1);
 		x(pw != NULL && pw != ss);
-		x(n == FFS_LEN("asdf")+1 && !ffq_cmpz(pw, L"asdf"));
+		x(n == FFS_LEN("asdf")+1 && !wcscmp(pw, L"asdf"));
 		ffmem_free(pw);
 	}
 
@@ -41,7 +39,7 @@ static int test_str()
 	xieq(3, n);
 	ws[n++] = '/';
 	ws[n] = '\0';
-	x(!ffq_cmpz(ws, L"asd/"));
+	x(!wcscmp(ws, L"asd/"));
 	ffmem_free(ws);
 #endif
 

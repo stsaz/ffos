@@ -300,7 +300,7 @@ static inline fffd fffile_open(const char *name, ffuint flags)
 		if (n == 0)
 			goto end;
 
-		if (0 != ffq_icmpz(longname, w)) {
+		if (0 != _wcsicmp(longname, w)) {
 			SetLastError(ERROR_INVALID_NAME);
 			goto end;
 		}

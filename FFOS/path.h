@@ -61,7 +61,7 @@ static inline ffbool ffpath_islong(const wchar_t *fnw)
 	ffuint n = GetLongPathNameW(fnw, fnlong, FF_COUNT(fnlong));
 	if (n == 0)
 		return 0;
-	if (0 != ffq_icmpz(fnlong, fnw))
+	if (0 != _wcsicmp(fnlong, fnw))
 		return 0;
 	return 1;
 }
