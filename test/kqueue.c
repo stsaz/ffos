@@ -241,6 +241,7 @@ void test_kqueue_socket_io()
 
 	// connect
 	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, FFSOCK_NONBLOCK)));
+	x_sys(!ffsock_setopt(c, SOL_SOCKET, SO_SNDBUF, 128*1024));
 	x_sys(0 == ffkq_attach_socket(kq, c, &c, FFKQ_READWRITE));
 	int r = ffsock_connect_async(c, &a, &task);
 	x_sys(r == 0 || fferr_last() == FFSOCK_EINPROGRESS);
@@ -255,7 +256,7 @@ void test_kqueue_socket_io()
 
 	x_sys(0 == ffsock_connect_async(c, &a, &task));
 
-	char cbuf[1000] = {};
+	char cbuf[64000] = {};
 	r = ffsock_recv_async(c, cbuf, sizeof(cbuf), &task);
 	x_sys(r < 0 && fferr_last() == FFSOCK_EINPROGRESS);
 
@@ -284,7 +285,7 @@ void test_kqueue_socket_io()
 
 	// server <- client
 	// receive until the system buffer is empty
-	char lbuf[1000];
+	char lbuf[64000];
 	r = ffsock_recv(lc, lbuf, sizeof(lbuf), 0);
 	x_sys(r >= 6);
 	x(!memcmp(lbuf, "cldata", 6));
@@ -405,6 +406,7 @@ void test_kqueue_socket_sendv()
 
 	// connect
 	x_sys(FFSOCK_NULL != (c = ffsock_create_tcp(AF_INET, FFSOCK_NONBLOCK)));
+	x_sys(!ffsock_setopt(c, SOL_SOCKET, SO_SNDBUF, 128*1024));
 	x_sys(0 == ffkq_attach_socket(kq, c, &c, FFKQ_READWRITE));
 	int r = ffsock_connect_async(c, &a, &task);
 	x_sys(r == 0 || fferr_last() == FFSOCK_EINPROGRESS);
@@ -422,7 +424,7 @@ void test_kqueue_socket_sendv()
 	// client -> server
 	// send until the system buffer is full
 	int n = 0;
-	char cbuf[1000];
+	char cbuf[64000];
 	ffiovec iov[3] = {};
 	ffiovec_set(&iov[1], "cldata", 6);
 	ffiovec_set(&iov[2], cbuf, sizeof(cbuf));
@@ -436,7 +438,7 @@ void test_kqueue_socket_sendv()
 
 	// server <- client
 	// receive until the system buffer is empty
-	char lbuf[1000];
+	char lbuf[64000];
 	r = ffsock_recv(lc, lbuf, sizeof(lbuf), 0);
 	x_sys(r >= 6);
 	x(!memcmp(lbuf, "cldata", 6));

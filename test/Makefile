@@ -1,16 +1,14 @@
 # ffos makefile
-# 2020, Simon Zolin
 
 ROOT := ../..
 FFOS_DIR := $(ROOT)/ffos
 FFBASE_DIR := $(ROOT)/ffbase
-HEADERS := $(wildcard $(FFOS_DIR)/FFOS/*.h)
 
-include $(FFBASE_DIR)/test/makeconf
+include $(FFBASE_DIR)/conf.mk
 
 TEST_EXE := ffostest$(DOTEXE)
 
-TEST_OBJ := \
+OBJ := \
 	backtrace.o \
 	compat.o \
 	dir.o \
@@ -36,63 +34,63 @@ TEST_OBJ := \
 	timerqueue.o \
 	vol.o
 # 	fileaio.o
-HEADERS += $(FFOS_DIR)/test/Makefile
 ifeq "$(OS)" "windows"
-	TEST_OBJ += \
+	OBJ += \
 		filemon.o \
 		winreg.o
 else
-	ifeq ($(OS),linux)
-		TEST_OBJ += \
+	ifeq "$(OS)" "linux"
+		OBJ += \
 			filemon.o \
 			netlink.o
-	else ifeq ($(OS),freebsd)
-	else ifeq ($(OS),apple)
+	else ifeq "$(OS)" "freebsd"
+	else ifeq "$(OS)" "apple"
 	endif
 endif
 
-all: $(TEST_EXE)
+default: $(TEST_EXE)
 
 clean:
-	$(RM) $(TEST_EXE) $(TEST_OBJ)
+	$(RM) $(TEST_EXE) $(OBJ)
 
-TEST_CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR) \
+CFLAGS := -MMD -MP -I$(FFOS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -Wno-array-bounds -fno-strict-aliasing \
 	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g
 ifeq "$(DEBUG)" "1"
-	TEST_CFLAGS += -O0 -DFFBASE_DEBUG
+	CFLAGS += -O0 -DFFBASE_DEBUG
 else
-	TEST_CFLAGS += -O3
+	CFLAGS += -O3
 endif
-TEST_CXXFLAGS := $(TEST_CFLAGS)
-TEST_CFLAGS += -std=gnu99
+CXXFLAGS := $(CFLAGS)
+CFLAGS += -std=gnu99
+
 ifeq "$(ASAN)" "1"
-	TEST_CFLAGS += -fsanitize=address
-	TEST_LDFLAGS += -fsanitize=address
+	CFLAGS += -fsanitize=address
+	LINKFLAGS += -fsanitize=address
 endif
 
 ifeq "$(OS)" "windows"
-	# TEST_CFLAGS += -DFF_WIN_APIVER=0x0501
-	TEST_LDLIBS += -lws2_32 -liphlpapi
+	# CFLAGS += -DFF_WIN_APIVER=0x0501
+	LINKFLAGS += -lws2_32 -liphlpapi
 else
-	TEST_LDLIBS += -pthread
-	ifeq ($(OS),linux)
-		TEST_LDLIBS += -ldl
-	else ifeq ($(OS),freebsd)
-		TEST_LDLIBS += -lexecinfo
+	LINKFLAGS += -pthread
+	ifeq "$(OS)" "linux"
+		LINKFLAGS += -ldl
+	else ifeq "$(OS)" "freebsd"
+		LINKFLAGS += -lexecinfo
 	endif
 endif
 
+-include $(wildcard *.d)
+
 %.o: $(FFOS_DIR)/FFOS/%.c
-	$(C) $(TEST_CFLAGS) $< -o $@
+	$(C) $(CFLAGS) $< -o $@
 
-test.o: $(FFOS_DIR)/test/test.c $(FFOS_DIR)/test/tests.h $(HEADERS)
-	$(C) $(TEST_CFLAGS) $< -o $@
-%.o: $(FFOS_DIR)/test/%.c $(HEADERS)
-	$(C) $(TEST_CFLAGS) $< -o $@
+%.o: $(FFOS_DIR)/test/%.c
+	$(C) $(CFLAGS) $< -o $@
 
-%.o: $(FFOS_DIR)/test/%.cpp $(HEADERS)
-	$(CXX) $(TEST_CXXFLAGS) $< -o $@
+%.o: $(FFOS_DIR)/test/%.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
 
-$(TEST_EXE): $(TEST_OBJ)
-	$(LINK) $(TEST_LDFLAGS) $+ $(TEST_LDLIBS) -o $@
+$(TEST_EXE): $(OBJ)
+	$(LINK) $+ $(LINKFLAGS) -o $@

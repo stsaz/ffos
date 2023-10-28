@@ -24,7 +24,7 @@ void test_error()
 	fferr_set(1);
 	x(0 != fferr_str(fferr_last(), buf, 15));
 #ifdef FF_WIN
-	xsz("Incorrect func", buf);
+	x(!strcmp("Incorrect func", buf) || !strcmp("Invalid functi", buf));
 #else
 	xsz("Operation not ", buf);
 #endif
@@ -33,7 +33,7 @@ void test_error()
 
 	const char *s = fferr_strptr(fferr_last());
 #ifdef FF_WIN
-	xsz("Incorrect function", s);
+	x(!strcmp("Incorrect function", s) || !strcmp("Invalid function", s));
 #else
 	xsz("Operation not permitted", s);
 #endif

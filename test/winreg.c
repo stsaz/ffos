@@ -22,17 +22,25 @@ void test_winreg_enum(ffwinreg k)
 	x_sys(1 == ffwinreg_enum_nextkey(&e, &name));
 
 	ffwinreg_enum_begin(&e, k);
-	x_sys(0 == ffwinreg_enum_nextval(&e, &name, &val, &t));
-	xseq(&name, "NameInt");
-	xseq(&val, "0x00003039 (12345)");
-	x(t == REG_DWORD);
+	int n = 0;
+	for (;;) {
+		int r = ffwinreg_enum_nextval(&e, &name, &val, &t);
+		if (r == 1)
+			break;
+		x_sys(r == 0);
 
-	x_sys(0 == ffwinreg_enum_nextval(&e, &name, &val, &t));
-	xseq(&name, "NameStr");
-	xseq(&val, "Value");
-	x(t == REG_SZ);
+		if (ffstr_eqz(&name, "NameInt")) {
+			xseq(&val, "0x00003039 (12345)");
+			x(t == REG_DWORD);
+			n++;
 
-	x_sys(1 == ffwinreg_enum_nextval(&e, &name, &val, &t));
+		} else if (ffstr_eqz(&name, "NameStr")) {
+			xseq(&val, "Value");
+			x(t == REG_SZ);
+			n++;
+		}
+	}
+	xieq(n, 2);
 
 	ffwinreg_enum_destroy(&e);
 
