@@ -239,6 +239,7 @@ static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 #else // UNIX:
 
 #include <FFOS/error.h>
+#include <sys/stat.h>
 #include <termios.h>
 
 #define ffstdin  0
@@ -323,8 +324,11 @@ static inline int ffstd_keyparse(ffstr *data)
 
 static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 {
-	if (attr == FFSTD_VTERM)
-		return 0; // enabled by default
+	if (attr == FFSTD_VTERM) {
+		struct stat st;
+		return !(!fstat(fd, &st)
+			&& (st.st_mode & S_IFMT) == S_IFCHR);
+	}
 
 	struct termios t;
 	if (0 != tcgetattr(fd, &t))
