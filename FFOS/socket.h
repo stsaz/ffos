@@ -185,9 +185,9 @@ static inline int ffsock_connect_async(ffsock sk, const ffsockaddr *addr, ffkq_t
 		return 0;
 	}
 
-	ffsockaddr a = *addr;
-	a.ip4.sin_port = 0;
-	if (0 != bind(sk, (struct sockaddr*)&a.ip4, a.len))
+	ffsockaddr a = {};
+	a.ip4.sin_family = addr->ip4.sin_family;
+	if (0 != bind(sk, (struct sockaddr*)&a.ip4, addr->len))
 		return -1;
 
 	ffmem_zero_obj(task);
