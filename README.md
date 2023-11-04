@@ -1,3 +1,5 @@
+This repository was renamed and moved here: [ffsys](https://github.com/stsaz/ffsys).
+
 # ffos
 
 FFOS library allows to write cross-platform code for these OS:
